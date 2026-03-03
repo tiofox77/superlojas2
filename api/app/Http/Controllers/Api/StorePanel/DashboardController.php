@@ -12,7 +12,7 @@ class DashboardController extends Controller
     {
         $store = Store::where('slug', $slug)
             ->withCount('products')
-            ->with('user')
+            ->with(['user', 'plan'])
             ->firstOrFail();
 
         $this->authorizeStoreAccess($request->user(), $store);
