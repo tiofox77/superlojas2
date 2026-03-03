@@ -66,7 +66,7 @@ Route::post('/track', [\App\Http\Controllers\Api\TrackingController::class, 'tra
 // ─── Subdomain resolution ────────────────────────────────────
 Route::get('/subdomain/resolve/{slug}', function (string $slug) {
     $store = \App\Models\Store::where('slug', $slug)
-        ->where('status', 'active')
+        ->where('status', 'approved')
         ->with(['plan:id,name,slug,custom_domain', 'products' => function ($q) {
             $q->select('id', 'store_id')->limit(1);
         }])
