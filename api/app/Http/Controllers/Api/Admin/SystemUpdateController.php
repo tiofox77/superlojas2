@@ -294,15 +294,43 @@ class SystemUpdateController extends Controller
             // ─── Step 2: Extract zip ───
             $steps[] = ['step' => 'extract', 'status' => 'running', 'message' => 'A extrair ficheiros...'];
 
-            $zip = new \ZipArchive();
-            if ($zip->open($zipPath) !== true) {
-                return response()->json(['error' => 'Nao foi possivel abrir o zip.', 'steps' => $steps], 500);
-            }
-
             $extractDir = $tempDir . '/extracted';
             File::ensureDirectoryExists($extractDir);
-            $zip->extractTo($extractDir);
-            $zip->close();
+
+            $extracted = false;
+
+            // Try ZipArchive first
+            if (class_exists(\ZipArchive::class)) {
+                $zip = new \ZipArchive();
+                if ($zip->open($zipPath) === true) {
+                    $zip->extractTo($extractDir);
+                    $zip->close();
+                    $extracted = true;
+                }
+            }
+
+            // Fallback: shell unzip command
+            if (!$extracted) {
+                $unzipCmd = "unzip -o " . escapeshellarg($zipPath) . " -d " . escapeshellarg($extractDir) . " 2>&1";
+                $output = [];
+                $exitCode = 0;
+                exec($unzipCmd, $output, $exitCode);
+
+                if ($exitCode !== 0) {
+                    // Try Python as last resort
+                    $pyCmd = "python3 -c \"import zipfile; zipfile.ZipFile(" . escapeshellarg($zipPath) . ").extractall(" . escapeshellarg($extractDir) . ")\" 2>&1";
+                    exec($pyCmd, $output, $exitCode);
+                }
+
+                $extracted = ($exitCode === 0) || count(File::allFiles($extractDir)) > 0;
+            }
+
+            if (!$extracted || count(File::allFiles($extractDir)) === 0) {
+                return response()->json([
+                    'error' => 'Nao foi possivel extrair o zip. Verifique se a extensao php-zip ou o comando unzip estao disponiveis no servidor.',
+                    'steps' => $steps,
+                ], 500);
+            }
 
             // GitHub zipball has a root folder like "owner-repo-hash/"
             $innerDirs = File::directories($extractDir);

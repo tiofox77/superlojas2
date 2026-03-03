@@ -64,6 +64,7 @@ export default function SystemUpdate() {
   const [installing, setInstalling] = useState<string | null>(null);
   const [installSteps, setInstallSteps] = useState<{step:string;status:string;message:string}[]>([]);
   const [installResult, setInstallResult] = useState<{success:boolean;message:string;version?:string;files_copied?:number;files_skipped?:number} | null>(null);
+  const [confirmModal, setConfirmModal] = useState<Release | null>(null);
 
   // Form state
   const [repoUrl, setRepoUrl] = useState("");
@@ -160,7 +161,7 @@ export default function SystemUpdate() {
   };
 
   const installRelease = async (rel: Release) => {
-    if (!confirm(`Instalar versao ${rel.tag_name}?\n\nIsto ira:\n- Descarregar os ficheiros da release\n- Sobrescrever ficheiros existentes\n- Preservar .env e api/.env\n- Executar migracoes Laravel\n\nContinuar?`)) return;
+    setConfirmModal(null);
     setInstalling(rel.tag_name);
     setInstallSteps([]);
     setInstallResult(null);
@@ -186,6 +187,8 @@ export default function SystemUpdate() {
       toast.error("Erro de conexao");
     } finally { setInstalling(null); }
   };
+
+  const askInstall = (rel: Release) => setConfirmModal(rel);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -501,7 +504,7 @@ export default function SystemUpdate() {
 
                         {!isCurrent && (
                           <>
-                            <button onClick={() => installRelease(rel)} disabled={!!installing}
+                            <button onClick={() => askInstall(rel)} disabled={!!installing}
                               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-40 transition-colors ml-auto shadow-sm">
                               {installing === rel.tag_name ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
                               {installing === rel.tag_name ? "A instalar..." : "Instalar Agora"}
@@ -531,36 +534,89 @@ export default function SystemUpdate() {
           </div>
           <div>
             <h3 className={`text-sm font-bold ${s.textPrimary}`}>Como Actualizar</h3>
-            <p className={`text-[11px] ${s.textMuted}`}>Passos para actualizar o sistema</p>
+            <p className={`text-[11px] ${s.textMuted}`}>O sistema actualiza automaticamente com 1 clique</p>
           </div>
         </div>
         <div className={`rounded-xl p-4 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"} space-y-3 text-xs ${s.textSecondary}`}>
           <div className="flex gap-3">
-            <span className="h-5 w-5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
-            <p>Faca download do <strong>Source (zip)</strong> da release desejada</p>
+            <span className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+            <p>Clique em <strong>"Instalar Agora"</strong> na release desejada</p>
           </div>
           <div className="flex gap-3">
-            <span className="h-5 w-5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
-            <p>Faca backup da base de dados e dos ficheiros actuais</p>
+            <span className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+            <p>O sistema descarrega, extrai e copia automaticamente os ficheiros novos</p>
           </div>
           <div className="flex gap-3">
-            <span className="h-5 w-5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold flex items-center justify-center shrink-0">3</span>
-            <p>Extraia os ficheiros e substitua os existentes no servidor (excluindo <code className="px-1 py-0.5 rounded bg-orange-500/10 text-orange-600">.env</code> e <code className="px-1 py-0.5 rounded bg-orange-500/10 text-orange-600">api/.env</code>)</p>
+            <span className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold flex items-center justify-center shrink-0">3</span>
+            <p>Os ficheiros <code className="px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-600">.env</code> e <code className="px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-600">api/.env</code> sao preservados automaticamente</p>
           </div>
           <div className="flex gap-3">
-            <span className="h-5 w-5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold flex items-center justify-center shrink-0">4</span>
-            <p>Execute <code className="px-1 py-0.5 rounded bg-orange-500/10 text-orange-600">cd api && composer install && php artisan migrate</code></p>
+            <span className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold flex items-center justify-center shrink-0">4</span>
+            <p>Migracoes Laravel e seeders sao executados automaticamente</p>
           </div>
           <div className="flex gap-3">
-            <span className="h-5 w-5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold flex items-center justify-center shrink-0">5</span>
-            <p>Execute <code className="px-1 py-0.5 rounded bg-orange-500/10 text-orange-600">npm install && npm run build</code></p>
-          </div>
-          <div className="flex gap-3">
-            <span className="h-5 w-5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold flex items-center justify-center shrink-0">6</span>
-            <p>Clique em <strong>"Marcar como instalado"</strong> na release correspondente</p>
+            <span className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold flex items-center justify-center shrink-0">5</span>
+            <p>Caches sao limpos e a versao e actualizada. <strong>Tudo pronto!</strong></p>
           </div>
         </div>
       </div>
+
+      {/* ═══ Confirm Install Modal ═══ */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setConfirmModal(null)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div onClick={(e) => e.stopPropagation()}
+            className={`relative w-full max-w-md rounded-2xl border ${s.card} ${s.borderLight} shadow-2xl overflow-hidden`}>
+            {/* Header */}
+            <div className={`p-5 border-b ${s.borderLight}`}>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                  <Rocket className="h-5 w-5 text-emerald-500" />
+                </div>
+                <div>
+                  <h3 className={`text-sm font-bold ${s.textPrimary}`}>Instalar Actualizacao</h3>
+                  <p className={`text-[11px] ${s.textMuted}`}>Versao {confirmModal.tag_name}</p>
+                </div>
+              </div>
+            </div>
+            {/* Body */}
+            <div className="p-5 space-y-3">
+              <p className={`text-xs ${s.textSecondary}`}>Esta accao ira:</p>
+              <div className="space-y-2">
+                {[
+                  { icon: FileDown, text: "Descarregar os ficheiros da release", color: "text-blue-500" },
+                  { icon: FolderSync, text: "Sobrescrever ficheiros existentes", color: "text-orange-500" },
+                  { icon: Shield, text: "Preservar .env e api/.env", color: "text-emerald-500" },
+                  { icon: Database, text: "Executar migracoes e seeders", color: "text-violet-500" },
+                  { icon: Trash2, text: "Limpar caches do sistema", color: "text-rose-500" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <item.icon className={`h-3.5 w-3.5 ${item.color} shrink-0`} />
+                    <span className={`text-xs ${s.textSecondary}`}>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+              <div className={`mt-3 p-3 rounded-xl ${s.isDark ? "bg-amber-500/5 border border-amber-500/20" : "bg-amber-50 border border-amber-200"}`}>
+                <p className={`text-[11px] font-medium ${s.isDark ? "text-amber-400" : "text-amber-700"}`}>
+                  <AlertTriangle className="inline h-3 w-3 mr-1" />
+                  Certifique-se de que tem um backup recente antes de continuar.
+                </p>
+              </div>
+            </div>
+            {/* Footer */}
+            <div className={`p-4 border-t ${s.borderLight} flex justify-end gap-2`}>
+              <button onClick={() => setConfirmModal(null)}
+                className={`px-4 py-2 rounded-xl text-xs font-medium ${s.btnSecondary}`}>
+                Cancelar
+              </button>
+              <button onClick={() => installRelease(confirmModal)}
+                className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors shadow-sm">
+                <Rocket className="h-3.5 w-3.5" /> Instalar {confirmModal.tag_name}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
