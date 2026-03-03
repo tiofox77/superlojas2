@@ -451,7 +451,7 @@ export default function SystemUpdate() {
                           {installSteps.map((st, i) => {
                             const stepIcons: Record<string, typeof Rocket> = {
                               download: FileDown, extract: FolderSync, backup: Shield,
-                              copy: FolderSync, migrate: Database, cache: Trash2, version: Tag,
+                              copy: FolderSync, migrate: Database, seed: Database, cache: Trash2, version: Tag,
                             };
                             const Icon = stepIcons[st.step] || Package;
                             return (

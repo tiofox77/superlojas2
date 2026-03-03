@@ -375,6 +375,20 @@ class SystemUpdateController extends Controller
 
             $steps[] = ['step' => 'migrate', 'status' => 'done', 'message' => $migrateOutput ?: 'Sem migracoes pendentes'];
 
+            // ─── Step 6b: Run seeders (idempotent only) ───
+            $steps[] = ['step' => 'seed', 'status' => 'running', 'message' => 'A executar seeders...'];
+
+            $seedOutput = '';
+            try {
+                Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\UpdateSeeder', '--force' => true]);
+                $seedOutput = trim(Artisan::output());
+            } catch (\Throwable $e) {
+                $seedOutput = 'Erro: ' . $e->getMessage();
+                Log::error('Update seeder error', ['error' => $e->getMessage()]);
+            }
+
+            $steps[] = ['step' => 'seed', 'status' => 'done', 'message' => $seedOutput ?: 'Seeders executados'];
+
             // ─── Step 7: Clear caches ───
             $steps[] = ['step' => 'cache', 'status' => 'running', 'message' => 'A limpar caches...'];
 
