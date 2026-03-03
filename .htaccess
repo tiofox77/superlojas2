@@ -1,0 +1,28 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # ─── Laravel API: route /api/* to api/public/index.php ───
+  RewriteCond %{REQUEST_URI} ^/api/
+  RewriteRule ^api/(.*)$ /api/public/index.php [L,QSA]
+
+  # ─── Sanctum CSRF cookie ───
+  RewriteCond %{REQUEST_URI} ^/sanctum/
+  RewriteRule ^sanctum/(.*)$ /api/public/index.php [L,QSA]
+
+  # ─── Storage: serve uploaded files from api/public/storage/ ───
+  RewriteCond %{REQUEST_URI} ^/storage/(.*)$
+  RewriteCond %{DOCUMENT_ROOT}/api/public/storage/%1 -f
+  RewriteRule ^storage/(.*)$ /api/public/storage/$1 [L]
+
+  # ─── Frontend: serve existing files from disk (prevents loops) ───
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # ─── Frontend: serve assets from dist/ ───
+  RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
+  RewriteRule ^(.*)$ /dist/$1 [L]
+
+  # ─── SPA fallback: everything else serves dist/index.html ───
+  RewriteRule ^ /dist/index.html [L]
+</IfModule>
