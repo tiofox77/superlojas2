@@ -330,6 +330,7 @@ Route::middleware(['auth:sanctum', 'super_admin'])->prefix('admin')->group(funct
     Route::get('/system-update/check-latest', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'checkLatest']);
     Route::put('/system-update/set-version', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'setVersion']);
     Route::get('/system-update/repo-info', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'repoInfo']);
+    Route::post('/system-update/install', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'install']);
 
     // Email Logs
     Route::get('/email-logs', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'index']);

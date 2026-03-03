@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class SystemUpdateController extends Controller
 {
@@ -223,6 +226,273 @@ class SystemUpdateController extends Controller
             'message' => "Versao actualizada para {$request->version}",
             'current_version' => $request->version,
         ]);
+    }
+
+    /**
+     * Install a release directly on the server.
+     * Downloads zip from GitHub, extracts, copies files (preserving .env, api/.env, api/storage/), runs migrations.
+     */
+    public function install(Request $request)
+    {
+        $request->validate([
+            'tag' => 'required|string|max:100',
+            'zipball_url' => 'required|string|url',
+        ]);
+
+        $tag = $request->tag;
+        $zipUrl = $request->zipball_url;
+        $repo = Setting::get('github_repo');
+
+        if (!$repo) {
+            return response()->json(['error' => 'Repositorio nao configurado.'], 422);
+        }
+
+        // Project root (one level up from api/)
+        $projectRoot = realpath(base_path('..'));
+        if (!$projectRoot || !is_dir($projectRoot)) {
+            return response()->json(['error' => 'Nao foi possivel determinar a raiz do projecto.'], 500);
+        }
+
+        $steps = [];
+        $tempDir = null;
+        $zipPath = null;
+
+        try {
+            // ─── Step 1: Download zip ───
+            $steps[] = ['step' => 'download', 'status' => 'running', 'message' => 'A descarregar release...'];
+
+            $headers = ['User-Agent' => 'SuperLojas-Updater', 'Accept' => 'application/vnd.github.v3+json'];
+            $token = Setting::get('github_token');
+            if ($token) {
+                $headers['Authorization'] = 'Bearer ' . $token;
+            }
+
+            $response = Http::withHeaders($headers)
+                ->withOptions(['allow_redirects' => true])
+                ->timeout(120)
+                ->get($zipUrl);
+
+            if ($response->failed()) {
+                return response()->json([
+                    'error' => 'Erro ao descarregar: HTTP ' . $response->status(),
+                    'steps' => $steps,
+                ], 500);
+            }
+
+            $zipContent = $response->body();
+            if (strlen($zipContent) < 1000) {
+                return response()->json(['error' => 'Ficheiro zip invalido ou vazio.', 'steps' => $steps], 500);
+            }
+
+            $tempDir = storage_path('app/update_' . uniqid());
+            File::ensureDirectoryExists($tempDir);
+            $zipPath = $tempDir . '/release.zip';
+            File::put($zipPath, $zipContent);
+
+            $steps[] = ['step' => 'download', 'status' => 'done', 'message' => 'Download concluido (' . $this->formatSize(strlen($zipContent)) . ')'];
+
+            // ─── Step 2: Extract zip ───
+            $steps[] = ['step' => 'extract', 'status' => 'running', 'message' => 'A extrair ficheiros...'];
+
+            $zip = new \ZipArchive();
+            if ($zip->open($zipPath) !== true) {
+                return response()->json(['error' => 'Nao foi possivel abrir o zip.', 'steps' => $steps], 500);
+            }
+
+            $extractDir = $tempDir . '/extracted';
+            File::ensureDirectoryExists($extractDir);
+            $zip->extractTo($extractDir);
+            $zip->close();
+
+            // GitHub zipball has a root folder like "owner-repo-hash/"
+            $innerDirs = File::directories($extractDir);
+            $sourceDir = count($innerDirs) === 1 ? $innerDirs[0] : $extractDir;
+
+            if (!is_dir($sourceDir)) {
+                return response()->json(['error' => 'Estrutura do zip invalida.', 'steps' => $steps], 500);
+            }
+
+            $steps[] = ['step' => 'extract', 'status' => 'done', 'message' => 'Extraccao concluida'];
+
+            // ─── Step 3: Backup .env files ───
+            $steps[] = ['step' => 'backup', 'status' => 'running', 'message' => 'A preservar ficheiros de configuracao...'];
+
+            $preserved = [];
+
+            // Save current .env files
+            $envFiles = [
+                $projectRoot . '/.env',
+                $projectRoot . '/api/.env',
+            ];
+            $envBackups = [];
+            foreach ($envFiles as $envFile) {
+                if (File::exists($envFile)) {
+                    $envBackups[$envFile] = File::get($envFile);
+                    $preserved[] = str_replace($projectRoot . '/', '', $envFile);
+                }
+            }
+
+            $steps[] = ['step' => 'backup', 'status' => 'done', 'message' => 'Ficheiros preservados: ' . implode(', ', $preserved)];
+
+            // ─── Step 4: Copy files ───
+            $steps[] = ['step' => 'copy', 'status' => 'running', 'message' => 'A copiar ficheiros novos...'];
+
+            $copied = 0;
+            $skipped = 0;
+
+            // Files/dirs to NEVER overwrite from the release
+            $protectedPaths = [
+                '.env',
+                'api/.env',
+                'api/storage/app',
+                'api/storage/logs',
+                'api/storage/framework/sessions',
+                'api/storage/framework/cache',
+                'node_modules',
+                'api/vendor',
+            ];
+
+            $this->copyDirectory($sourceDir, $projectRoot, $protectedPaths, $copied, $skipped);
+
+            $steps[] = ['step' => 'copy', 'status' => 'done', 'message' => "{$copied} ficheiros copiados, {$skipped} protegidos/ignorados"];
+
+            // ─── Step 5: Restore .env files (safety) ───
+            foreach ($envBackups as $envFile => $content) {
+                File::put($envFile, $content);
+            }
+
+            // ─── Step 6: Run migrations ───
+            $steps[] = ['step' => 'migrate', 'status' => 'running', 'message' => 'A executar migracoes...'];
+
+            $migrateOutput = '';
+            try {
+                Artisan::call('migrate', ['--force' => true]);
+                $migrateOutput = trim(Artisan::output());
+            } catch (\Throwable $e) {
+                $migrateOutput = 'Erro: ' . $e->getMessage();
+                Log::error('Update migration error', ['error' => $e->getMessage()]);
+            }
+
+            $steps[] = ['step' => 'migrate', 'status' => 'done', 'message' => $migrateOutput ?: 'Sem migracoes pendentes'];
+
+            // ─── Step 7: Clear caches ───
+            $steps[] = ['step' => 'cache', 'status' => 'running', 'message' => 'A limpar caches...'];
+
+            try {
+                Artisan::call('config:clear');
+                Artisan::call('route:clear');
+                Artisan::call('view:clear');
+                Artisan::call('cache:clear');
+            } catch (\Throwable $e) {
+                Log::warning('Cache clear error during update', ['error' => $e->getMessage()]);
+            }
+
+            $steps[] = ['step' => 'cache', 'status' => 'done', 'message' => 'Caches limpos'];
+
+            // ─── Step 8: Update version ───
+            $cleanTag = ltrim($tag, 'vV');
+            Setting::set('current_version', $cleanTag);
+            Cache::forget('github_releases');
+            Setting::set('last_update_installed', now()->toIso8601String());
+
+            $steps[] = ['step' => 'version', 'status' => 'done', 'message' => "Versao actualizada para {$cleanTag}"];
+
+            // ─── Cleanup temp ───
+            File::deleteDirectory($tempDir);
+
+            Log::info("System updated to {$tag}", [
+                'repo' => $repo,
+                'files_copied' => $copied,
+                'files_skipped' => $skipped,
+            ]);
+
+            return response()->json([
+                'message' => "Actualizacao para {$tag} instalada com sucesso!",
+                'version' => $cleanTag,
+                'steps' => $steps,
+                'files_copied' => $copied,
+                'files_skipped' => $skipped,
+            ]);
+
+        } catch (\Throwable $e) {
+            // Cleanup on error
+            if ($tempDir && File::isDirectory($tempDir)) {
+                File::deleteDirectory($tempDir);
+            }
+
+            // Restore .env if we backed them up
+            if (!empty($envBackups)) {
+                foreach ($envBackups as $envFile => $content) {
+                    File::put($envFile, $content);
+                }
+            }
+
+            Log::error("System update failed", ['error' => $e->getMessage(), 'tag' => $tag]);
+
+            return response()->json([
+                'error' => 'Erro na instalacao: ' . $e->getMessage(),
+                'steps' => $steps,
+            ], 500);
+        }
+    }
+
+    /**
+     * Recursively copy directory, respecting protected paths.
+     */
+    private function copyDirectory(string $source, string $dest, array $protectedPaths, int &$copied, int &$skipped, string $relativePath = ''): void
+    {
+        $items = File::files($source);
+        foreach ($items as $file) {
+            $relPath = $relativePath ? $relativePath . '/' . $file->getFilename() : $file->getFilename();
+
+            // Check if protected
+            $isProtected = false;
+            foreach ($protectedPaths as $pp) {
+                if ($relPath === $pp || str_starts_with($relPath, $pp . '/')) {
+                    $isProtected = true;
+                    break;
+                }
+            }
+
+            if ($isProtected) {
+                $skipped++;
+                continue;
+            }
+
+            $destPath = $dest . '/' . $relPath;
+            File::ensureDirectoryExists(dirname($destPath));
+            File::copy($file->getPathname(), $destPath);
+            $copied++;
+        }
+
+        $dirs = File::directories($source);
+        foreach ($dirs as $dir) {
+            $dirName = basename($dir);
+            $relPath = $relativePath ? $relativePath . '/' . $dirName : $dirName;
+
+            // Skip fully protected directories
+            $isProtected = false;
+            foreach ($protectedPaths as $pp) {
+                if ($relPath === $pp) {
+                    $isProtected = true;
+                    break;
+                }
+            }
+
+            if ($isProtected) {
+                $skipped++;
+                continue;
+            }
+
+            $this->copyDirectory($dir, $dest, $protectedPaths, $copied, $skipped, $relPath);
+        }
+    }
+
+    private function formatSize(int $bytes): string
+    {
+        if ($bytes < 1024) return $bytes . ' B';
+        if ($bytes < 1048576) return round($bytes / 1024, 1) . ' KB';
+        return round($bytes / 1048576, 1) . ' MB';
     }
 
     /**

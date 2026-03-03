@@ -5,7 +5,8 @@ import { useToastNotification } from "@/contexts/ToastContext";
 import {
   Github, Loader2, RefreshCw, Tag, Download, ExternalLink, Star, GitFork,
   Shield, Clock, CheckCircle2, AlertTriangle, Settings,
-  ArrowUpRight, Package, Globe, ChevronDown, ChevronUp, Copy, Info
+  ArrowUpRight, Package, Globe, ChevronDown, ChevronUp, Copy, Info,
+  Rocket, XCircle, Database, FolderSync, FileDown, Trash2
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
@@ -60,6 +61,9 @@ export default function SystemUpdate() {
   const [saving, setSaving] = useState(false);
   const [expandedRelease, setExpandedRelease] = useState<number | null>(null);
   const [settingVersion, setSettingVersion] = useState<string | null>(null);
+  const [installing, setInstalling] = useState<string | null>(null);
+  const [installSteps, setInstallSteps] = useState<{step:string;status:string;message:string}[]>([]);
+  const [installResult, setInstallResult] = useState<{success:boolean;message:string;version?:string;files_copied?:number;files_skipped?:number} | null>(null);
 
   // Form state
   const [repoUrl, setRepoUrl] = useState("");
@@ -153,6 +157,34 @@ export default function SystemUpdate() {
       } else toast.error("Erro", data.message);
     } catch { toast.error("Erro de conexao"); }
     finally { setSettingVersion(null); }
+  };
+
+  const installRelease = async (rel: Release) => {
+    if (!confirm(`Instalar versao ${rel.tag_name}?\n\nIsto ira:\n- Descarregar os ficheiros da release\n- Sobrescrever ficheiros existentes\n- Preservar .env e api/.env\n- Executar migracoes Laravel\n\nContinuar?`)) return;
+    setInstalling(rel.tag_name);
+    setInstallSteps([]);
+    setInstallResult(null);
+    setExpandedRelease(rel.id);
+    try {
+      const res = await fetch(`${API}/admin/system-update/install`, {
+        method: "POST", headers: hdrs,
+        body: JSON.stringify({ tag: rel.tag_name, zipball_url: rel.zipball_url }),
+      });
+      const data = await res.json();
+      if (data.steps) setInstallSteps(data.steps);
+      if (res.ok) {
+        setInstallResult({ success: true, message: data.message, version: data.version, files_copied: data.files_copied, files_skipped: data.files_skipped });
+        setCurrentVer(data.version || rel.tag_name.replace(/^[vV]/, ""));
+        setConfig(prev => prev ? { ...prev, current_version: data.version || rel.tag_name.replace(/^[vV]/, "") } : prev);
+        toast.success("Instalado!", data.message);
+      } else {
+        setInstallResult({ success: false, message: data.error || "Erro na instalacao" });
+        toast.error("Erro", data.error || "Falha na instalacao");
+      }
+    } catch (e) {
+      setInstallResult({ success: false, message: "Erro de conexao ao servidor" });
+      toast.error("Erro de conexao");
+    } finally { setInstalling(null); }
   };
 
   const copyToClipboard = (text: string) => {
@@ -410,16 +442,54 @@ export default function SystemUpdate() {
                         </div>
                       )}
 
-                      {/* Source code links */}
+                      {/* Install progress */}
+                      {(installing === rel.tag_name || (installResult && expandedRelease === rel.id && installSteps.length > 0)) && (
+                        <div className={`mt-3 rounded-xl p-3 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"} space-y-2`}>
+                          <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider font-bold mb-2`}>
+                            {installing === rel.tag_name ? "A instalar..." : "Resultado da instalacao"}
+                          </p>
+                          {installSteps.map((st, i) => {
+                            const stepIcons: Record<string, typeof Rocket> = {
+                              download: FileDown, extract: FolderSync, backup: Shield,
+                              copy: FolderSync, migrate: Database, cache: Trash2, version: Tag,
+                            };
+                            const Icon = stepIcons[st.step] || Package;
+                            return (
+                              <div key={i} className={`flex items-start gap-2 text-xs ${
+                                st.status === "done" ? (s.isDark ? "text-emerald-400" : "text-emerald-600") :
+                                st.status === "running" ? (s.isDark ? "text-blue-400" : "text-blue-600") :
+                                (s.isDark ? "text-red-400" : "text-red-600")
+                              }`}>
+                                {st.status === "running" ? <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0 mt-0.5" /> :
+                                 st.status === "done" ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" /> :
+                                 <XCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />}
+                                <span className="break-all">{st.message}</span>
+                              </div>
+                            );
+                          })}
+                          {installResult && (
+                            <div className={`mt-2 p-2.5 rounded-lg border ${
+                              installResult.success
+                                ? (s.isDark ? "border-emerald-500/20 bg-emerald-500/5" : "border-emerald-200 bg-emerald-50")
+                                : (s.isDark ? "border-red-500/20 bg-red-500/5" : "border-red-200 bg-red-50")
+                            }`}>
+                              <p className={`text-xs font-semibold ${
+                                installResult.success ? (s.isDark ? "text-emerald-400" : "text-emerald-700") : (s.isDark ? "text-red-400" : "text-red-700")
+                              }`}>
+                                {installResult.success ? "✓ " : "✗ "}{installResult.message}
+                              </p>
+                              {installResult.files_copied !== undefined && (
+                                <p className={`text-[10px] ${s.textMuted} mt-1`}>
+                                  {installResult.files_copied} ficheiros copiados, {installResult.files_skipped} protegidos
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Action buttons */}
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <a href={rel.zipball_url} target="_blank" rel="noopener noreferrer"
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium ${s.btnSecondary}`}>
-                          <Download className="h-3 w-3" /> Source (zip)
-                        </a>
-                        <a href={rel.tarball_url} target="_blank" rel="noopener noreferrer"
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium ${s.btnSecondary}`}>
-                          <Download className="h-3 w-3" /> Source (tar.gz)
-                        </a>
                         <a href={rel.html_url} target="_blank" rel="noopener noreferrer"
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium ${s.btnSecondary}`}>
                           <Github className="h-3 w-3" /> Ver no GitHub
@@ -430,11 +500,18 @@ export default function SystemUpdate() {
                         </button>
 
                         {!isCurrent && (
-                          <button onClick={() => markVersion(rel.tag_name)} disabled={settingVersion === rel.tag_name}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40 transition-colors ml-auto">
-                            {settingVersion === rel.tag_name ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
-                            Marcar como instalado
-                          </button>
+                          <>
+                            <button onClick={() => installRelease(rel)} disabled={!!installing}
+                              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-40 transition-colors ml-auto shadow-sm">
+                              {installing === rel.tag_name ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
+                              {installing === rel.tag_name ? "A instalar..." : "Instalar Agora"}
+                            </button>
+                            <button onClick={() => markVersion(rel.tag_name)} disabled={settingVersion === rel.tag_name || !!installing}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium ${s.btnSecondary} disabled:opacity-40`}>
+                              {settingVersion === rel.tag_name ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tag className="h-3 w-3" />}
+                              Marcar como instalado
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
