@@ -22,8 +22,18 @@ class DashboardController extends Controller
         $avgRating = $store->rating;
         $reviewCount = $store->review_count;
 
+        $plan = $store->plan;
+
         return response()->json([
             'store' => $store,
+            'plan' => $plan ? [
+                'id' => $plan->id,
+                'name' => $plan->name,
+                'custom_domain' => (bool) $plan->custom_domain,
+                'has_api' => (bool) $plan->has_api,
+                'has_pos' => (bool) $plan->has_pos,
+                'analytics' => (bool) $plan->analytics,
+            ] : null,
             'stats' => [
                 'total_products' => $totalProducts,
                 'total_slides' => $totalSlides,
