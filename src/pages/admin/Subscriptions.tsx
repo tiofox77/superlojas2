@@ -185,8 +185,10 @@ export default function AdminSubscriptions() {
 
   const openAction = (sub: SubItem, type: "activate" | "cancel" | "renew" | "view") => {
     setActionSub(sub); setActionType(type);
-    setActionPayMethod(sub.payment_method || ""); setActionPayRef("");
-    setActionAmount(sub.plan ? sub.plan.price : ""); setActionNotes("");
+    setActionPayMethod(sub.payment_method || "");
+    setActionPayRef(sub.payment_reference || "");
+    setActionAmount(sub.amount_paid || (sub.plan ? sub.plan.price : ""));
+    setActionNotes(sub.notes || "");
   };
 
   const inputCls = `w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`;
@@ -428,6 +430,20 @@ export default function AdminSubscriptions() {
               <p className={`text-xs ${s.textMuted}`}>Loja: <strong className={s.textPrimary}>{actionSub.store?.name}</strong></p>
               <p className={`text-xs ${s.textMuted}`}>Plano: <strong className={s.textPrimary}>{actionSub.plan?.name} — {formatPrice(actionSub.plan?.price || "0")}</strong></p>
             </div>
+
+            {/* Payment info from store owner */}
+            {actionType === "activate" && (actionSub.payment_method || actionSub.payment_reference || actionSub.amount_paid) && (
+              <div className={`rounded-xl p-3 border ${s.isDark ? "border-emerald-500/20 bg-emerald-900/10" : "border-emerald-200 bg-emerald-50"}`}>
+                <p className={`text-[10px] font-bold ${s.isDark ? "text-emerald-300" : "text-emerald-700"} uppercase tracking-wider mb-2`}>Dados enviados pelo lojista</p>
+                <div className={`text-xs space-y-1 ${s.isDark ? "text-emerald-200" : "text-emerald-800"}`}>
+                  {actionSub.payment_method && <p><strong>Metodo:</strong> {actionSub.payment_method}</p>}
+                  {actionSub.payment_reference && <p><strong>Referencia:</strong> {actionSub.payment_reference}</p>}
+                  {actionSub.amount_paid && <p><strong>Valor:</strong> {formatPrice(actionSub.amount_paid)} {actionSub.currency}</p>}
+                  {actionSub.notes && <p><strong>Notas:</strong> {actionSub.notes}</p>}
+                  <p className={`text-[10px] ${s.isDark ? "text-emerald-400" : "text-emerald-600"} mt-1`}>Pedido em: {fmtDate(actionSub.created_at)}</p>
+                </div>
+              </div>
+            )}
 
             {/* Payment proof */}
             {actionSub.payment_proof && (

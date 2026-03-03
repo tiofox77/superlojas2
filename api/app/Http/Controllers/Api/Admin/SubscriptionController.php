@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use App\Models\Plan;
 use App\Models\Store;
 use App\Models\Subscription;
@@ -152,6 +153,17 @@ class SubscriptionController extends Controller
             }
         } catch (\Throwable $e) {}
 
+        // Notificar loja
+        Notification::notifyStore(
+            $subscription->store_id,
+            'subscription_activated',
+            'Subscricao aprovada!',
+            "O seu plano {$plan->name} foi activado com sucesso. Expira em " . ($subscription->expires_at ? $subscription->expires_at->format('d/m/Y') : 'sem expiracao') . ".",
+            'check-circle',
+            'emerald',
+            '/subscricao'
+        );
+
         return response()->json([
             'message' => 'Subscricao activada com sucesso.',
             'subscription' => $subscription->fresh()->load(['store:id,name,slug', 'plan:id,name,slug,price']),
@@ -181,6 +193,17 @@ class SubscriptionController extends Controller
                 'plan_expires_at' => null,
             ]);
         }
+
+        // Notificar loja
+        Notification::notifyStore(
+            $subscription->store_id,
+            'subscription_cancelled',
+            'Subscricao cancelada',
+            'A sua subscricao foi cancelada. A loja foi revertida para o plano gratuito.',
+            'x-circle',
+            'red',
+            '/subscricao'
+        );
 
         return response()->json(['message' => 'Subscricao cancelada. Loja revertida para plano gratuito.']);
     }

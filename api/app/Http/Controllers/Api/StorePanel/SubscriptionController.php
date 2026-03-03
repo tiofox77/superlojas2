@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\StorePanel;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use App\Models\Plan;
 use App\Models\Store;
 use App\Models\Subscription;
@@ -145,6 +146,26 @@ class SubscriptionController extends Controller
             'currency' => 'AOA',
             'notes' => $data['notes'] ?? null,
         ]);
+
+        // Notificar admin
+        Notification::notifyAdmin(
+            'subscription_request',
+            'Novo pedido de subscricao',
+            "A loja \"{$store->name}\" solicitou o plano {$plan->name} ({$plan->price} Kz). Metodo: " . ($data['payment_method'] ?? 'N/A') . ".",
+            'credit-card',
+            'amber',
+            '/admin/subscricoes',
+            [
+                'store_id' => $store->id,
+                'store_name' => $store->name,
+                'plan_id' => $plan->id,
+                'plan_name' => $plan->name,
+                'amount' => $plan->price,
+                'payment_method' => $data['payment_method'] ?? null,
+                'has_proof' => !empty($proofPath),
+                'subscription_id' => $subscription->id,
+            ]
+        );
 
         return response()->json([
             'message' => "Pedido de subscricao para o plano '{$plan->name}' enviado. Aguarde aprovacao do administrador.",
