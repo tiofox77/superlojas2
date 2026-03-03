@@ -320,6 +320,7 @@ Route::middleware(['auth:sanctum', 'super_admin'])->prefix('admin')->group(funct
     Route::put('/notifications/{notification}/read', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'markRead']);
     Route::put('/notifications/read-all', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'markAllRead']);
     Route::delete('/notifications/cleanup', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'cleanup']);
+    Route::post('/notifications/send', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'send']);
 
     // System Updates
     Route::get('/system-update/config', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'config']);
