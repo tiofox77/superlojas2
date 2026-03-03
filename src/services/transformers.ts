@@ -72,6 +72,7 @@ interface ApiHeroSlide {
   cta: string;
   cta_link: string;
   bg_color: string;
+  image: string | null;
   store_slug: string | null;
   sort_order: number;
 }
@@ -142,6 +143,7 @@ export function transformHeroSlide(api: ApiHeroSlide): HeroSlide {
     cta: api.cta,
     ctaLink: api.cta_link,
     bgColor: api.bg_color,
+    image: api.image || null,
   };
 }
 

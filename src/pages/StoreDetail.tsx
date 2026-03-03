@@ -49,9 +49,12 @@ function StoreHeroSlider({ storeSlug }: { storeSlug: string }) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -40 }}
           transition={{ duration: 0.35 }}
-          className={`bg-gradient-to-r ${slide.bgColor} px-8 py-14 sm:px-12 sm:py-20 text-primary-foreground`}
+          className={`${!slide.bgColor || slide.bgColor === "none" ? "bg-gray-900" : `bg-gradient-to-r ${slide.bgColor}`} px-8 py-14 sm:px-12 sm:py-20 text-primary-foreground relative overflow-hidden`}
         >
-          <div className="max-w-lg">
+          {slide.image && (
+            <img src={slide.image} alt="" className={`absolute inset-0 w-full h-full object-cover ${!slide.bgColor || slide.bgColor === "none" ? "" : "mix-blend-overlay opacity-60"}`} />
+          )}
+          <div className="max-w-lg relative z-10">
             <h2 className="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight">{slide.title}</h2>
             <p className="text-primary-foreground/80 text-sm mb-5">{slide.subtitle}</p>
             <Link

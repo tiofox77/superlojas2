@@ -26,9 +26,12 @@ export function HeroSlider() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -50 }}
           transition={{ duration: 0.4 }}
-          className={`bg-gradient-to-r ${slide.bgColor} px-8 py-12 sm:px-12 sm:py-16 text-primary-foreground h-full flex flex-col justify-center min-h-[280px] sm:min-h-[360px]`}
+          className={`${!slide.bgColor || slide.bgColor === "none" ? "bg-gray-900" : `bg-gradient-to-r ${slide.bgColor}`} px-8 py-12 sm:px-12 sm:py-16 text-primary-foreground h-full flex flex-col justify-center min-h-[280px] sm:min-h-[360px] relative overflow-hidden`}
         >
-          <div className="max-w-md">
+          {slide.image && (
+            <img src={slide.image} alt="" className={`absolute inset-0 w-full h-full object-cover ${!slide.bgColor || slide.bgColor === "none" ? "" : "mix-blend-overlay opacity-60"}`} />
+          )}
+          <div className="max-w-md relative z-10">
             <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary-foreground/70 mb-2">
               SuperLojas
             </span>

@@ -13,10 +13,13 @@ interface SlideItem { id: number; title: string; subtitle: string; cta: string; 
 const emptyForm = { title: "", subtitle: "", cta: "", cta_link: "", bg_color: "from-emerald-500 to-teal-500" };
 
 const GRADIENTS = [
+  "none",
   "from-orange-500 to-pink-500", "from-blue-500 to-violet-600", "from-emerald-500 to-teal-600",
   "from-red-500 to-orange-500", "from-indigo-500 to-purple-600", "from-pink-500 to-violet-500",
   "from-amber-500 to-red-500", "from-cyan-500 to-blue-600", "from-gray-800 to-gray-900",
 ];
+
+const isNoneGradient = (v: string) => !v || v === "none";
 
 export default function StorePanelSlides() {
   const { token } = useAuth();
@@ -110,8 +113,8 @@ export default function StorePanelSlides() {
           {slides.map((sl) => (
             <motion.div key={sl.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
               className={`rounded-2xl border ${s.card} ${s.cardHover} overflow-hidden transition-all group`}>
-              <div className={`relative bg-gradient-to-r ${sl.bg_color} h-36 overflow-hidden`}>
-                {sl.image && <img src={sl.image} alt="" className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-60" />}
+              <div className={`relative ${isNoneGradient(sl.bg_color) ? "bg-gray-900" : `bg-gradient-to-r ${sl.bg_color}`} h-36 overflow-hidden`}>
+                {sl.image && <img src={sl.image} alt="" className={`absolute inset-0 w-full h-full object-cover ${isNoneGradient(sl.bg_color) ? "" : "mix-blend-overlay opacity-60"}`} />}
                 <div className="relative z-10 p-4 flex flex-col justify-end h-full">
                   <p className="text-sm font-bold text-white drop-shadow truncate">{sl.title}</p>
                   <p className="text-[11px] text-white/80 drop-shadow truncate">{sl.subtitle}</p>
@@ -152,7 +155,13 @@ export default function StorePanelSlides() {
             <div className="flex flex-wrap gap-2">
               {GRADIENTS.map((g) => (
                 <button key={g} onClick={() => setForm({ ...form, bg_color: g })} type="button"
-                  className={`h-8 w-14 rounded-lg bg-gradient-to-r ${g} transition-all ${form.bg_color === g ? "ring-2 ring-emerald-400 ring-offset-2 scale-105" : "opacity-70 hover:opacity-100"}`} />
+                  className={`h-8 w-14 rounded-lg transition-all ${
+                    g === "none"
+                      ? `border-2 border-dashed ${s.isDark ? "border-white/20" : "border-gray-300"} flex items-center justify-center text-[8px] font-medium ${s.isDark ? "text-white/40" : "text-gray-400"}`
+                      : `bg-gradient-to-r ${g}`
+                  } ${form.bg_color === g ? "ring-2 ring-emerald-400 ring-offset-2 scale-105" : "opacity-70 hover:opacity-100"}`}>
+                  {g === "none" && "Nenhum"}
+                </button>
               ))}
             </div>
           </div>
@@ -171,8 +180,8 @@ export default function StorePanelSlides() {
             ))}
           </div>
           {/* Preview */}
-          <div className={`relative rounded-xl bg-gradient-to-r ${form.bg_color} h-28 overflow-hidden`}>
-            {imagePreview && <img src={imagePreview} alt="" className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-60" />}
+          <div className={`relative rounded-xl ${isNoneGradient(form.bg_color) ? "bg-gray-900" : `bg-gradient-to-r ${form.bg_color}`} h-28 overflow-hidden`}>
+            {imagePreview && <img src={imagePreview} alt="" className={`absolute inset-0 w-full h-full object-cover ${isNoneGradient(form.bg_color) ? "" : "mix-blend-overlay opacity-60"}`} />}
             <div className="relative z-10 p-4 flex flex-col justify-end h-full">
               <p className="text-sm font-bold text-white drop-shadow">{form.title || "Titulo..."}</p>
               <p className="text-xs text-white/80 drop-shadow">{form.subtitle || "Subtitulo..."}</p>

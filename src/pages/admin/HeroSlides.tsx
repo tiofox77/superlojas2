@@ -12,6 +12,7 @@ interface SlideItem { id: number; title: string; subtitle: string; cta: string; 
 const emptyForm = { title: "", subtitle: "", cta: "", cta_link: "", bg_color: "from-orange-500 to-pink-500", store_slug: "" };
 
 const GRADIENTS = [
+  { label: "Sem Gradiente", value: "none" },
   { label: "Laranja-Rosa", value: "from-orange-500 to-pink-500" },
   { label: "Azul-Violeta", value: "from-blue-500 to-violet-600" },
   { label: "Verde-Teal", value: "from-emerald-500 to-teal-600" },
@@ -23,6 +24,8 @@ const GRADIENTS = [
   { label: "Cinza Escuro", value: "from-gray-800 to-gray-900" },
   { label: "Primary-Warning", value: "from-primary to-warning" },
 ];
+
+const isNoneGradient = (v: string) => !v || v === "none";
 
 export default function AdminHeroSlides() {
   const { token } = useAuth();
@@ -105,9 +108,9 @@ export default function AdminHeroSlides() {
     <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
       className={`rounded-2xl border ${s.card} ${s.cardHover} overflow-hidden transition-all group`}>
       {/* Slide visual */}
-      <div className={`relative bg-gradient-to-r ${slide.bg_color} h-36 overflow-hidden`}>
+      <div className={`relative ${isNoneGradient(slide.bg_color) ? "bg-gray-900" : `bg-gradient-to-r ${slide.bg_color}`} h-36 overflow-hidden`}>
         {slide.image && (
-          <img src={slide.image} alt="" className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-60" />
+          <img src={slide.image} alt="" className={`absolute inset-0 w-full h-full object-cover ${isNoneGradient(slide.bg_color) ? "" : "mix-blend-overlay opacity-60"}`} />
         )}
         <div className="relative z-10 p-4 flex flex-col justify-end h-full">
           <p className="text-sm font-bold text-white drop-shadow truncate">{slide.title}</p>
@@ -200,13 +203,19 @@ export default function AdminHeroSlides() {
 
           {/* Gradient picker */}
           <div>
-            <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Gradiente de Fundo <span className="text-red-500">*</span></label>
+            <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Gradiente de Fundo</label>
             <div className="flex flex-wrap gap-2">
               {GRADIENTS.map((g) => (
                 <button key={g.value} onClick={() => setForm({ ...form, bg_color: g.value })} type="button"
-                  className={`h-8 w-16 rounded-lg bg-gradient-to-r ${g.value} transition-all ${
+                  className={`h-8 w-16 rounded-lg transition-all ${
+                    g.value === "none"
+                      ? `border-2 border-dashed ${s.isDark ? "border-white/20" : "border-gray-300"} flex items-center justify-center text-[9px] font-medium ${s.isDark ? "text-white/40" : "text-gray-400"}`
+                      : `bg-gradient-to-r ${g.value}`
+                  } ${
                     form.bg_color === g.value ? "ring-2 ring-orange-400 ring-offset-2 scale-105" : "opacity-70 hover:opacity-100"
-                  }`} title={g.label} />
+                  }`} title={g.label}>
+                  {g.value === "none" && "Nenhum"}
+                </button>
               ))}
             </div>
           </div>
@@ -230,9 +239,9 @@ export default function AdminHeroSlides() {
           {/* Live Preview */}
           <div>
             <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Pre-visualizacao</label>
-            <div className={`relative rounded-xl bg-gradient-to-r ${form.bg_color || "from-gray-500 to-gray-600"} h-32 overflow-hidden`}>
+            <div className={`relative rounded-xl ${isNoneGradient(form.bg_color) ? "bg-gray-900" : `bg-gradient-to-r ${form.bg_color || "from-gray-500 to-gray-600"}`} h-32 overflow-hidden`}>
               {imagePreview && (
-                <img src={imagePreview} alt="" className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-60" />
+                <img src={imagePreview} alt="" className={`absolute inset-0 w-full h-full object-cover ${isNoneGradient(form.bg_color) ? "" : "mix-blend-overlay opacity-60"}`} />
               )}
               <div className="relative z-10 p-5 flex flex-col justify-end h-full">
                 <p className="text-sm font-bold text-white drop-shadow">{form.title || "Titulo do Slide..."}</p>

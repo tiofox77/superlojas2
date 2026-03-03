@@ -71,6 +71,7 @@ export interface HeroSlide {
   cta: string;
   ctaLink: string;
   bgColor: string;
+  image: string | null;
 }
 
 export interface CartItem {
