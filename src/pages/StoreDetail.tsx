@@ -56,13 +56,15 @@ function StoreHeroSlider({ storeSlug }: { storeSlug: string }) {
           )}
           <div className="max-w-lg relative z-10">
             <h2 className="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight">{slide.title}</h2>
-            <p className="text-primary-foreground/80 text-sm mb-5">{slide.subtitle}</p>
-            <Link
-              to={slide.ctaLink}
-              className="inline-block rounded-xl bg-card text-foreground px-6 py-2.5 font-semibold text-sm hover:opacity-90 transition-opacity shadow-md"
-            >
-              {slide.cta} →
-            </Link>
+            {slide.subtitle && <p className="text-primary-foreground/80 text-sm mb-5">{slide.subtitle}</p>}
+            {slide.cta && slide.ctaLink && (
+              <Link
+                to={slide.ctaLink}
+                className="inline-block rounded-xl bg-card text-foreground px-6 py-2.5 font-semibold text-sm hover:opacity-90 transition-opacity shadow-md"
+              >
+                {slide.cta} →
+              </Link>
+            )}
           </div>
         </motion.div>
       </AnimatePresence>

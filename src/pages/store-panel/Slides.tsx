@@ -57,7 +57,7 @@ export default function StorePanelSlides() {
   };
 
   const saveSlide = async () => {
-    if (!form.title || !form.subtitle || !form.cta || !form.cta_link) { setFormError("Preencha todos os campos."); return; }
+    if (!form.title) { setFormError("O titulo e obrigatorio."); return; }
     setSaving(true); setFormError("");
     const fd = new FormData();
     fd.append("title", form.title);
@@ -117,8 +117,8 @@ export default function StorePanelSlides() {
                 {sl.image && <img src={sl.image} alt="" className={`absolute inset-0 w-full h-full object-cover ${isNoneGradient(sl.bg_color) ? "" : "mix-blend-overlay opacity-60"}`} />}
                 <div className="relative z-10 p-4 flex flex-col justify-end h-full">
                   <p className="text-sm font-bold text-white drop-shadow truncate">{sl.title}</p>
-                  <p className="text-[11px] text-white/80 drop-shadow truncate">{sl.subtitle}</p>
-                  <span className="inline-block mt-2 px-3 py-1 rounded-lg bg-white/25 backdrop-blur-sm text-[10px] text-white font-semibold w-fit">{sl.cta}</span>
+                  {sl.subtitle && <p className="text-[11px] text-white/80 drop-shadow truncate">{sl.subtitle}</p>}
+                  {sl.cta && <span className="inline-block mt-2 px-3 py-1 rounded-lg bg-white/25 backdrop-blur-sm text-[10px] text-white font-semibold w-fit">{sl.cta}</span>}
                 </div>
               </div>
               <div className="p-3 flex items-center justify-between">
@@ -168,12 +168,12 @@ export default function StorePanelSlides() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { l: "Titulo", k: "title", p: "Ofertas Especiais", req: true },
-              { l: "Subtitulo", k: "subtitle", p: "Ate 50% desconto", req: true },
-              { l: "Texto Botao", k: "cta", p: "Ver Ofertas", req: true },
-              { l: "Link", k: "cta_link", p: "/ofertas", req: true },
+              { l: "Subtitulo", k: "subtitle", p: "Ate 50% desconto", req: false },
+              { l: "Texto Botao", k: "cta", p: "Ver Ofertas", req: false },
+              { l: "Link", k: "cta_link", p: "/ofertas", req: false },
             ].map((f) => (
               <div key={f.k}>
-                <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>{f.l} <span className="text-red-500">*</span></label>
+                <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>{f.l} {f.req && <span className="text-red-500">*</span>}</label>
                 <input value={(form as any)[f.k]} onChange={(e) => setForm({ ...form, [f.k]: e.target.value })} placeholder={f.p}
                   className={`w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20`} />
               </div>
@@ -184,8 +184,8 @@ export default function StorePanelSlides() {
             {imagePreview && <img src={imagePreview} alt="" className={`absolute inset-0 w-full h-full object-cover ${isNoneGradient(form.bg_color) ? "" : "mix-blend-overlay opacity-60"}`} />}
             <div className="relative z-10 p-4 flex flex-col justify-end h-full">
               <p className="text-sm font-bold text-white drop-shadow">{form.title || "Titulo..."}</p>
-              <p className="text-xs text-white/80 drop-shadow">{form.subtitle || "Subtitulo..."}</p>
-              <span className="inline-block mt-1 px-3 py-1 rounded-lg bg-white/25 text-[10px] text-white font-semibold w-fit">{form.cta || "Botao"}</span>
+              {form.subtitle && <p className="text-xs text-white/80 drop-shadow">{form.subtitle}</p>}
+              {form.cta && <span className="inline-block mt-1 px-3 py-1 rounded-lg bg-white/25 text-[10px] text-white font-semibold w-fit">{form.cta}</span>}
             </div>
           </div>
           <div className={`flex justify-end gap-2 pt-2 border-t ${s.borderLight}`}>

@@ -34,10 +34,10 @@ class HeroSlideController extends Controller
 
         $request->validate([
             'title' => 'required|string|max:255',
-            'subtitle' => 'required|string|max:500',
-            'cta' => 'required|string|max:100',
-            'cta_link' => 'required|string|max:255',
-            'bg_color' => 'required|string|max:255',
+            'subtitle' => 'nullable|string|max:500',
+            'cta' => 'nullable|string|max:100',
+            'cta_link' => 'nullable|string|max:255',
+            'bg_color' => 'nullable|string|max:255',
             'image' => 'nullable|file|image|max:4096',
         ]);
 

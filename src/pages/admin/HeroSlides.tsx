@@ -69,7 +69,7 @@ export default function AdminHeroSlides() {
   };
 
   const saveSlide = async () => {
-    if (!form.title || !form.subtitle || !form.cta || !form.cta_link) { setFormError("Titulo, subtitulo, botao e link sao obrigatorios."); return; }
+    if (!form.title) { setFormError("O titulo e obrigatorio."); return; }
     setSaving(true); setFormError("");
 
     const fd = new FormData();
@@ -114,8 +114,8 @@ export default function AdminHeroSlides() {
         )}
         <div className="relative z-10 p-4 flex flex-col justify-end h-full">
           <p className="text-sm font-bold text-white drop-shadow truncate">{slide.title}</p>
-          <p className="text-[11px] text-white/80 drop-shadow truncate">{slide.subtitle}</p>
-          <span className="inline-block mt-2 px-3 py-1 rounded-lg bg-white/25 backdrop-blur-sm text-[10px] text-white font-semibold w-fit">{slide.cta}</span>
+          {slide.subtitle && <p className="text-[11px] text-white/80 drop-shadow truncate">{slide.subtitle}</p>}
+          {slide.cta && <span className="inline-block mt-2 px-3 py-1 rounded-lg bg-white/25 backdrop-blur-sm text-[10px] text-white font-semibold w-fit">{slide.cta}</span>}
         </div>
       </div>
       <div className="p-3 flex items-center justify-between">
@@ -223,9 +223,9 @@ export default function AdminHeroSlides() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { l: "Titulo", k: "title", p: "Descubra as Melhores Ofertas", req: true },
-              { l: "Subtitulo", k: "subtitle", p: "Ate 50% de desconto em tudo", req: true },
-              { l: "Texto do Botao", k: "cta", p: "Ver Ofertas", req: true },
-              { l: "Link do Botao", k: "cta_link", p: "/ofertas", req: true },
+              { l: "Subtitulo", k: "subtitle", p: "Ate 50% de desconto em tudo" },
+              { l: "Texto do Botao", k: "cta", p: "Ver Ofertas" },
+              { l: "Link do Botao", k: "cta_link", p: "/ofertas" },
               { l: "Loja (slug, vazio = global)", k: "store_slug", p: "techzone-angola" },
             ].map((f) => (
               <div key={f.k} className={f.k === "store_slug" ? "sm:col-span-2" : ""}>
@@ -245,8 +245,8 @@ export default function AdminHeroSlides() {
               )}
               <div className="relative z-10 p-5 flex flex-col justify-end h-full">
                 <p className="text-sm font-bold text-white drop-shadow">{form.title || "Titulo do Slide..."}</p>
-                <p className="text-xs text-white/80 drop-shadow">{form.subtitle || "Subtitulo do slide..."}</p>
-                <span className="inline-block mt-2 px-4 py-1.5 rounded-lg bg-white/25 backdrop-blur-sm text-[11px] text-white font-semibold w-fit">{form.cta || "Botao"}</span>
+                {form.subtitle && <p className="text-xs text-white/80 drop-shadow">{form.subtitle}</p>}
+                {form.cta && <span className="inline-block mt-2 px-4 py-1.5 rounded-lg bg-white/25 backdrop-blur-sm text-[11px] text-white font-semibold w-fit">{form.cta}</span>}
               </div>
             </div>
           </div>
