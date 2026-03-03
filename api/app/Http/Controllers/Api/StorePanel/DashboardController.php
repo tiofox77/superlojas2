@@ -23,6 +23,7 @@ class DashboardController extends Controller
         $reviewCount = $store->review_count;
 
         $plan = $store->plan;
+        $hasSubdomain = $plan ? (bool) $plan->custom_domain : false;
 
         return response()->json([
             'store' => $store,
@@ -34,6 +35,8 @@ class DashboardController extends Controller
                 'has_pos' => (bool) $plan->has_pos,
                 'analytics' => (bool) $plan->analytics,
             ] : null,
+            'has_subdomain' => $hasSubdomain,
+            'plan_name' => $plan->name ?? null,
             'stats' => [
                 'total_products' => $totalProducts,
                 'total_slides' => $totalSlides,

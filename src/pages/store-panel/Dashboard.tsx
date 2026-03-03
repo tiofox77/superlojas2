@@ -10,6 +10,8 @@ const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 interface DashboardData {
   store: any;
   plan?: { id: number; name: string; custom_domain: boolean; has_api: boolean; has_pos: boolean; analytics: boolean } | null;
+  has_subdomain?: boolean;
+  plan_name?: string | null;
   stats: { total_products: number; total_slides: number; rating: string; review_count: number; status: string };
   recent_products: any[];
 }
@@ -38,8 +40,8 @@ export default function StorePanelDashboard() {
   if (!data) return <p className={`text-sm ${s.textMuted}`}>Erro ao carregar dados.</p>;
 
   const BASE_DOMAIN = import.meta.env.VITE_BASE_DOMAIN || "superloja.vip";
-  const plan = data.plan || data.store?.plan;
-  const hasSubdomain = !!(plan?.custom_domain);
+  const hasSubdomain = !!(data.has_subdomain || data.plan?.custom_domain || data.store?.plan?.custom_domain);
+  const planName = data.plan_name || data.plan?.name || data.store?.plan?.name;
   const subdomainUrl = `https://${data.store.slug}.${BASE_DOMAIN}`;
   const storeUrl = `https://${BASE_DOMAIN}/lojas/${data.store.slug}`;
   const copyUrl = (url: string) => { navigator.clipboard.writeText(url); };
@@ -104,7 +106,7 @@ export default function StorePanelDashboard() {
                 <p className="text-[10px] text-purple-500 font-semibold mb-0.5 flex items-center gap-1">
                   <Globe className="h-2.5 w-2.5" /> Subdominio Exclusivo
                   <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${s.isDark ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600"}`}>
-                    {plan?.name}
+                    {planName}
                   </span>
                 </p>
                 <p className={`text-xs font-bold ${s.textPrimary} truncate`}>{subdomainUrl}</p>
