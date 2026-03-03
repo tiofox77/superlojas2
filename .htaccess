@@ -2,6 +2,10 @@
   RewriteEngine On
   RewriteBase /
 
+  # ─── Force HTTPS ───
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
   # ─── Laravel API: route /api/* to api/public/index.php ───
   RewriteCond %{REQUEST_URI} ^/api/
   RewriteRule ^api/(.*)$ /api/public/index.php [L,QSA]
