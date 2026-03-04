@@ -101,10 +101,10 @@ export default function SystemUpdate() {
     } catch {}
   };
 
-  const fetchReleases = async () => {
+  const fetchReleases = async (force = false) => {
     setLoadingReleases(true);
     try {
-      const res = await fetch(`${API}/admin/system-update/releases`, { headers: hdrs });
+      const res = await fetch(`${API}/admin/system-update/releases${force ? '?force=1' : ''}`, { headers: hdrs });
       const data = await res.json();
       if (res.ok) {
         setReleases(data.releases || []);
@@ -338,7 +338,7 @@ export default function SystemUpdate() {
               <p className={`text-[11px] ${s.textMuted}`}>{releases.length} release{releases.length !== 1 ? "s" : ""} encontrada{releases.length !== 1 ? "s" : ""}</p>
             </div>
           </div>
-          <button onClick={fetchReleases} disabled={loadingReleases}
+          <button onClick={() => fetchReleases(true)} disabled={loadingReleases}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-medium ${s.btnSecondary} disabled:opacity-40`}>
             {loadingReleases ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
             Verificar

@@ -79,7 +79,7 @@ class SystemUpdateController extends Controller
     /**
      * Fetch releases from GitHub API.
      */
-    public function releases()
+    public function releases(Request $request)
     {
         $repo = Setting::get('github_repo');
         if (!$repo) {
@@ -88,6 +88,12 @@ class SystemUpdateController extends Controller
 
         // Cache releases for 10 minutes
         $cacheKey = 'github_releases_' . md5($repo);
+
+        // Force refresh when requested (e.g. clicking "Verificar")
+        if ($request->boolean('force')) {
+            Cache::forget($cacheKey);
+        }
+
         $cached = Cache::get($cacheKey);
 
         if ($cached) {
