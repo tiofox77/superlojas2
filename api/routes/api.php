@@ -199,14 +199,14 @@ Route::middleware(['auth:sanctum', 'store_approved'])->prefix('store-panel/{slug
     Route::get('/products', [StorePanelProduct::class, 'index']);
     Route::get('/products/check-slug', [StorePanelProduct::class, 'checkSlug']);
     Route::post('/products', [StorePanelProduct::class, 'store']);
-    Route::post('/products/{product}', [StorePanelProduct::class, 'update']);
+    Route::match(['put', 'post'], '/products/{product}', [StorePanelProduct::class, 'update']);
     Route::delete('/products/{product}', [StorePanelProduct::class, 'destroy']);
     Route::get('/slides', [StorePanelHeroSlide::class, 'index']);
     Route::post('/slides', [StorePanelHeroSlide::class, 'store']);
-    Route::post('/slides/{heroSlide}', [StorePanelHeroSlide::class, 'update']);
+    Route::match(['put', 'post'], '/slides/{heroSlide}', [StorePanelHeroSlide::class, 'update']);
     Route::delete('/slides/{heroSlide}', [StorePanelHeroSlide::class, 'destroy']);
     Route::get('/settings', [StorePanelSettings::class, 'show']);
-    Route::post('/settings', [StorePanelSettings::class, 'update']);
+    Route::match(['put', 'post'], '/settings', [StorePanelSettings::class, 'update']);
     Route::get('/payments', [StorePanelPayment::class, 'index']);
     Route::put('/payments', [StorePanelPayment::class, 'update']);
 
