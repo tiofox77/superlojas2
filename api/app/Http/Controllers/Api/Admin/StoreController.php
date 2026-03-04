@@ -15,15 +15,15 @@ class StoreController extends Controller
     {
         $query = Store::with('user')->withCount('products');
 
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->has('province')) {
+        if ($request->filled('province')) {
             $query->where('province', $request->province);
         }
 
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")

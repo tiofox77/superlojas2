@@ -55,7 +55,7 @@ export default function AdminStores() {
     const params = new URLSearchParams({ per_page: "10", page: String(page) });
     if (search) params.set("search", search);
     if (statusFilter) params.set("status", statusFilter);
-    fetch(`${API}/admin/stores?${params}`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
+    fetch(`${API}/admin/stores?${params}&_t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json", "Cache-Control": "no-cache" } })
       .then((r) => r.json())
       .then((data) => { setStores(data.data || []); setTotalPages(data.last_page || 1); })
       .finally(() => setLoading(false));
