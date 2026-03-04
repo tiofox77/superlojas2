@@ -68,6 +68,7 @@ import ClientAddresses from "./pages/client/Addresses";
 import ClientSecurity from "./pages/client/Security";
 import ClientFollowing from "./pages/client/Following";
 import ClientFeed from "./pages/client/Feed";
+import PwaInstallPrompt from "./components/PwaInstallPrompt";
 import { SubdomainStoreProvider } from "./contexts/SubdomainStoreContext";
 import SubdomainStoreLayout from "./layouts/SubdomainStoreLayout";
 import { isSubdomainMode } from "./hooks/useSubdomain";
@@ -124,6 +125,7 @@ const App = () => (
             <DynamicHead />
             <ScrollToTop />
             <PageTracker />
+            <PwaInstallPrompt />
             {subdomain ? (
               /* ─── Subdomain mode: loja individual ─── */
               <SubdomainStoreProvider>
