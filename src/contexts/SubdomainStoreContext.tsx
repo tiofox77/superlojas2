@@ -24,6 +24,9 @@ interface SubdomainStore {
   rating: number;
   review_count: number;
   is_official: boolean;
+  meta_title: string | null;
+  meta_description: string | null;
+  meta_keywords: string | null;
   plan: string;
 }
 

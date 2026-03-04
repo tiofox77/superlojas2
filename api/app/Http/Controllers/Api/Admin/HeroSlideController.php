@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Helpers\SeoFileName;
 use App\Http\Controllers\Controller;
 use App\Models\HeroSlide;
 use App\Models\Store;
@@ -55,7 +56,8 @@ class HeroSlideController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            $data['image'] = '/storage/' . $request->file('image')->store($folder, 'public');
+            $slideSlug = !empty($data['store_slug']) ? $data['store_slug'] : 'global';
+            $data['image'] = SeoFileName::storePublic($request->file('image'), $folder, $slideSlug, 'slide');
         }
 
         $heroSlide = HeroSlide::create($data);
@@ -92,7 +94,8 @@ class HeroSlideController extends Controller
                 $store = Store::where('slug', $storeSlug)->first();
                 if ($store) $folder = "stores/{$store->id}/slides";
             }
-            $data['image'] = '/storage/' . $request->file('image')->store($folder, 'public');
+            $slideSlug = $storeSlug ?: 'global';
+            $data['image'] = SeoFileName::storePublic($request->file('image'), $folder, $slideSlug, 'slide');
         }
 
         $heroSlide->update($data);

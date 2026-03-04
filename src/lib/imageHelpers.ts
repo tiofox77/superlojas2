@@ -23,9 +23,16 @@ export function bannerSrc(url: string | undefined | null): string {
   return PLACEHOLDER_BANNER;
 }
 
+const BASE = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(/\/api\/?$/, "");
+
+/** Resolve /storage/ paths to absolute URLs */
+export function resolveStorageUrl(url: string): string {
+  return url.startsWith("/storage") ? `${BASE}${url}` : url;
+}
+
 /** Get a safe product image URL with fallback */
 export function productImgSrc(url: string | undefined | null): string {
-  if (url && url.trim()) return url;
+  if (url && url.trim()) return resolveStorageUrl(url);
   return PLACEHOLDER_PRODUCT;
 }
 

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Store extends Model
@@ -50,6 +51,7 @@ class Store extends Model
         'api_rate_limit',
         'api_last_used_at',
         'categories',
+        'categories_changed_at',
         'socials',
         'payment_methods',
     ];
@@ -72,6 +74,7 @@ class Store extends Model
         'api_permissions' => 'array',
         'api_rate_limit' => 'integer',
         'api_last_used_at' => 'datetime',
+        'categories_changed_at' => 'datetime',
     ];
 
     protected $hidden = [
@@ -97,6 +100,16 @@ class Store extends Model
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function storeCategories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'category_store')->withTimestamps();
     }
 
     public function subscriptions(): \Illuminate\Database\Eloquent\Relations\HasMany

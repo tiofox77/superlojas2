@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { logoSrc, bannerSrc, onImgError } from "@/lib/imageHelpers";
 import { useState } from "react";
+import StoreSeoHead from "@/components/StoreSeoHead";
 
 function SubdomainHeader() {
   const { store } = useSubdomainStore();
@@ -195,6 +196,16 @@ export default function SubdomainStoreLayout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <StoreSeoHead
+        storeName={store.name}
+        storeSlug={store.slug}
+        storeDescription={store.description}
+        storeLogo={store.logo ?? undefined}
+        metaTitle={store.meta_title ?? undefined}
+        metaDescription={store.meta_description ?? undefined}
+        metaKeywords={store.meta_keywords ?? undefined}
+        isSubdomain={true}
+      />
       <SubdomainHeader />
       <CartDrawer />
       <main className="flex-1">

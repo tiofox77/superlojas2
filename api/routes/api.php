@@ -47,8 +47,53 @@ Route::get('/hero-slides/store/{slug}', [HeroSlideController::class, 'byStore'])
 
 Route::get('/provinces', [ProvinceController::class, 'index']);
 
+// ─── Pre-orders (encomendas) ─────────────────────────────────
+Route::post('/pre-orders', [\App\Http\Controllers\Api\PreOrderController::class, 'store']);
+
 Route::get('/site-settings', [App\Http\Controllers\Api\SiteSettingsController::class, 'index']);
 Route::post('/contact', [App\Http\Controllers\Api\SiteSettingsController::class, 'contact']);
+
+// ─── PWA Manifest (dynamic from settings) ────────────────────
+Route::get('/pwa/manifest.json', function () {
+    $s = fn(string $key, string $default = '') => \App\Models\Setting::where('key', $key)->value('value') ?? $default;
+
+    $enabled = $s('pwa_enabled', 'true');
+    if ($enabled !== 'true') {
+        return response()->json(['error' => 'PWA disabled'], 404);
+    }
+
+    $name = $s('pwa_name', $s('site_name', 'SuperLojas'));
+    $shortName = $s('pwa_short_name', 'SuperLojas');
+    $description = $s('pwa_description', $s('site_description', 'Marketplace de Angola'));
+    $themeColor = $s('pwa_theme_color', '#10b981');
+    $bgColor = $s('pwa_bg_color', '#ffffff');
+    $display = $s('pwa_display', 'standalone');
+    $icon192 = $s('pwa_icon_192', '/pwa-192.png');
+    $icon512 = $s('pwa_icon_512', '/pwa-512.png');
+    $startUrl = $s('pwa_start_url', '/');
+
+    $manifest = [
+        'name' => $name,
+        'short_name' => $shortName,
+        'description' => $description,
+        'start_url' => $startUrl,
+        'scope' => '/',
+        'display' => $display,
+        'orientation' => 'portrait-primary',
+        'theme_color' => $themeColor,
+        'background_color' => $bgColor,
+        'lang' => 'pt',
+        'categories' => ['shopping', 'business'],
+        'icons' => [
+            ['src' => $icon192, 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any maskable'],
+            ['src' => $icon512, 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable'],
+        ],
+    ];
+
+    return response()->json($manifest)
+        ->header('Content-Type', 'application/manifest+json')
+        ->header('Cache-Control', 'public, max-age=3600');
+});
 
 // ─── Reviews (public read) ───────────────────────────────────
 Route::get('/reviews', [\App\Http\Controllers\Api\ReviewController::class, 'index']);
@@ -102,6 +147,9 @@ Route::get('/subdomain/resolve/{slug}', function (string $slug) {
             'rating' => $store->rating,
             'review_count' => $store->review_count,
             'is_official' => $store->is_official,
+            'meta_title' => $store->meta_title,
+            'meta_description' => $store->meta_description,
+            'meta_keywords' => $store->meta_keywords,
             'plan' => $store->plan->name,
         ],
     ]);
@@ -149,6 +197,7 @@ use App\Http\Controllers\Api\StorePanel\PaymentController as StorePanelPayment;
 Route::middleware(['auth:sanctum', 'store_approved'])->prefix('store-panel/{slug}')->group(function () {
     Route::get('/dashboard', [StorePanelDashboard::class, 'index']);
     Route::get('/products', [StorePanelProduct::class, 'index']);
+    Route::get('/products/check-slug', [StorePanelProduct::class, 'checkSlug']);
     Route::post('/products', [StorePanelProduct::class, 'store']);
     Route::post('/products/{product}', [StorePanelProduct::class, 'update']);
     Route::delete('/products/{product}', [StorePanelProduct::class, 'destroy']);
@@ -160,6 +209,11 @@ Route::middleware(['auth:sanctum', 'store_approved'])->prefix('store-panel/{slug
     Route::post('/settings', [StorePanelSettings::class, 'update']);
     Route::get('/payments', [StorePanelPayment::class, 'index']);
     Route::put('/payments', [StorePanelPayment::class, 'update']);
+
+    // Categories
+    Route::get('/categories', [\App\Http\Controllers\Api\StorePanel\StoreCategoryController::class, 'index']);
+    Route::put('/categories', [\App\Http\Controllers\Api\StorePanel\StoreCategoryController::class, 'update']);
+    Route::post('/categories/request-change', [\App\Http\Controllers\Api\StorePanel\StoreCategoryController::class, 'requestChange']);
 
     // Notifications
     Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\StorePanel\NotificationController::class, 'unreadCount']);
@@ -244,7 +298,14 @@ Route::middleware(['auth:sanctum', 'super_admin'])->prefix('admin')->group(funct
     Route::patch('/stores/{store}/toggle-official', [AdminStoreController::class, 'toggleOfficial']);
     Route::patch('/stores/{store}/toggle-featured', [AdminStoreController::class, 'toggleFeatured']);
 
+    // Store category cooldown reset
+    Route::post('/stores/{store}/reset-category-cooldown', function (\App\Models\Store $store) {
+        $store->update(['categories_changed_at' => null]);
+        return response()->json(['message' => "Cooldown de categorias da loja \"{$store->name}\" foi reiniciado."]);
+    });
+
     // Products
+    Route::get('/products/check-slug', [AdminProductController::class, 'checkSlug']);
     Route::apiResource('products', AdminProductController::class);
     Route::post('/products/bulk-delete', [AdminProductController::class, 'bulkDelete']);
 

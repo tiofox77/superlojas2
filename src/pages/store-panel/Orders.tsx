@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import {
   Package, Loader2, CheckCircle2, XCircle, Clock, Truck, Search,
   RefreshCw, ChevronLeft, ChevronRight, Eye, X, AlertTriangle,
-  ShoppingBag, MapPin, Phone, Mail, CreditCard, FileText, Image, ExternalLink
+  ShoppingBag, MapPin, Phone, Mail, CreditCard, FileText, Image, ExternalLink, PackageCheck
 } from "lucide-react";
 import { useToastNotification } from "@/contexts/ToastContext";
 
@@ -17,7 +17,7 @@ interface OrderItem {
 }
 
 interface Order {
-  id: number; order_number: string; status: string;
+  id: number; order_number: string; type: string; status: string;
   customer_name: string; customer_email: string; customer_phone: string;
   customer_address: string; customer_province: string; customer_notes: string | null;
   payment_method: string; payment_receipt: string | null;
@@ -29,7 +29,8 @@ interface Order {
 }
 
 interface Stats {
-  total: number; pending: number; confirmed: number; processing: number;
+  total: number; total_orders: number; total_preorders: number;
+  pending: number; confirmed: number; processing: number;
   shipped: number; delivered: number; cancelled: number; revenue: number; today: number;
 }
 
@@ -57,6 +58,7 @@ export default function StorePanelOrders() {
   const [lastPage, setLastPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterType, setFilterType] = useState<"all" | "order" | "preorder">("all");
   const [searchQ, setSearchQ] = useState("");
   const [selected, setSelected] = useState<Order | null>(null);
   const [updating, setUpdating] = useState(false);
@@ -74,6 +76,7 @@ export default function StorePanelOrders() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(p), per_page: "20" });
+      if (filterType !== "all") params.set("type", filterType);
       if (filterStatus !== "all") params.set("status", filterStatus);
       if (searchQ) params.set("search", searchQ);
       const res = await fetch(`${API}/store-panel/${slug}/orders?${params}`, { headers: hdrs });
@@ -94,7 +97,7 @@ export default function StorePanelOrders() {
   };
 
   useEffect(() => { if (token && slug) { fetchOrders(); fetchStats(); } }, [token, slug]);
-  useEffect(() => { if (token && slug) fetchOrders(1); }, [filterStatus, searchQ]);
+  useEffect(() => { if (token && slug) fetchOrders(1); }, [filterStatus, filterType, searchQ]);
 
   const updateStatus = async (order: Order, newStatus: string) => {
     setUpdating(true);
@@ -144,9 +147,23 @@ export default function StorePanelOrders() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className={`text-lg font-bold ${s.textPrimary}`}>Pedidos</h2>
-        <p className={`text-xs ${s.textMuted}`}>Gerir encomendas da sua loja</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className={`text-lg font-bold ${s.textPrimary}`}>Pedidos</h2>
+          <p className={`text-xs ${s.textMuted}`}>Gerir pedidos e encomendas da sua loja</p>
+        </div>
+        <div className={`inline-flex rounded-xl border ${s.borderLight} overflow-hidden text-xs`}>
+          {(["all", "order", "preorder"] as const).map(t => (
+            <button key={t} onClick={() => setFilterType(t)}
+              className={`px-4 py-2 font-medium transition-colors ${
+                filterType === t
+                  ? s.isDark ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-50 text-emerald-700"
+                  : `${s.textMuted} ${s.isDark ? "hover:bg-white/[0.04]" : "hover:bg-gray-50"}`
+              }`}>
+              {t === "all" ? `Todos${stats ? ` (${stats.total})` : ""}` : t === "order" ? `Pedidos${stats ? ` (${stats.total_orders})` : ""}` : `Encomendas${stats ? ` (${stats.total_preorders})` : ""}`}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Stats */}
@@ -199,7 +216,14 @@ export default function StorePanelOrders() {
                 return (
                   <tr key={o.id} className={`border-b ${s.borderLight} hover:${s.isDark ? "bg-white/[0.02]" : "bg-gray-50"} transition-colors cursor-pointer`}
                     onClick={() => setSelected(o)}>
-                    <td className={`py-2.5 px-3 font-mono font-semibold ${s.textPrimary}`}>{o.order_number}</td>
+                    <td className={`py-2.5 px-3 ${s.textPrimary}`}>
+                      <span className="font-mono font-semibold">{o.order_number}</span>
+                      {o.type === "preorder" && (
+                        <span className="ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400">
+                          <PackageCheck className="h-2.5 w-2.5" /> Encomenda
+                        </span>
+                      )}
+                    </td>
                     <td className="py-2.5 px-3">
                       <p className={`font-medium ${s.textPrimary}`}>{o.customer_name}</p>
                       <p className={`text-[10px] ${s.textMuted}`}>{o.customer_phone}</p>
@@ -245,7 +269,9 @@ export default function StorePanelOrders() {
             {/* Header */}
             <div className={`flex items-center justify-between px-5 py-3 border-b ${s.borderLight}`}>
               <div>
-                <h3 className={`text-sm font-bold ${s.textPrimary}`}>Pedido #{selected.order_number}</h3>
+                <h3 className={`text-sm font-bold ${s.textPrimary}`}>
+                  {selected.type === "preorder" ? "Encomenda" : "Pedido"} #{selected.order_number}
+                </h3>
                 <p className={`text-[10px] ${s.textMuted}`}>{formatDate(selected.created_at)}</p>
               </div>
               <button onClick={() => setSelected(null)} className={`p-1 rounded-lg ${s.textMuted} hover:text-red-500`}><X className="h-4 w-4" /></button>

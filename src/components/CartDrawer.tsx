@@ -70,7 +70,7 @@ export function CartDrawer() {
                   <div className="space-y-3">
                     {storeItems.map((item) => (
                       <div key={item.product.id} className="flex gap-3 p-2 rounded-lg bg-secondary/50">
-                        <img src={item.product.images[0]} alt={item.product.name} className="h-16 w-16 rounded-lg object-cover" />
+                        <img src={productImgSrc(item.product.images[0])} alt={item.product.name} className="h-16 w-16 rounded-lg object-cover" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{item.product.name}</p>
                           <p className="text-xs text-muted-foreground">{formatPrice(item.product.price)} Kz</p>

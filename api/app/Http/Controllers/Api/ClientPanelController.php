@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\SeoFileName;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\User;
@@ -115,7 +116,7 @@ class ClientPanelController extends Controller
             if ($user->avatar && str_starts_with($user->avatar, '/storage/')) {
                 Storage::disk('public')->delete(str_replace('/storage/', '', $user->avatar));
             }
-            $user->avatar = '/storage/' . $request->file('avatar')->store("users/{$user->id}/avatars", 'public');
+            $user->avatar = SeoFileName::storePublic($request->file('avatar'), "users/{$user->id}/avatars", $user->name, 'avatar');
         }
 
         $user->save();

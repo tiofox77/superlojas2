@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, CreditCard, MapPin, Phone, User, Mail, CheckCircle2, Truck, ShieldCheck, Loader2, AlertTriangle, BookmarkCheck, PenLine, Upload, Building2, Copy, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { logoSrc, onImgError } from "@/lib/imageHelpers";
+import { logoSrc, productImgSrc, onImgError } from "@/lib/imageHelpers";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
@@ -460,7 +460,7 @@ const Checkout = () => {
                       </div>
                       {storeItems.map((item) => (
                         <div key={item.product.id} className="flex items-center gap-3 py-2">
-                          <img src={item.product.images[0]} alt={item.product.name} className="h-12 w-12 rounded-lg object-cover" />
+                          <img src={productImgSrc(item.product.images[0])} alt={item.product.name} className="h-12 w-12 rounded-lg object-cover" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{item.product.name}</p>
                             <p className="text-xs text-muted-foreground">x{item.quantity}</p>

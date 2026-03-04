@@ -59,6 +59,7 @@ import StorePanelSubscription from "./pages/store-panel/Subscription";
 import StorePanelOrders from "./pages/store-panel/Orders";
 import StorePanelPos from "./pages/store-panel/Pos";
 import StorePanelAnalytics from "./pages/store-panel/Analytics";
+import StorePanelCategories from "./pages/store-panel/Categories";
 import ClientPanelLayout from "./layouts/ClientPanelLayout";
 import ClientDashboard from "./pages/client/Dashboard";
 import ClientOrders from "./pages/client/Orders";
@@ -153,6 +154,7 @@ const App = () => (
                 <Route path="/loja/:slug/painel" element={<StorePanelLayout />}>
                   <Route index element={<StorePanelDashboard />} />
                   <Route path="produtos" element={<StorePanelProducts />} />
+                  <Route path="categorias" element={<StorePanelCategories />} />
                   <Route path="pedidos" element={<StorePanelOrders />} />
                   <Route path="slides" element={<StorePanelSlides />} />
                   <Route path="pagamentos" element={<StorePanelPayments />} />

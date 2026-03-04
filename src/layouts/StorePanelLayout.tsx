@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { logoSrc, onImgError } from "@/lib/imageHelpers";
 import {
   LayoutDashboard, Package, Image, Settings, CreditCard,
-  LogOut, Menu, X, Bell, Search, Store,
+  LogOut, Menu, X, Bell, Search, Store, Tag,
   ChevronLeft, Globe, Sun, Moon, ArrowLeft,
   Clock, ShieldX, ShieldCheck, RefreshCw, Key, Crown, Monitor, ShoppingBag, BarChart3
 } from "lucide-react";
@@ -16,6 +16,7 @@ const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 const sidebarNav = [
   { label: "Dashboard", path: "", icon: LayoutDashboard, end: true, color: "text-blue-500" },
   { label: "Produtos", path: "/produtos", icon: Package, color: "text-emerald-500" },
+  { label: "Categorias", path: "/categorias", icon: Tag, color: "text-pink-500" },
   { label: "Pedidos", path: "/pedidos", icon: ShoppingBag, color: "text-amber-500" },
   { label: "Hero Slides", path: "/slides", icon: Image, color: "text-cyan-500" },
   { label: "Pagamentos", path: "/pagamentos", icon: CreditCard, color: "text-orange-500" },
@@ -26,7 +27,13 @@ const sidebarNav = [
   { label: "Configuracoes", path: "/configuracoes", icon: Settings, color: "text-gray-500" },
 ];
 
-interface StoreInfo { id: number; name: string; slug: string; logo: string; status: string; }
+interface PlanInfo {
+  id: number; name: string;
+  max_products: number; max_images_per_product: number; max_hero_slides: number; max_categories: number;
+  custom_domain: boolean; has_api: boolean; has_pos: boolean; analytics: boolean;
+  featured_badge: boolean; priority_support: boolean;
+}
+interface StoreInfo { id: number; name: string; slug: string; logo: string; status: string; categories?: (string | number)[]; plan?: PlanInfo | null; }
 
 function StorePanelInner() {
   const { slug } = useParams<{ slug: string }>();

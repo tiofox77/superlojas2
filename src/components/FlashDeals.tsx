@@ -24,12 +24,19 @@ function getTimeLeft(target: Date) {
 }
 
 export function FlashDeals() {
-  // Set countdown to end of day
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
-  const { hours, minutes, seconds } = useCountdown(endOfDay);
-
   const { data: promoProducts = [] } = useFlashSaleProducts();
+
+  // Use the nearest flash_sale_end from products, fallback to end of day
+  const targetDate = (() => {
+    const ends = promoProducts
+      .filter(p => p.flashSaleEnd)
+      .map(p => new Date(p.flashSaleEnd!).getTime())
+      .filter(t => t > Date.now())
+      .sort((a, b) => a - b);
+    if (ends.length > 0) return new Date(ends[0]);
+    const d = new Date(); d.setHours(23, 59, 59, 999); return d;
+  })();
+  const { hours, minutes, seconds } = useCountdown(targetDate);
 
   return (
     <section className="rounded-2xl border border-destructive/20 bg-card overflow-hidden">

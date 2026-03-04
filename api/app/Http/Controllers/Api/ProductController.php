@@ -80,6 +80,10 @@ class ProductController extends Controller
             Product::with('store')
                 ->whereNotNull('original_price')
                 ->where('badge', 'Promo')
+                ->where(function ($q) {
+                    $q->whereNull('flash_sale_end')
+                      ->orWhere('flash_sale_end', '>', now());
+                })
                 ->get()
         );
     }

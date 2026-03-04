@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\StorePanel;
 
+use App\Helpers\SeoFileName;
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use App\Models\Plan;
@@ -132,7 +133,7 @@ class SubscriptionController extends Controller
         // Handle file upload
         $proofPath = null;
         if ($request->hasFile('payment_proof')) {
-            $proofPath = '/storage/' . $request->file('payment_proof')->store('payment-proofs', 'public');
+            $proofPath = SeoFileName::storePublic($request->file('payment_proof'), 'payment-proofs', $store->slug, 'pagamento');
         }
 
         $subscription = Subscription::create([

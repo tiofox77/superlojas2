@@ -1,21 +1,36 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import Modal from "@/components/admin/Modal";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Package, Search, Trash2, Star, Image as ImageIcon, Store, Tag, Edit3, Plus, Loader2, Upload, X, Eye, Calendar, Hash, ChevronLeft, ChevronRight } from "lucide-react";
+import { Package, Search, Trash2, Star, Image as ImageIcon, Store, Tag, Edit3, Plus, Loader2, Upload, X, Eye, Calendar, Hash, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToastNotification } from "@/contexts/ToastContext";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+const BASE = API.replace(/\/api\/?$/, "");
+const imgUrl = (src: string) => src.startsWith("/storage") ? `${BASE}${src}` : src;
+
+interface SubcategoryItem { id: number; category_id: number; name: string; slug: string; }
+interface CategoryItem { id: number; name: string; slug: string; icon: string; subcategories?: SubcategoryItem[]; }
 
 interface ProductItem {
   id: number; name: string; slug: string; price: number; original_price: number | null;
-  images: string[]; category: string; badge: string | null; rating: string;
+  images: string[]; category: string; category_id: number | null; subcategory_id: number | null; badge: string | null; rating: string;
   review_count: number; stock: number; description?: string; store?: { id: number; name: string; slug?: string }; created_at: string;
 }
 
-const emptyForm = { name: "", slug: "", price: "", original_price: "", stock: "", category: "", badge: "", store_id: "", description: "" };
+const emptyForm = { name: "", slug: "", price: "", original_price: "", stock: "", category: "", category_id: "", subcategory_id: "", badge: "", store_id: "", description: "" };
+
+function slugify(text: string): string {
+  return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+}
+
+function titleCase(text: string): string {
+  return text.replace(/\b\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+}
+
+type FieldErrors = Record<string, string>;
 
 export default function AdminProducts() {
   const { token } = useAuth();
@@ -36,10 +51,16 @@ export default function AdminProducts() {
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [detailProd, setDetailProd] = useState<ProductItem | null>(null);
   const [detailImg, setDetailImg] = useState(0);
   const imgRef = useRef<HTMLInputElement>(null);
   const [allStores, setAllStores] = useState<{ id: number; name: string }[]>([]);
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [slugManual, setSlugManual] = useState(false);
+  const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [slugSuggestion, setSlugSuggestion] = useState<string | null>(null);
+  const slugTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchProducts = () => {
     if (!token) return;
@@ -58,14 +79,53 @@ export default function AdminProducts() {
     fetch(`${API}/admin/stores`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
       .then(r => r.json()).then((d: any) => setAllStores(Array.isArray(d) ? d : (d?.data || [])));
   }, [token]);
+  useEffect(() => {
+    fetch(`${API}/categories`, { headers: { Accept: "application/json" } })
+      .then(r => r.json()).then(d => setCategories(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
+
+  const currentSubcategories = categories.find(c => String(c.id) === form.category_id)?.subcategories || [];
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setPage(1); fetchProducts(); };
 
-  const openCreate = () => { setEditProd(null); setForm(emptyForm); setImageFiles([]); setImagePreviews([]); setExistingImages([]); setFormError(""); setModalOpen(true); };
+  const openCreate = () => { setEditProd(null); setForm(emptyForm); setImageFiles([]); setImagePreviews([]); setExistingImages([]); setFormError(""); setFieldErrors({}); setSlugManual(false); setSlugStatus("idle"); setSlugSuggestion(null); setModalOpen(true); };
   const openEdit = (p: ProductItem) => {
     setEditProd(p);
-    setForm({ name: p.name, slug: p.slug, price: String(p.price), original_price: p.original_price ? String(p.original_price) : "", stock: String(p.stock), category: p.category, badge: p.badge || "", store_id: p.store?.id ? String(p.store.id) : "", description: "" });
-    setImageFiles([]); setImagePreviews([]); setExistingImages(p.images || []); setFormError(""); setModalOpen(true);
+    setForm({ name: p.name, slug: p.slug, price: String(p.price), original_price: p.original_price ? String(p.original_price) : "", stock: String(p.stock), category: p.category, category_id: p.category_id ? String(p.category_id) : "", subcategory_id: p.subcategory_id ? String(p.subcategory_id) : "", badge: p.badge || "", store_id: p.store?.id ? String(p.store.id) : "", description: "" });
+    setImageFiles([]); setImagePreviews([]); setExistingImages(p.images || []); setFormError(""); setFieldErrors({}); setSlugManual(true); setSlugStatus("idle"); setSlugSuggestion(null); setModalOpen(true);
   };
+
+  const handleNameChange = (raw: string) => {
+    const name = titleCase(raw);
+    const updated = { ...form, name };
+    if (!slugManual) updated.slug = slugify(name);
+    setForm(updated);
+    setFieldErrors(prev => { const n = { ...prev }; delete n.name; return n; });
+  };
+
+  const handleSlugChange = (val: string) => {
+    const clean = val.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    setSlugManual(true);
+    setForm({ ...form, slug: clean });
+    setFieldErrors(prev => { const n = { ...prev }; delete n.slug; return n; });
+  };
+
+  const checkSlugAvailability = useCallback((slugVal: string, excludeId?: number) => {
+    if (!slugVal || slugVal.length < 2) { setSlugStatus("idle"); setSlugSuggestion(null); return; }
+    setSlugStatus("checking"); setSlugSuggestion(null);
+    const params = new URLSearchParams({ slug: slugVal });
+    if (excludeId) params.set("exclude", String(excludeId));
+    fetch(`${API}/admin/products/check-slug?${params}`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
+      .then(r => { if (!r.ok) throw new Error('request failed'); return r.json(); })
+      .then(d => { setSlugStatus(d.available ? "available" : "taken"); if (d.suggestion) setSlugSuggestion(d.suggestion); })
+      .catch(() => setSlugStatus("idle"));
+  }, [token]);
+
+  useEffect(() => {
+    if (!modalOpen || !form.slug) { setSlugStatus("idle"); return; }
+    if (slugTimerRef.current) clearTimeout(slugTimerRef.current);
+    slugTimerRef.current = setTimeout(() => checkSlugAvailability(form.slug, editProd?.id), 400);
+    return () => { if (slugTimerRef.current) clearTimeout(slugTimerRef.current); };
+  }, [form.slug, modalOpen, editProd, checkSlugAvailability]);
 
   const handleImageAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -83,10 +143,40 @@ export default function AdminProducts() {
     setExistingImages((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  // Combined index: 0..existingImages.length-1 = existing, rest = new
+  const totalImages = existingImages.length + imagePreviews.length;
+  const setFeatured = (combinedIdx: number) => {
+    if (combinedIdx < existingImages.length) {
+      // Click on existing image → move to index 0 of existing
+      setExistingImages((prev) => { const n = [...prev]; const [img] = n.splice(combinedIdx, 1); return [img, ...n]; });
+    } else {
+      // Click on new image → move to first position overall:
+      // move all existing after it, and this new image becomes the first existing-equivalent
+      const newIdx = combinedIdx - existingImages.length;
+      if (existingImages.length === 0) {
+        // No existing: just reorder new files
+        setImageFiles((prev) => { const n = [...prev]; const [f] = n.splice(newIdx, 1); return [f, ...n]; });
+        setImagePreviews((prev) => { const n = [...prev]; const [p] = n.splice(newIdx, 1); return [p, ...n]; });
+      } else {
+        // Has existing images: move the clicked new image to front of new array
+        // so it becomes position existingImages.length, then swap with existing[0]
+        setImageFiles((prev) => { const n = [...prev]; const [f] = n.splice(newIdx, 1); return [f, ...n]; });
+        setImagePreviews((prev) => { const n = [...prev]; const [p] = n.splice(newIdx, 1); return [p, ...n]; });
+      }
+    }
+  };
+
   const saveProduct = async () => {
-    if (!form.name || !form.slug || !form.price) { setFormError("Nome, slug e preco sao obrigatorios."); return; }
-    if (!editProd && imageFiles.length === 0) { setFormError("Pelo menos uma imagem e obrigatoria."); return; }
-    setSaving(true); setFormError("");
+    const errs: FieldErrors = {};
+    if (!form.name) errs.name = "Nome e obrigatorio.";
+    if (!form.slug) errs.slug = "Slug e obrigatorio.";
+    else if (slugStatus === "taken") errs.slug = "Este slug ja esta em uso.";
+    if (!form.price) errs.price = "Preco e obrigatorio.";
+    if (!form.category && !form.category_id) errs.category_id = "Seleccione uma categoria.";
+    if (!editProd && !form.store_id) errs.store_id = "Seleccione uma loja.";
+    if (!editProd && imageFiles.length === 0) errs.images = "Pelo menos uma imagem e obrigatoria.";
+    if (Object.keys(errs).length > 0) { setFieldErrors(errs); setFormError(""); return; }
+    setSaving(true); setFormError(""); setFieldErrors({});
 
     const fd = new FormData();
     fd.append("name", form.name);
@@ -95,6 +185,8 @@ export default function AdminProducts() {
     if (form.original_price) fd.append("original_price", form.original_price);
     fd.append("stock", form.stock || "0");
     fd.append("category", form.category);
+    if (form.category_id) fd.append("category_id", form.category_id);
+    if (form.subcategory_id) fd.append("subcategory_id", form.subcategory_id);
     if (form.badge) fd.append("badge", form.badge);
     if (form.description) fd.append("description", form.description);
     if (form.store_id) fd.append("store_id", form.store_id);
@@ -105,15 +197,20 @@ export default function AdminProducts() {
       imageFiles.forEach((file) => fd.append("new_images[]", file));
     } else {
       imageFiles.forEach((file) => fd.append("images[]", file));
-      if (!form.store_id) { setFormError("Loja (store_id) e obrigatorio."); setSaving(false); return; }
-      if (!form.description) { setFormError("Descricao e obrigatoria."); setSaving(false); return; }
     }
 
     const url = editProd ? `${API}/admin/products/${editProd.id}` : `${API}/admin/products`;
     try {
       const res = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }, body: fd });
       const data = await res.json();
-      if (!res.ok) { setFormError(data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.message || "Erro"); toast.error("Erro", "Nao foi possivel guardar o produto."); }
+      if (!res.ok) {
+        if (data.errors) {
+          const mapped: FieldErrors = {};
+          for (const [key, msgs] of Object.entries(data.errors)) mapped[key] = (msgs as string[]).join(" ");
+          setFieldErrors(mapped);
+        } else { setFormError(data.message || "Erro ao guardar."); }
+        toast.error("Erro", "Nao foi possivel guardar o produto.");
+      }
       else { setModalOpen(false); fetchProducts(); toast.success(editProd ? "Produto actualizado" : "Produto criado", `"${form.name}" guardado com sucesso.`); }
     } finally { setSaving(false); }
   };
@@ -166,7 +263,7 @@ export default function AdminProducts() {
                 <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${s.hoverRow} transition-colors`}>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
-                      {p.images?.[0] ? <img src={p.images[0]} alt="" className="h-10 w-10 rounded-xl object-cover bg-gray-100" />
+                      {p.images?.[0] ? <img src={imgUrl(p.images[0])} alt="" className="h-10 w-10 rounded-xl object-cover bg-gray-100" />
                         : <div className={`h-10 w-10 rounded-xl ${s.isDark ? "bg-white/5" : "bg-gray-100"} flex items-center justify-center`}><ImageIcon className={`h-4 w-4 ${s.textMuted}`} /></div>}
                       <div className="min-w-0">
                         <p className={`text-xs font-semibold ${s.textPrimary} truncate max-w-[180px]`}>{p.name}</p>
@@ -222,7 +319,7 @@ export default function AdminProducts() {
               <div className="relative w-full sm:w-64 shrink-0">
                 {detailProd.images?.length > 0 ? (
                   <div className="relative">
-                    <img src={detailProd.images[detailImg]} alt="" className="w-full h-56 rounded-xl object-cover" />
+                    <img src={imgUrl(detailProd.images[detailImg])} alt="" className="w-full h-56 rounded-xl object-cover" />
                     {detailProd.images.length > 1 && (
                       <>
                         <button onClick={() => setDetailImg((detailImg - 1 + detailProd.images.length) % detailProd.images.length)}
@@ -235,7 +332,7 @@ export default function AdminProducts() {
                       {detailProd.images.map((img, i) => (
                         <button key={i} onClick={() => setDetailImg(i)}
                           className={`h-12 w-12 rounded-lg overflow-hidden border-2 transition-colors ${i === detailImg ? "border-orange-500" : s.isDark ? "border-white/10" : "border-gray-200"}`}>
-                          <img src={img} alt="" className="h-full w-full object-cover" />
+                          <img src={imgUrl(img)} alt="" className="h-full w-full object-cover" />
                         </button>
                       ))}
                     </div>
@@ -323,19 +420,32 @@ export default function AdminProducts() {
           {/* Imagens upload */}
           <div>
             <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Imagens {!editProd && <span className="text-red-500">*</span>}</label>
+            {fieldErrors.images && <p className="text-[11px] text-red-500 mb-1">{fieldErrors.images}</p>}
+            {totalImages > 1 && <p className={`text-[10px] ${s.textMuted} mb-1`}>Clique numa imagem para a definir como destaque (primeira = destaque)</p>}
             <div className="flex flex-wrap gap-2">
-              {existingImages.map((img, i) => (
-                <div key={`ex-${i}`} className="relative h-16 w-16 rounded-lg overflow-hidden border">
-                  <img src={img} alt="" className="h-full w-full object-cover" />
-                  <button onClick={() => removeExistingImage(i)} className="absolute top-0 right-0 bg-red-500 text-white rounded-bl p-0.5"><X className="h-3 w-3" /></button>
-                </div>
-              ))}
-              {imagePreviews.map((prev, i) => (
-                <div key={`new-${i}`} className="relative h-16 w-16 rounded-lg overflow-hidden border border-orange-300">
-                  <img src={prev} alt="" className="h-full w-full object-cover" />
-                  <button onClick={() => removeNewImage(i)} className="absolute top-0 right-0 bg-red-500 text-white rounded-bl p-0.5"><X className="h-3 w-3" /></button>
-                </div>
-              ))}
+              {existingImages.map((img, i) => {
+                const isFeatured = i === 0 && totalImages > 1;
+                return (
+                  <div key={`ex-${i}`} className={`relative h-16 w-16 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${isFeatured ? "border-orange-500 ring-2 ring-orange-500/30" : s.isDark ? "border-white/10 hover:border-orange-300" : "border-gray-200 hover:border-orange-300"}`}
+                    onClick={() => setFeatured(i)}>
+                    <img src={imgUrl(img)} alt="" className="h-full w-full object-cover" />
+                    {isFeatured && <span className="absolute bottom-0 left-0 right-0 bg-orange-500 text-white text-[8px] font-bold text-center leading-tight py-0.5"><Star className="h-2.5 w-2.5 inline fill-white" /> Destaque</span>}
+                    <button onClick={(e) => { e.stopPropagation(); removeExistingImage(i); }} className="absolute top-0 right-0 bg-red-500 text-white rounded-bl p-0.5"><X className="h-3 w-3" /></button>
+                  </div>
+                );
+              })}
+              {imagePreviews.map((prev, i) => {
+                const combinedIdx = existingImages.length + i;
+                const isFeatured = combinedIdx === 0 && totalImages > 1;
+                return (
+                  <div key={`new-${i}`} className={`relative h-16 w-16 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${isFeatured ? "border-orange-500 ring-2 ring-orange-500/30" : "border-orange-200 hover:border-orange-400"}`}
+                    onClick={() => setFeatured(combinedIdx)}>
+                    <img src={prev} alt="" className="h-full w-full object-cover" />
+                    {isFeatured && <span className="absolute bottom-0 left-0 right-0 bg-orange-500 text-white text-[8px] font-bold text-center leading-tight py-0.5"><Star className="h-2.5 w-2.5 inline fill-white" /> Destaque</span>}
+                    <button onClick={(e) => { e.stopPropagation(); removeNewImage(i); }} className="absolute top-0 right-0 bg-red-500 text-white rounded-bl p-0.5"><X className="h-3 w-3" /></button>
+                  </div>
+                );
+              })}
               <button type="button" onClick={() => imgRef.current?.click()}
                 className={`h-16 w-16 rounded-lg border-2 border-dashed ${s.isDark ? "border-white/10 hover:border-white/20" : "border-gray-300 hover:border-orange-400"} flex items-center justify-center cursor-pointer transition-colors`}>
                 <Upload className={`h-5 w-5 ${s.textMuted}`} />
@@ -346,35 +456,97 @@ export default function AdminProducts() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Nome */}
+            <div>
+              <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Nome <span className="text-red-500">*</span></label>
+              <input type="text" value={form.name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Nome do produto"
+                className={`w-full ${s.input} border ${fieldErrors.name ? "border-red-400" : ""} rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`} />
+              {fieldErrors.name && <p className="text-[11px] text-red-500 mt-1">{fieldErrors.name}</p>}
+            </div>
+            {/* Slug */}
+            <div>
+              <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Slug <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <input type="text" value={form.slug} onChange={(e) => handleSlugChange(e.target.value)} placeholder="nome-do-produto"
+                  className={`w-full ${s.input} border ${fieldErrors.slug ? "border-red-400" : slugStatus === "available" ? "border-green-400" : slugStatus === "taken" ? "border-red-400" : ""} rounded-xl px-3 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`} />
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                  {slugStatus === "checking" && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
+                  {slugStatus === "available" && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                  {slugStatus === "taken" && <AlertCircle className="h-4 w-4 text-red-500" />}
+                </span>
+              </div>
+              {fieldErrors.slug && <p className="text-[11px] text-red-500 mt-1">{fieldErrors.slug}</p>}
+              {!fieldErrors.slug && slugStatus === "taken" && (
+                <p className="text-[11px] text-red-500 mt-1">
+                  Este slug ja esta em uso.{slugSuggestion && <> Sugestao: <button type="button" className="underline font-semibold hover:text-red-700" onClick={() => { setForm(f => ({ ...f, slug: slugSuggestion })); setSlugManual(true); setSlugSuggestion(null); }}>{slugSuggestion}</button></>}
+                </p>
+              )}
+              {slugStatus === "available" && <p className="text-[11px] text-green-500 mt-1">Slug disponivel!</p>}
+            </div>
+            {/* Preco, Original, Stock */}
             {[
-              { l: "Nome", k: "name", p: "Nome do produto", req: true },
-              { l: "Slug", k: "slug", p: "nome-do-produto", req: true },
               { l: "Preco (Kz)", k: "price", p: "15000", req: true, type: "number" },
               { l: "Preco Original (Kz)", k: "original_price", p: "20000", type: "number" },
               { l: "Stock", k: "stock", p: "100", type: "number" },
-              { l: "Categoria", k: "category", p: "Electronica", req: true },
-              { l: "Badge", k: "badge", p: "Novo ou Promo" },
             ].map((f) => (
               <div key={f.k}>
                 <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>{f.l} {f.req && <span className="text-red-500">*</span>}</label>
-                <input type={f.type || "text"} value={(form as any)[f.k]} onChange={(e) => setForm({ ...form, [f.k]: e.target.value })} placeholder={f.p}
-                  className={`w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`} />
+                <input type={f.type || "text"} value={(form as any)[f.k]} onChange={(e) => { setForm({ ...form, [f.k]: e.target.value }); setFieldErrors(prev => { const n = { ...prev }; delete n[f.k]; return n; }); }} placeholder={f.p}
+                  className={`w-full ${s.input} border ${fieldErrors[f.k] ? "border-red-400" : ""} rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`} />
+                {fieldErrors[f.k] && <p className="text-[11px] text-red-500 mt-1">{fieldErrors[f.k]}</p>}
               </div>
             ))}
+            {/* Categoria dropdown */}
+            <div>
+              <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Categoria <span className="text-red-500">*</span></label>
+              <select value={form.category_id} onChange={(e) => {
+                const catId = e.target.value;
+                const cat = categories.find(c => String(c.id) === catId);
+                setForm({ ...form, category_id: catId, category: cat?.name || "", subcategory_id: "" });
+                setFieldErrors(prev => { const n = { ...prev }; delete n.category_id; return n; });
+              }} className={`w-full ${s.input} border ${fieldErrors.category_id ? "border-red-400" : ""} rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`}>
+                <option value="">Seleccionar categoria...</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+              </select>
+              {fieldErrors.category_id && <p className="text-[11px] text-red-500 mt-1">{fieldErrors.category_id}</p>}
+            </div>
+            {/* Subcategoria dropdown */}
+            <div>
+              <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Subcategoria</label>
+              <select value={form.subcategory_id} onChange={(e) => setForm({ ...form, subcategory_id: e.target.value })}
+                disabled={!form.category_id || currentSubcategories.length === 0}
+                className={`w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50`}>
+                <option value="">{!form.category_id ? "Seleccione categoria primeiro" : currentSubcategories.length === 0 ? "Sem subcategorias" : "Seleccionar..."}</option>
+                {currentSubcategories.map(sc => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
+              </select>
+            </div>
+            {/* Badge */}
+            <div>
+              <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Badge</label>
+              <select value={form.badge} onChange={(e) => setForm({ ...form, badge: e.target.value })}
+                className={`w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`}>
+                <option value="">Nenhum</option>
+                <option value="Novo">Novo</option>
+                <option value="Usado">Usado</option>
+                <option value="Promo">Promo</option>
+              </select>
+            </div>
             {/* Loja select */}
             <div>
               <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Loja {!editProd && <span className="text-red-500">*</span>}</label>
-              <select value={form.store_id} onChange={(e) => setForm({ ...form, store_id: e.target.value })}
-                className={`w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`}>
+              <select value={form.store_id} onChange={(e) => { setForm({ ...form, store_id: e.target.value }); setFieldErrors(prev => { const n = { ...prev }; delete n.store_id; return n; }); }}
+                className={`w-full ${s.input} border ${fieldErrors.store_id ? "border-red-400" : ""} rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`}>
                 <option value="">Seleccionar loja...</option>
                 {allStores.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
               </select>
+              {fieldErrors.store_id && <p className="text-[11px] text-red-500 mt-1">{fieldErrors.store_id}</p>}
             </div>
           </div>
           <div>
-            <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Descricao {!editProd && <span className="text-red-500">*</span>}</label>
-            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} placeholder="Descricao do produto..."
-              className={`w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 resize-none`} />
+            <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Descricao</label>
+            <textarea value={form.description} onChange={(e) => { setForm({ ...form, description: e.target.value }); setFieldErrors(prev => { const n = { ...prev }; delete n.description; return n; }); }} rows={3} placeholder="Descricao do produto..."
+              className={`w-full ${s.input} border ${fieldErrors.description ? "border-red-400" : ""} rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 resize-none`} />
+            {fieldErrors.description && <p className="text-[11px] text-red-500 mt-1">{fieldErrors.description}</p>}
           </div>
           <div className={`flex justify-end gap-2 pt-2 border-t ${s.borderLight}`}>
             <button onClick={() => setModalOpen(false)} className={`px-4 py-2.5 rounded-xl text-xs font-medium ${s.btnSecondary}`}>Cancelar</button>

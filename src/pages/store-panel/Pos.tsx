@@ -11,6 +11,8 @@ import {
 import { useToastNotification } from "@/contexts/ToastContext";
 import Modal from "@/components/admin/Modal";
 
+import { resolveStorageUrl } from "@/lib/imageHelpers";
+
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 const LS_PRODUCTS_KEY = "pos_products_";
 const LS_CART_KEY = "pos_cart_";
@@ -171,7 +173,7 @@ export default function StorePos() {
 
   const addToCart = (p: PosProduct) => {
     const price = getPrice(p);
-    const img = p.images?.[0] || null;
+    const img = p.images?.[0] ? resolveStorageUrl(p.images[0]) : null;
     setCart((prev) => {
       const idx = prev.findIndex((c) => c.product_id === p.id);
       if (idx >= 0) {
@@ -425,7 +427,7 @@ export default function StorePos() {
             {filtered.map((p) => {
               const price = getPrice(p);
               const inCart = cart.find((c) => c.product_id === p.id);
-              const imgSrc = p.images?.[0] || null;
+              const imgSrc = p.images?.[0] ? resolveStorageUrl(p.images[0]) : null;
               return (
                 <button key={p.id} onClick={() => addToCart(p)} disabled={p.stock <= 0}
                   className={`rounded-xl border ${s.card} overflow-hidden text-left transition-all hover:shadow-md disabled:opacity-40 relative group`}>

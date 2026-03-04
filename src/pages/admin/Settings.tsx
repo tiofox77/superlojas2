@@ -5,7 +5,7 @@ import {
   Settings, Mail, MessageSquare, Loader2, CheckCircle2, Eye, EyeOff, Send, Store,
   ToggleLeft, ToggleRight, Shield, Megaphone, Phone, MapPin, Globe, Instagram, Facebook,
   Clock, Plus, Trash2, GripVertical, Volume2, AlertTriangle, ShoppingBag, Package, Ban,
-  Upload, Image, Search, BarChart3, Code, ExternalLink, FileCode
+  Upload, Image, Search, BarChart3, Code, ExternalLink, FileCode, Smartphone, Palette, Monitor
 } from "lucide-react";
 import { useRef } from "react";
 import { useToastNotification } from "@/contexts/ToastContext";
@@ -61,7 +61,7 @@ interface SmsConfig { provider: string; api_key: string; api_secret: string; sen
 const defaultSmtp: SmtpConfig = { host: "", port: "587", username: "", password: "", encryption: "tls", from_address: "", from_name: "SuperLojas", timeout: "30", auth_mode: "auto", verify_peer: "true" };
 const defaultSms: SmsConfig = { provider: "twilio", api_key: "", api_secret: "", sender_id: "", base_url: "" };
 
-type TabKey = "general" | "seo" | "marquee" | "contact" | "social" | "restrictions" | "smtp" | "sms";
+type TabKey = "general" | "seo" | "marquee" | "contact" | "social" | "restrictions" | "smtp" | "sms" | "pwa";
 
 const TABS: { key: TabKey; label: string; icon: React.ElementType; color: string }[] = [
   { key: "general", label: "Geral", icon: Settings, color: "text-purple-500" },
@@ -72,6 +72,7 @@ const TABS: { key: TabKey; label: string; icon: React.ElementType; color: string
   { key: "restrictions", label: "Restricoes", icon: Shield, color: "text-red-500" },
   { key: "smtp", label: "SMTP", icon: Mail, color: "text-cyan-500" },
   { key: "sms", label: "SMS", icon: MessageSquare, color: "text-emerald-500" },
+  { key: "pwa", label: "PWA", icon: Smartphone, color: "text-indigo-500" },
 ];
 
 export default function AdminSettings() {
@@ -144,10 +145,25 @@ export default function AdminSettings() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [storeRegistrationEnabled, setStoreRegistrationEnabled] = useState(true);
+  const [categoryCooldownDays, setCategoryCooldownDays] = useState("30");
 
   // ─── SMTP / SMS ───
   const [smtp, setSmtp] = useState<SmtpConfig>(defaultSmtp);
   const [sms, setSms] = useState<SmsConfig>(defaultSms);
+
+  // ─── PWA ───
+  const [pwaEnabled, setPwaEnabled] = useState(true);
+  const [pwaName, setPwaName] = useState("");
+  const [pwaShortName, setPwaShortName] = useState("");
+  const [pwaDescription, setPwaDescription] = useState("");
+  const [pwaThemeColor, setPwaThemeColor] = useState("#10b981");
+  const [pwaBgColor, setPwaBgColor] = useState("#ffffff");
+  const [pwaDisplay, setPwaDisplay] = useState("standalone");
+  const [pwaStartUrl, setPwaStartUrl] = useState("/");
+  const [pwaIcon192, setPwaIcon192] = useState("");
+  const [pwaIcon512, setPwaIcon512] = useState("");
+  const pwaIcon192Ref = useRef<HTMLInputElement>(null);
+  const pwaIcon512Ref = useRef<HTMLInputElement>(null);
 
   // ─── Load all settings ───
   useEffect(() => {
@@ -187,6 +203,7 @@ export default function AdminSettings() {
         setMaintenanceMode(d.maintenance_mode === 'true');
         setRegistrationEnabled((d.registration_enabled ?? 'true') === 'true');
         setStoreRegistrationEnabled((d.store_registration_enabled ?? 'true') === 'true');
+        if (d.category_change_cooldown_days) setCategoryCooldownDays(d.category_change_cooldown_days);
         // General images
         if (d.site_logo) setSiteLogo(d.site_logo);
         if (d.site_favicon) setSiteFavicon(d.site_favicon);
@@ -204,6 +221,17 @@ export default function AdminSettings() {
         // SMTP / SMS
         try { if (d.smtp) setSmtp({ ...defaultSmtp, ...JSON.parse(d.smtp) }); } catch {}
         try { if (d.sms) setSms({ ...defaultSms, ...JSON.parse(d.sms) }); } catch {}
+        // PWA
+        setPwaEnabled((d.pwa_enabled ?? 'true') === 'true');
+        if (d.pwa_name) setPwaName(d.pwa_name);
+        if (d.pwa_short_name) setPwaShortName(d.pwa_short_name);
+        if (d.pwa_description) setPwaDescription(d.pwa_description);
+        if (d.pwa_theme_color) setPwaThemeColor(d.pwa_theme_color);
+        if (d.pwa_bg_color) setPwaBgColor(d.pwa_bg_color);
+        if (d.pwa_display) setPwaDisplay(d.pwa_display);
+        if (d.pwa_start_url) setPwaStartUrl(d.pwa_start_url);
+        if (d.pwa_icon_192) setPwaIcon192(d.pwa_icon_192);
+        if (d.pwa_icon_512) setPwaIcon512(d.pwa_icon_512);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -263,6 +291,7 @@ export default function AdminSettings() {
     maintenance_mode: maintenanceMode ? 'true' : 'false',
     registration_enabled: registrationEnabled ? 'true' : 'false',
     store_registration_enabled: storeRegistrationEnabled ? 'true' : 'false',
+    category_change_cooldown_days: categoryCooldownDays,
   });
 
   const saveSeo = () => saveKV({
@@ -292,6 +321,36 @@ export default function AdminSettings() {
 
   const saveSmtp = () => saveKV({ smtp: JSON.stringify(smtp) });
   const saveSms = () => saveKV({ sms: JSON.stringify(sms) });
+
+  const savePwa = () => saveKV({
+    pwa_enabled: pwaEnabled ? 'true' : 'false',
+    pwa_name: pwaName,
+    pwa_short_name: pwaShortName,
+    pwa_description: pwaDescription,
+    pwa_theme_color: pwaThemeColor,
+    pwa_bg_color: pwaBgColor,
+    pwa_display: pwaDisplay,
+    pwa_start_url: pwaStartUrl,
+  });
+
+  const uploadPwaIcon = async (file: File, type: "pwa_icon_192" | "pwa_icon_512") => {
+    setUploading(type);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("type", type);
+      const res = await fetch(`${API}/admin/settings/upload`, {
+        method: "POST", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }, body: fd,
+      });
+      const d = await res.json();
+      if (res.ok) {
+        if (type === "pwa_icon_192") setPwaIcon192(d.url);
+        else setPwaIcon512(d.url);
+        toast.success(type === "pwa_icon_192" ? "Icone 192x192 carregado" : "Icone 512x512 carregado");
+      } else toast.error("Erro", d.message || "Erro ao carregar icone.");
+    } catch { toast.error("Erro de conexao"); }
+    finally { setUploading(""); }
+  };
 
   const testSmtp = async () => {
     if (!testEmail) { toast.error("Insira um email para teste."); return; }
@@ -761,10 +820,11 @@ export default function AdminSettings() {
               <Package className="h-4 w-4 text-violet-500" />
               <span className={`text-xs font-semibold ${s.textPrimary}`}>Limites</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <InputFieldStable label="Max Produtos/Loja" value={maxProductsPerStore} onChange={setMaxProductsPerStore} type="number" placeholder="Ilimitado" hint="Vazio = ilimitado" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
               <InputFieldStable label="Max Imagens/Produto" value={maxImagesPerProduct} onChange={setMaxImagesPerProduct} type="number" placeholder="5" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
               <InputFieldStable label="Max Ficheiro (MB)" value={maxFileSize} onChange={setMaxFileSize} type="number" placeholder="4" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
+              <InputFieldStable label="Cooldown Categorias (dias)" value={categoryCooldownDays} onChange={setCategoryCooldownDays} type="number" placeholder="30" hint="Dias entre trocas de categoria" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
             </div>
           </div>
 
@@ -903,6 +963,140 @@ export default function AdminSettings() {
           </div>
 
           <SaveBtnStable onClick={saveSms} saving={saving} label="Guardar SMS" btnPrimary={s.btnPrimary} />
+        </div>
+      )}
+
+      {/* ═══════════ TAB: PWA ═══════════ */}
+      {tab === "pwa" && (
+        <div className={cardCls}>
+          <SectionHeaderStable icon={Smartphone} color="text-indigo-500" title="Progressive Web App (PWA)" desc="Permita que os utilizadores instalem o site como aplicacao no telemovel" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
+
+          {/* Enable toggle */}
+          <div className={`rounded-xl p-4 border ${s.borderLight}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`h-9 w-9 rounded-lg ${s.isDark ? "bg-indigo-500/10" : "bg-indigo-50"} flex items-center justify-center`}>
+                  <Smartphone className="h-4 w-4 text-indigo-500" />
+                </div>
+                <div>
+                  <p className={`text-sm font-semibold ${s.textPrimary}`}>Activar PWA</p>
+                  <p className={`text-[11px] ${s.textMuted}`}>{pwaEnabled ? "Os utilizadores podem instalar a app" : "PWA desactivado"}</p>
+                </div>
+              </div>
+              <ToggleBtnStable val={pwaEnabled} onChange={setPwaEnabled} label={pwaEnabled ? "Activo" : "Desactivo"} textMuted={s.textMuted} />
+            </div>
+          </div>
+
+          {/* Icons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Icon 192x192 */}
+            <div className={`rounded-xl p-4 border ${s.borderLight} space-y-3`}>
+              <div className="flex items-center gap-2">
+                <Image className="h-4 w-4 text-indigo-500" />
+                <span className={`text-xs font-semibold ${s.textPrimary}`}>Icone 192x192</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className={`h-20 w-20 rounded-xl border-2 border-dashed ${s.isDark ? "border-white/10 bg-white/[0.03]" : "border-gray-200 bg-gray-50"} flex items-center justify-center overflow-hidden`}>
+                  {pwaIcon192 ? <img src={pwaIcon192} alt="PWA 192" className="h-full w-full object-contain" /> : <Smartphone className={`h-8 w-8 ${s.textMuted}`} />}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <button onClick={() => pwaIcon192Ref.current?.click()} disabled={uploading === "pwa_icon_192"}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${s.btnSecondary} disabled:opacity-50`}>
+                    {uploading === "pwa_icon_192" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Carregar
+                  </button>
+                  <p className={`text-[10px] ${s.textMuted}`}>PNG 192x192px. Usado no ecra inicial.</p>
+                  <input ref={pwaIcon192Ref} type="file" accept="image/png" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPwaIcon(f, "pwa_icon_192"); e.target.value = ""; }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Icon 512x512 */}
+            <div className={`rounded-xl p-4 border ${s.borderLight} space-y-3`}>
+              <div className="flex items-center gap-2">
+                <Image className="h-4 w-4 text-purple-500" />
+                <span className={`text-xs font-semibold ${s.textPrimary}`}>Icone 512x512</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className={`h-20 w-20 rounded-xl border-2 border-dashed ${s.isDark ? "border-white/10 bg-white/[0.03]" : "border-gray-200 bg-gray-50"} flex items-center justify-center overflow-hidden`}>
+                  {pwaIcon512 ? <img src={pwaIcon512} alt="PWA 512" className="h-full w-full object-contain" /> : <Smartphone className={`h-8 w-8 ${s.textMuted}`} />}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <button onClick={() => pwaIcon512Ref.current?.click()} disabled={uploading === "pwa_icon_512"}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${s.btnSecondary} disabled:opacity-50`}>
+                    {uploading === "pwa_icon_512" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Carregar
+                  </button>
+                  <p className={`text-[10px] ${s.textMuted}`}>PNG 512x512px. Splash screen e loja de apps.</p>
+                  <input ref={pwaIcon512Ref} type="file" accept="image/png" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPwaIcon(f, "pwa_icon_512"); e.target.value = ""; }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* App info */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <InputFieldStable label="Nome da App" value={pwaName} onChange={setPwaName} placeholder="SuperLojas — Marketplace" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} hint="Nome completo exibido na instalacao" />
+            <InputFieldStable label="Nome Curto" value={pwaShortName} onChange={setPwaShortName} placeholder="SuperLojas" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} hint="Exibido no ecra inicial (max 12 caracteres)" />
+            <div className="sm:col-span-2">
+              <label className={labelCls}>Descricao</label>
+              <textarea value={pwaDescription} onChange={(e) => setPwaDescription(e.target.value)} rows={2} placeholder="O maior marketplace de Angola..." className={`${inputCls} resize-none`} />
+            </div>
+          </div>
+
+          {/* Colors + Display */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className={labelCls}>Cor do Tema</label>
+              <div className="flex items-center gap-3">
+                <input type="color" value={pwaThemeColor} onChange={(e) => setPwaThemeColor(e.target.value)} className="h-10 w-10 rounded-lg border-0 cursor-pointer" />
+                <input type="text" value={pwaThemeColor} onChange={(e) => setPwaThemeColor(e.target.value)} className={`flex-1 ${inputCls}`} />
+              </div>
+              <p className={`text-[10px] ${s.textMuted} mt-1`}>Barra de status e browser</p>
+            </div>
+            <div>
+              <label className={labelCls}>Cor de Fundo</label>
+              <div className="flex items-center gap-3">
+                <input type="color" value={pwaBgColor} onChange={(e) => setPwaBgColor(e.target.value)} className="h-10 w-10 rounded-lg border-0 cursor-pointer" />
+                <input type="text" value={pwaBgColor} onChange={(e) => setPwaBgColor(e.target.value)} className={`flex-1 ${inputCls}`} />
+              </div>
+              <p className={`text-[10px] ${s.textMuted} mt-1`}>Splash screen ao abrir</p>
+            </div>
+            <div>
+              <label className={labelCls}>Modo de Exibicao</label>
+              <select value={pwaDisplay} onChange={(e) => setPwaDisplay(e.target.value)} className={inputCls}>
+                <option value="standalone">Standalone (sem barra do browser)</option>
+                <option value="fullscreen">Fullscreen (ecra cheio)</option>
+                <option value="minimal-ui">Minimal UI (barra minima)</option>
+                <option value="browser">Browser (normal)</option>
+              </select>
+              <p className={`text-[10px] ${s.textMuted} mt-1`}>Como a app aparece ao abrir</p>
+            </div>
+          </div>
+
+          <InputFieldStable label="URL Inicial" value={pwaStartUrl} onChange={setPwaStartUrl} placeholder="/" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} hint="Pagina que abre ao iniciar a app (ex: / ou /lojas)" />
+
+          {/* Preview */}
+          <div className={`rounded-xl p-4 border ${s.borderLight}`}>
+            <p className={`text-[10px] font-semibold ${s.textMuted} uppercase tracking-wider mb-3`}>Pre-visualizacao</p>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="h-20 w-20 rounded-2xl shadow-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: pwaBgColor }}>
+                  {pwaIcon192 ? <img src={pwaIcon192} alt="Icon" className="h-16 w-16 object-contain" /> : <Smartphone className="h-10 w-10" style={{ color: pwaThemeColor }} />}
+                </div>
+              </div>
+              <div>
+                <p className={`text-sm font-bold ${s.textPrimary}`}>{pwaShortName || pwaName || "SuperLojas"}</p>
+                <p className={`text-[11px] ${s.textMuted}`}>{pwaDescription || "Marketplace de Angola"}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium" style={{ backgroundColor: pwaThemeColor + "20", color: pwaThemeColor }}>
+                    <Monitor className="h-2.5 w-2.5" /> {pwaDisplay}
+                  </span>
+                  <span className={`text-[10px] ${s.textMuted}`}>{pwaStartUrl}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <SaveBtnStable onClick={savePwa} saving={saving} label="Guardar PWA" btnPrimary={s.btnPrimary} />
         </div>
       )}
     </div>

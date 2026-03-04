@@ -9,12 +9,13 @@ class OrderItem extends Model
 {
     protected $fillable = [
         'order_id', 'product_id', 'product_name', 'product_image',
-        'price', 'quantity', 'total',
+        'price', 'quantity', 'selected_variants', 'total',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'total' => 'decimal:2',
+        'selected_variants' => 'array',
     ];
 
     public function order(): BelongsTo

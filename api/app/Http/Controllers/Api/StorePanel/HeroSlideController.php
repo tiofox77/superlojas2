@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\StorePanel;
 
+use App\Helpers\SeoFileName;
 use App\Http\Controllers\Controller;
 use App\Models\Store;
 use App\Models\HeroSlide;
@@ -30,7 +31,24 @@ class HeroSlideController extends Controller
 
     public function store(Request $request, string $slug)
     {
-        $this->getStore($request, $slug);
+        $store = $this->getStore($request, $slug);
+        $store->load('plan');
+        $plan = $store->plan;
+
+        // Enforce max_hero_slides (0 = unlimited, super_admin bypasses)
+        if ($plan && $request->user()->role !== 'super_admin') {
+            $maxSlides = $plan->max_hero_slides;
+            if ($maxSlides > 0) {
+                $currentCount = \App\Models\HeroSlide::where('store_slug', $slug)->count();
+                if ($currentCount >= $maxSlides) {
+                    return response()->json([
+                        'message' => "O seu plano ({$plan->name}) permite no maximo {$maxSlides} slide(s). Faca upgrade para adicionar mais.",
+                        'limit' => $maxSlides,
+                        'current' => $currentCount,
+                    ], 422);
+                }
+            }
+        }
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -46,7 +64,7 @@ class HeroSlideController extends Controller
 
         $store = $this->getStore($request, $slug);
         if ($request->hasFile('image')) {
-            $data['image'] = '/storage/' . $request->file('image')->store("stores/{$store->id}/slides", 'public');
+            $data['image'] = SeoFileName::storePublic($request->file('image'), "stores/{$store->id}/slides", $store->slug, 'slide');
         }
 
         $heroSlide = HeroSlide::create($data);
@@ -74,7 +92,7 @@ class HeroSlideController extends Controller
                 Storage::disk('public')->delete(str_replace('/storage/', '', $heroSlide->image));
             }
             $storeModel = $this->getStore($request, $slug);
-            $data['image'] = '/storage/' . $request->file('image')->store("stores/{$storeModel->id}/slides", 'public');
+            $data['image'] = SeoFileName::storePublic($request->file('image'), "stores/{$storeModel->id}/slides", $storeModel->slug, 'slide');
         }
 
         $heroSlide->update($data);

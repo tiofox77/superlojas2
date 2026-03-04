@@ -26,6 +26,9 @@ class OrderController extends Controller
             ->where('store_id', $store->id)
             ->orderByDesc('created_at');
 
+        if ($request->has('type') && in_array($request->type, ['order', 'preorder'])) {
+            $query->where('type', $request->type);
+        }
         if ($request->has('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
@@ -53,6 +56,8 @@ class OrderController extends Controller
         $base = Order::where('store_id', $store->id);
 
         return response()->json([
+            'total_orders' => (clone $base)->where('type', 'order')->count(),
+            'total_preorders' => (clone $base)->where('type', 'preorder')->count(),
             'total' => (clone $base)->count(),
             'pending' => (clone $base)->where('status', 'pending')->count(),
             'confirmed' => (clone $base)->where('status', 'confirmed')->count(),

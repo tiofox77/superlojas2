@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Helpers\SeoFileName;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
@@ -39,11 +40,15 @@ class SettingsController extends Controller
     {
         $request->validate([
             'file' => 'required|file|image|max:2048',
-            'type' => 'required|in:site_logo,site_favicon',
+            'type' => 'required|in:site_logo,site_favicon,pwa_icon_192,pwa_icon_512',
         ]);
 
         $type = $request->type;
-        $folder = $type === 'site_favicon' ? 'site/favicon' : 'site/logo';
+        $folder = match ($type) {
+            'site_favicon' => 'site/favicon',
+            'pwa_icon_192', 'pwa_icon_512' => 'site/pwa',
+            default => 'site/logo',
+        };
 
         // Delete old file
         $old = Setting::get($type);
@@ -51,7 +56,13 @@ class SettingsController extends Controller
             Storage::disk('public')->delete(str_replace('/storage/', '', $old));
         }
 
-        $path = '/storage/' . $request->file('file')->store($folder, 'public');
+        $slug = match ($type) {
+            'site_favicon' => 'superloja-favicon',
+            'pwa_icon_192' => 'pwa-icon-192',
+            'pwa_icon_512' => 'pwa-icon-512',
+            default => 'superloja-logo',
+        };
+        $path = SeoFileName::storePublic($request->file('file'), $folder, $slug);
         Setting::set($type, $path);
 
         return response()->json(['message' => 'Ficheiro carregado com sucesso.', 'url' => $path]);

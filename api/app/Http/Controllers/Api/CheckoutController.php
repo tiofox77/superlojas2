@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\SeoFileName;
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Store;
 use App\Services\MailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -97,7 +99,8 @@ class CheckoutController extends Controller
                 // Handle receipt upload for this store
                 $receiptPath = null;
                 if (isset($receipts[$storeId])) {
-                    $receiptPath = '/storage/' . $receipts[$storeId]->store("orders/receipts", 'public');
+                    $storeName = Store::find($storeId)?->slug ?? 'loja';
+                    $receiptPath = SeoFileName::storePublic($receipts[$storeId], 'orders/receipts', $storeName, 'comprovativo');
                 }
 
                 $order = Order::create([

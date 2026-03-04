@@ -39,6 +39,9 @@ export interface Store {
   paymentMethods?: { type: string; label: string; details: string; account: string; is_active: boolean }[];
   showStock?: boolean;
   isOfficial?: boolean;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
 }
 
 export interface ProductVariant {
@@ -62,6 +65,8 @@ export interface Product {
   stock: number;
   description: string;
   variants: ProductVariant[];
+  flashSaleStart?: string;
+  flashSaleEnd?: string;
 }
 
 export interface HeroSlide {

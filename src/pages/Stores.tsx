@@ -1,6 +1,6 @@
-import { useStores } from "@/hooks/useApi";
+import { useStores, useCategories } from "@/hooks/useApi";
 import { StoreCard } from "@/components/StoreCard";
-import { Search, MapPin, Star, SlidersHorizontal, Grid3X3, List, Store, ChevronDown } from "lucide-react";
+import { Search, MapPin, Star, SlidersHorizontal, Grid3X3, List, Store, ChevronDown, Tag, X } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -9,27 +9,38 @@ import { logoSrc, bannerSrc, onImgError } from "@/lib/imageHelpers";
 const Stores = () => {
   const [search, setSearch] = useState("");
   const [selectedProvince, setSelectedProvince] = useState<string>("");
-  const [sortBy, setSortBy] = useState<"name" | "rating" | "reviews">("rating");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"name" | "rating" | "reviews" | "newest">("rating");
   const [viewGrid, setViewGrid] = useState(true);
   const { data: allStores = [] } = useStores();
+  const { data: categories = [] } = useCategories();
 
-  let filtered = allStores.filter((s) =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.description.toLowerCase().includes(search.toLowerCase())
-  );
+  const sorted = useMemo(() => {
+    let filtered = allStores.filter((s) =>
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.description.toLowerCase().includes(search.toLowerCase())
+    );
 
-  if (selectedProvince) {
-    filtered = filtered.filter((s) => s.province === selectedProvince);
-  }
+    if (selectedProvince) {
+      filtered = filtered.filter((s) => s.province === selectedProvince);
+    }
 
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortBy === "name") return a.name.localeCompare(b.name);
-    if (sortBy === "rating") return b.rating - a.rating;
-    if (sortBy === "reviews") return b.reviewCount - a.reviewCount;
-    return 0;
-  });
+    if (selectedCategory) {
+      filtered = filtered.filter((s) => s.categories.some(c => c.toLowerCase() === selectedCategory.toLowerCase()));
+    }
 
-  const storeProvinces = [...new Set(allStores.map((s) => s.province))];
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      if (sortBy === "rating") return b.rating - a.rating;
+      if (sortBy === "reviews") return b.reviewCount - a.reviewCount;
+      if (sortBy === "newest") return Number(b.id) - Number(a.id);
+      return 0;
+    });
+  }, [allStores, search, selectedProvince, selectedCategory, sortBy]);
+
+  const storeProvinces = useMemo(() => [...new Set(allStores.map((s) => s.province))].sort(), [allStores]);
+
+  const activeFilterCount = [selectedProvince, selectedCategory].filter(Boolean).length;
 
   return (
     <main className="min-h-screen bg-secondary/30">
@@ -55,36 +66,45 @@ const Stores = () => {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-2xl border-0 bg-card pl-12 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-lg placeholder:text-muted-foreground"
             />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       <div className="container py-6">
         {/* Filters row */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Province filter */}
-            <div className="relative">
-              <select
-                value={selectedProvince}
-                onChange={(e) => setSelectedProvince(e.target.value)}
-                className="appearance-none text-xs border border-border rounded-xl px-4 py-2 pr-8 bg-card focus:outline-none focus:ring-2 focus:ring-ring"
+        <div className="flex flex-col gap-3 mb-6">
+          {/* Category pills */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              onClick={() => setSelectedCategory("")}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${!selectedCategory ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}
+            >
+              Todas Categorias
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(selectedCategory === cat.name ? "" : cat.name)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1 ${selectedCategory === cat.name ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}
               >
-                <option value="">Todas Províncias</option>
-                {storeProvinces.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-            </div>
+                {cat.icon ? <span className="text-xs">{cat.icon}</span> : <Tag className="h-3 w-3" />} {cat.name}
+              </button>
+            ))}
+          </div>
 
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             {/* Province pills */}
             <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => setSelectedProvince("")}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium shrink-0 transition-colors ${!selectedProvince ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}
               >
-                Todas
+                Todas Províncias
               </button>
               {storeProvinces.map((p) => (
                 <button
@@ -96,27 +116,28 @@ const Stores = () => {
                 </button>
               ))}
             </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="text-xs border border-border rounded-xl px-3 py-2 bg-card focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="rating">Melhor Avaliação</option>
-              <option value="reviews">Mais Avaliadas</option>
-              <option value="name">Nome A-Z</option>
-            </select>
-            <div className="hidden sm:flex border border-border rounded-lg overflow-hidden">
-              <button onClick={() => setViewGrid(true)}
-                className={`p-1.5 ${viewGrid ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}>
-                <Grid3X3 className="h-3.5 w-3.5" />
-              </button>
-              <button onClick={() => setViewGrid(false)}
-                className={`p-1.5 ${!viewGrid ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}>
-                <List className="h-3.5 w-3.5" />
-              </button>
+            <div className="flex items-center gap-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="text-xs border border-border rounded-xl px-3 py-2 bg-card focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="rating">Melhor Avaliação</option>
+                <option value="reviews">Mais Avaliadas</option>
+                <option value="newest">Mais Recentes</option>
+                <option value="name">Nome A-Z</option>
+              </select>
+              <div className="hidden sm:flex border border-border rounded-lg overflow-hidden">
+                <button onClick={() => setViewGrid(true)}
+                  className={`p-1.5 ${viewGrid ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}>
+                  <Grid3X3 className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => setViewGrid(false)}
+                  className={`p-1.5 ${!viewGrid ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}>
+                  <List className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -125,6 +146,8 @@ const Stores = () => {
         <p className="text-xs text-muted-foreground mb-4">
           {sorted.length} loja{sorted.length !== 1 ? "s" : ""} encontrada{sorted.length !== 1 ? "s" : ""}
           {selectedProvince && ` em ${selectedProvince}`}
+          {selectedCategory && ` na categoria ${selectedCategory}`}
+          {activeFilterCount > 0 && <span className="text-primary font-medium"> (filtrado)</span>}
         </p>
 
         {/* Stores grid/list */}

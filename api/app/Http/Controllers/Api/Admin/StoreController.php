@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Helpers\SeoFileName;
 use App\Http\Controllers\Controller;
 use App\Models\Store;
 use App\Models\User;
@@ -74,12 +75,12 @@ class StoreController extends Controller
 
         // Upload logo para pasta individual da loja
         if ($request->hasFile('logo')) {
-            $store->logo = '/storage/' . $request->file('logo')->store("stores/{$store->id}/logos", 'public');
+            $store->logo = SeoFileName::storePublic($request->file('logo'), "stores/{$store->id}/logos", $store->slug, 'logo');
         }
 
         // Upload banner
         if ($request->hasFile('banner')) {
-            $store->banner = '/storage/' . $request->file('banner')->store("stores/{$store->id}/banners", 'public');
+            $store->banner = SeoFileName::storePublic($request->file('banner'), "stores/{$store->id}/banners", $store->slug, 'banner');
         } else {
             $store->banner = $store->logo;
         }
@@ -120,7 +121,7 @@ class StoreController extends Controller
             if ($store->logo && str_starts_with($store->logo, '/storage/')) {
                 Storage::disk('public')->delete(str_replace('/storage/', '', $store->logo));
             }
-            $data['logo'] = '/storage/' . $request->file('logo')->store("stores/{$store->id}/logos", 'public');
+            $data['logo'] = SeoFileName::storePublic($request->file('logo'), "stores/{$store->id}/logos", $store->slug, 'logo');
         }
 
         // Upload novo banner
@@ -128,7 +129,7 @@ class StoreController extends Controller
             if ($store->banner && str_starts_with($store->banner, '/storage/')) {
                 Storage::disk('public')->delete(str_replace('/storage/', '', $store->banner));
             }
-            $data['banner'] = '/storage/' . $request->file('banner')->store("stores/{$store->id}/banners", 'public');
+            $data['banner'] = SeoFileName::storePublic($request->file('banner'), "stores/{$store->id}/banners", $store->slug, 'banner');
         }
 
         $store->update($data);

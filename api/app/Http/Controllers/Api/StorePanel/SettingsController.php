@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\StorePanel;
 
+use App\Helpers\SeoFileName;
 use App\Http\Controllers\Controller;
 use App\Models\Store;
 use Illuminate\Http\Request;
@@ -21,7 +22,32 @@ class SettingsController extends Controller
 
     public function show(Request $request, string $slug)
     {
-        return response()->json($this->getStore($request, $slug));
+        $store = $this->getStore($request, $slug);
+        $store->load(['plan', 'storeCategories']);
+
+        $data = $store->toArray();
+
+        // Override categories with pivot IDs for the frontend
+        $pivotIds = $store->storeCategories->pluck('id')->toArray();
+        if (!empty($pivotIds)) {
+            $data['categories'] = $pivotIds;
+        } else {
+            // Backward compat: if pivot is empty but legacy JSON has category names,
+            // resolve IDs from the names and auto-populate the pivot
+            $legacyNames = $store->categories ?? [];
+            if (!empty($legacyNames)) {
+                $resolved = \App\Models\Category::whereIn('name', $legacyNames)
+                    ->orWhereIn('slug', array_map(fn($n) => \Illuminate\Support\Str::slug($n), $legacyNames))
+                    ->pluck('id')
+                    ->toArray();
+                if (!empty($resolved)) {
+                    $store->storeCategories()->sync($resolved);
+                    $data['categories'] = $resolved;
+                }
+            }
+        }
+
+        return response()->json($data);
     }
 
     public function update(Request $request, string $slug)
@@ -72,14 +98,14 @@ class SettingsController extends Controller
             if ($store->logo && str_starts_with($store->logo, '/storage/')) {
                 Storage::disk('public')->delete(str_replace('/storage/', '', $store->logo));
             }
-            $data['logo'] = '/storage/' . $request->file('logo')->store("stores/{$store->id}/logos", 'public');
+            $data['logo'] = SeoFileName::storePublic($request->file('logo'), "stores/{$store->id}/logos", $store->slug, 'logo');
         }
 
         if ($request->hasFile('banner')) {
             if ($store->banner && str_starts_with($store->banner, '/storage/')) {
                 Storage::disk('public')->delete(str_replace('/storage/', '', $store->banner));
             }
-            $data['banner'] = '/storage/' . $request->file('banner')->store("stores/{$store->id}/banners", 'public');
+            $data['banner'] = SeoFileName::storePublic($request->file('banner'), "stores/{$store->id}/banners", $store->slug, 'banner');
         }
 
         $store->update($data);

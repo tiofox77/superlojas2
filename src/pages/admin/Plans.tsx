@@ -23,6 +23,7 @@ interface PlanItem {
   max_products: number;
   max_images_per_product: number;
   max_hero_slides: number;
+  max_categories: number;
   priority_support: boolean;
   featured_badge: boolean;
   analytics: boolean;
@@ -39,7 +40,7 @@ interface PlanItem {
 const emptyForm = {
   name: "", price: "0", billing_cycle: "monthly", description: "",
   features: [] as string[], max_products: "10", max_images_per_product: "5",
-  max_hero_slides: "0", priority_support: false, featured_badge: false,
+  max_hero_slides: "0", max_categories: "1", priority_support: false, featured_badge: false,
   analytics: false, custom_domain: false, has_api: false, has_pos: false, is_free: false,
   is_active: true, is_recommended: false, sort_order: "0",
 };
@@ -91,7 +92,7 @@ export default function AdminPlans() {
       name: p.name, price: String(p.price), billing_cycle: p.billing_cycle,
       description: p.description || "", features: p.features || [],
       max_products: String(p.max_products), max_images_per_product: String(p.max_images_per_product),
-      max_hero_slides: String(p.max_hero_slides), priority_support: p.priority_support,
+      max_hero_slides: String(p.max_hero_slides), max_categories: String(p.max_categories ?? 1), priority_support: p.priority_support,
       featured_badge: p.featured_badge, analytics: p.analytics, custom_domain: p.custom_domain,
       has_api: p.has_api, has_pos: p.has_pos, is_free: p.is_free, is_active: p.is_active, is_recommended: p.is_recommended,
       sort_order: String(p.sort_order),
@@ -112,6 +113,7 @@ export default function AdminPlans() {
       max_products: parseInt(form.max_products) || 0,
       max_images_per_product: parseInt(form.max_images_per_product) || 5,
       max_hero_slides: parseInt(form.max_hero_slides) || 0,
+      max_categories: parseInt(form.max_categories) || 1,
       priority_support: form.priority_support,
       featured_badge: form.featured_badge,
       analytics: form.analytics,
@@ -249,6 +251,9 @@ export default function AdminPlans() {
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${s.badge("purple")}`}>
                       <Image className="h-2.5 w-2.5" /> {plan.max_images_per_product} img
                     </span>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${s.badge("orange")}`}>
+                      {plan.max_categories === 0 ? "∞" : plan.max_categories} categ.
+                    </span>
                     {plan.max_hero_slides > 0 && (
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${s.badge("orange")}`}>
                         {plan.max_hero_slides} slides
@@ -370,6 +375,12 @@ export default function AdminPlans() {
                 <label className={`text-[10px] ${s.textMuted} mb-1 block`}>Max Slides</label>
                 <input type="number" value={form.max_hero_slides} onChange={(e) => setForm({ ...form, max_hero_slides: e.target.value })}
                   className={`${s.input} border rounded-lg px-2 py-1.5 text-xs w-full focus:outline-none focus:ring-2 focus:ring-orange-500/20`} />
+              </div>
+              <div>
+                <label className={`text-[10px] ${s.textMuted} mb-1 block`}>Max Categorias</label>
+                <input type="number" value={form.max_categories} onChange={(e) => setForm({ ...form, max_categories: e.target.value })}
+                  className={`${s.input} border rounded-lg px-2 py-1.5 text-xs w-full focus:outline-none focus:ring-2 focus:ring-orange-500/20`} />
+                <p className={`text-[9px] ${s.textMuted} mt-0.5`}>0 = ilimitado, 1 = basico</p>
               </div>
             </div>
           </div>

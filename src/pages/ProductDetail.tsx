@@ -2,11 +2,13 @@ import { useParams, Link } from "react-router-dom";
 import { useProduct, useProducts } from "@/hooks/useApi";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { Star, ShoppingCart, MessageCircle, ChevronRight, Minus, Plus, Truck, Heart, AlertTriangle } from "lucide-react";
+import { Star, ShoppingCart, MessageCircle, ChevronRight, Minus, Plus, Truck, Heart, AlertTriangle, Clock, PackageCheck, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ReviewSection } from "@/components/ReviewSection";
 import { toast } from "sonner";
+import { productImgSrc } from "@/lib/imageHelpers";
+import ProductSeoHead from "@/components/ProductSeoHead";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -18,6 +20,75 @@ const ProductDetail = () => {
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [selectedImage, setSelectedImage] = useState(0);
   const [stockAlert, setStockAlert] = useState("");
+  const [variantAlert, setVariantAlert] = useState("");
+  const [countdown, setCountdown] = useState("");
+  const [saleActive, setSaleActive] = useState(false);
+
+  // Pre-order state
+  const [preOrderOpen, setPreOrderOpen] = useState(false);
+  const [preOrderForm, setPreOrderForm] = useState({ name: "", email: "", phone: "", province: "", notes: "" });
+  const [preOrderSending, setPreOrderSending] = useState(false);
+  const [preOrderError, setPreOrderError] = useState("");
+
+  const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+  const provinces = ["Bengo","Benguela","Bie","Cabinda","Cuando Cubango","Cuanza Norte","Cuanza Sul","Cunene","Huambo","Huila","Icolo e Bengo","Luanda","Lunda Norte","Lunda Sul","Malanje","Moxico","Namibe","Uige","Zaire"];
+
+  const openPreOrder = () => {
+    const missing = product?.variants.filter(v => !selectedVariants[v.type]).map(v => v.type) || [];
+    if (missing.length > 0) { setVariantAlert(`Selecione: ${missing.join(", ")}`); return; }
+    setPreOrderError(""); setPreOrderOpen(true);
+  };
+
+  const submitPreOrder = async () => {
+    if (!product) return;
+    if (!preOrderForm.name || !preOrderForm.email || !preOrderForm.phone || !preOrderForm.province) {
+      setPreOrderError("Preencha todos os campos obrigatorios."); return;
+    }
+    setPreOrderSending(true); setPreOrderError("");
+    try {
+      const res = await fetch(`${API}/pre-orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          product_id: Number(product.id),
+          quantity,
+          selected_variants: Object.keys(selectedVariants).length > 0 ? selectedVariants : null,
+          customer: preOrderForm,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || "Encomenda registada!");
+        setPreOrderOpen(false);
+        setPreOrderForm({ name: "", email: "", phone: "", province: "", notes: "" });
+      } else {
+        setPreOrderError(data.message || data.error || "Erro ao enviar encomenda.");
+      }
+    } catch { setPreOrderError("Erro de conexao. Tente novamente."); }
+    finally { setPreOrderSending(false); }
+  };
+
+  // Flash sale countdown
+  useEffect(() => {
+    if (!product?.flashSaleEnd) { setSaleActive(!!product?.badge && product.badge === "Promo"); return; }
+    const end = new Date(product.flashSaleEnd).getTime();
+    const start = product.flashSaleStart ? new Date(product.flashSaleStart).getTime() : 0;
+    const tick = () => {
+      const now = Date.now();
+      if (start && now < start) { setSaleActive(false); setCountdown("Em breve"); return; }
+      const diff = end - now;
+      if (diff <= 0) { setSaleActive(false); setCountdown("Terminado"); return; }
+      setSaleActive(true);
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const sec = Math.floor((diff % 60000) / 1000);
+      setCountdown(`${d > 0 ? d + "d " : ""}${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [product?.flashSaleEnd, product?.flashSaleStart, product?.badge]);
 
   if (isLoading) {
     return (
@@ -50,6 +121,15 @@ const ProductDetail = () => {
 
   return (
     <main className="container py-8 min-h-screen">
+      <ProductSeoHead
+        productName={product.name}
+        productSlug={product.slug}
+        productDescription={product.description}
+        productImage={product.images[0]}
+        productPrice={product.price}
+        storeName={product.store.name}
+        category={product.category}
+      />
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1 text-sm text-muted-foreground mb-6">
         <Link to="/" className="hover:text-foreground">Início</Link>
@@ -63,7 +143,7 @@ const ProductDetail = () => {
         {/* Image Gallery */}
         <div>
           <div className="aspect-square rounded-2xl overflow-hidden bg-secondary mb-3">
-            <img src={product.images[selectedImage]} alt={product.name} className="h-full w-full object-cover" />
+            <img src={productImgSrc(product.images[selectedImage])} alt={product.name} className="h-full w-full object-cover" />
           </div>
           {product.images.length > 1 && (
             <div className="flex gap-2 overflow-x-auto scrollbar-hide">
@@ -75,7 +155,7 @@ const ProductDetail = () => {
                     selectedImage === i ? "border-primary" : "border-border hover:border-primary/40"
                   }`}
                 >
-                  <img src={img} alt={`${product.name} ${i + 1}`} className="h-full w-full object-cover" />
+                  <img src={productImgSrc(img)} alt={`${product.name} ${i + 1}`} className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>
@@ -105,6 +185,19 @@ const ProductDetail = () => {
             )}
           </div>
 
+          {/* Flash Sale Countdown */}
+          {product.badge === "Promo" && countdown && (
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl mb-4 ${saleActive ? "bg-destructive/10 border border-destructive/20" : "bg-muted border border-border"}`}>
+              <Clock className={`h-4 w-4 ${saleActive ? "text-destructive" : "text-muted-foreground"}`} />
+              <span className={`text-xs font-bold ${saleActive ? "text-destructive" : "text-muted-foreground"}`}>
+                {saleActive ? "Flash Sale termina em:" : countdown === "Terminado" ? "Flash Sale terminada" : "Flash Sale começa em breve"}
+              </span>
+              {saleActive && (
+                <span className="text-sm font-mono font-extrabold text-destructive ml-auto">{countdown}</span>
+              )}
+            </div>
+          )}
+
           {/* Price */}
           <div className="flex items-baseline gap-3 mb-6">
             <span className="text-3xl font-extrabold">{formatPrice(product.price)} Kz</span>
@@ -117,26 +210,35 @@ const ProductDetail = () => {
           </div>
 
           {/* Variants */}
-          {product.variants.map((v) => (
-            <div key={v.type} className="mb-4">
-              <p className="text-sm font-medium mb-2">{v.type}</p>
-              <div className="flex flex-wrap gap-2">
-                {v.options.map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={() => setSelectedVariants((prev) => ({ ...prev, [v.type]: opt }))}
-                    className={`px-3 py-1.5 rounded-lg border text-sm transition-colors ${
-                      selectedVariants[v.type] === opt
-                        ? "border-primary bg-accent text-accent-foreground font-medium"
-                        : "border-border hover:border-primary/40"
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
+          {product.variants.length > 0 && (
+            <div className="mb-2">
+              {product.variants.map((v) => (
+                <div key={v.type} className="mb-4">
+                  <p className="text-sm font-medium mb-2">{v.type} {!selectedVariants[v.type] && <span className="text-xs text-muted-foreground">(selecione)</span>}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {v.options.map((opt) => (
+                      <button
+                        key={opt}
+                        onClick={() => { setSelectedVariants((prev) => ({ ...prev, [v.type]: opt })); setVariantAlert(""); }}
+                        className={`px-3 py-1.5 rounded-lg border text-sm transition-colors ${
+                          selectedVariants[v.type] === opt
+                            ? "border-primary bg-accent text-accent-foreground font-medium"
+                            : "border-border hover:border-primary/40"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {variantAlert && (
+                <div className="flex items-center gap-1.5 text-xs text-destructive mb-2">
+                  <AlertTriangle className="h-3.5 w-3.5" /> {variantAlert}
+                </div>
+              )}
             </div>
-          ))}
+          )}
 
           {/* Quantity */}
           <div className="flex flex-col gap-2 mb-6">
@@ -177,22 +279,28 @@ const ProductDetail = () => {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              className="flex-1 bg-hero-gradient text-primary-foreground hover:opacity-90 gap-2"
-              disabled={product.stock <= 0}
-              onClick={() => {
-                if (product.stock > 0 && quantity > product.stock) {
-                  setStockAlert(`Apenas ${product.stock} unidades disponiveis.`);
-                  setQuantity(product.stock);
-                  return;
-                }
-                addItem(product, quantity, selectedVariants);
-                setStockAlert("");
-                toast.success(`"${product.name}" adicionado ao carrinho`);
-              }}
-            >
-              <ShoppingCart className="h-4 w-4" /> {product.stock <= 0 ? "Esgotado" : "Adicionar ao Carrinho"}
-            </Button>
+            {product.stock > 0 ? (
+              <Button
+                className="flex-1 bg-hero-gradient text-primary-foreground hover:opacity-90 gap-2"
+                onClick={() => {
+                  const missing = product.variants.filter(v => !selectedVariants[v.type]).map(v => v.type);
+                  if (missing.length > 0) { setVariantAlert(`Selecione: ${missing.join(", ")}`); return; }
+                  if (quantity > product.stock) { setStockAlert(`Apenas ${product.stock} unidades disponiveis.`); setQuantity(product.stock); return; }
+                  addItem(product, quantity, selectedVariants);
+                  setStockAlert(""); setVariantAlert("");
+                  toast.success(`"${product.name}" adicionado ao carrinho`);
+                }}
+              >
+                <ShoppingCart className="h-4 w-4" /> Adicionar ao Carrinho
+              </Button>
+            ) : (
+              <Button
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white gap-2"
+                onClick={openPreOrder}
+              >
+                <PackageCheck className="h-4 w-4" /> Encomendar
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => toggleWishlist(product)}
@@ -245,7 +353,7 @@ const ProductDetail = () => {
               <div key={p.id}>
                 <Link to={`/produto/${p.slug}`}>
                   <div className="aspect-square rounded-xl overflow-hidden bg-secondary mb-2">
-                    <img src={p.images[0]} alt={p.name} className="h-full w-full object-cover hover:scale-105 transition-transform" />
+                    <img src={productImgSrc(p.images[0])} alt={p.name} className="h-full w-full object-cover hover:scale-105 transition-transform" />
                   </div>
                   <p className="text-sm font-medium truncate">{p.name}</p>
                   <p className="text-sm font-bold">{formatPrice(p.price)} Kz</p>
@@ -254,6 +362,94 @@ const ProductDetail = () => {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Pre-order Modal */}
+      {preOrderOpen && product && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setPreOrderOpen(false)} />
+          <div className="relative w-full max-w-md bg-card rounded-2xl shadow-xl border border-border overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-purple-50 dark:bg-purple-500/10">
+              <div className="flex items-center gap-2">
+                <PackageCheck className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <h3 className="text-sm font-bold text-foreground">Encomendar Produto</h3>
+              </div>
+              <button onClick={() => setPreOrderOpen(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+            </div>
+
+            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+              {/* Product summary */}
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary">
+                <img src={productImgSrc(product.images[0])} alt="" className="h-12 w-12 rounded-lg object-cover" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate">{product.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {quantity}x — {formatPrice(product.price * quantity)} Kz
+                    {Object.entries(selectedVariants).length > 0 && (
+                      <span> · {Object.entries(selectedVariants).map(([k, v]) => `${k}: ${v}`).join(", ")}</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Este produto esta esgotado. Preencha os seus dados para registar uma encomenda. A loja entrara em contacto consigo quando estiver disponivel.
+              </p>
+
+              {preOrderError && (
+                <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive">{preOrderError}</div>
+              )}
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Nome completo <span className="text-destructive">*</span></label>
+                  <input type="text" value={preOrderForm.name} onChange={(e) => setPreOrderForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="O seu nome"
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Email <span className="text-destructive">*</span></label>
+                  <input type="email" value={preOrderForm.email} onChange={(e) => setPreOrderForm(f => ({ ...f, email: e.target.value }))}
+                    placeholder="email@exemplo.com"
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Telefone <span className="text-destructive">*</span></label>
+                  <input type="tel" value={preOrderForm.phone} onChange={(e) => setPreOrderForm(f => ({ ...f, phone: e.target.value }))}
+                    placeholder="+244 9XX XXX XXX"
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Provincia <span className="text-destructive">*</span></label>
+                  <select value={preOrderForm.province} onChange={(e) => setPreOrderForm(f => ({ ...f, province: e.target.value }))}
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20">
+                    <option value="">Selecionar provincia...</option>
+                    {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Notas (opcional)</label>
+                  <textarea value={preOrderForm.notes} onChange={(e) => setPreOrderForm(f => ({ ...f, notes: e.target.value }))}
+                    placeholder="Alguma observacao..."
+                    rows={2}
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 resize-none" />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button variant="outline" onClick={() => setPreOrderOpen(false)} className="flex-1">Cancelar</Button>
+                <Button
+                  onClick={submitPreOrder}
+                  disabled={preOrderSending}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white gap-2"
+                >
+                  {preOrderSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />}
+                  {preOrderSending ? "A enviar..." : "Confirmar Encomenda"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

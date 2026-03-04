@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\SeoFileName;
 use App\Http\Controllers\Controller;
 use App\Models\Store;
 use App\Models\Setting;
@@ -126,16 +127,25 @@ class StoreController extends Controller
 
         // Upload logo para pasta individual da loja
         if ($request->hasFile('logo')) {
-            $store->logo = '/storage/' . $request->file('logo')->store("stores/{$store->id}/logos", 'public');
+            $store->logo = SeoFileName::storePublic($request->file('logo'), "stores/{$store->id}/logos", $store->slug, 'logo');
         }
 
         // Upload banner
         if ($request->hasFile('banner')) {
-            $store->banner = '/storage/' . $request->file('banner')->store("stores/{$store->id}/banners", 'public');
+            $store->banner = SeoFileName::storePublic($request->file('banner'), "stores/{$store->id}/banners", $store->slug, 'banner');
         } else {
             $store->banner = $store->logo;
         }
         $store->save();
+
+        // Populate category_store pivot from the selected category name
+        $categoryName = $request->category;
+        $category = \App\Models\Category::where('name', $categoryName)
+            ->orWhere('slug', \Illuminate\Support\Str::slug($categoryName))
+            ->first();
+        if ($category) {
+            $store->storeCategories()->sync([$category->id]);
+        }
 
         // Actualizar utilizador como store_owner
         if ($user->role !== 'super_admin') {

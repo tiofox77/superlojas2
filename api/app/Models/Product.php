@@ -24,6 +24,8 @@ class Product extends Model
         'stock',
         'description',
         'variants',
+        'flash_sale_start',
+        'flash_sale_end',
     ];
 
     protected $casts = [
@@ -32,6 +34,8 @@ class Product extends Model
         'price' => 'decimal:2',
         'original_price' => 'decimal:2',
         'rating' => 'decimal:1',
+        'flash_sale_start' => 'datetime',
+        'flash_sale_end' => 'datetime',
     ];
 
     public function store(): BelongsTo

@@ -15,7 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { logoSrc, bannerSrc, onImgError } from "@/lib/imageHelpers";
+import { logoSrc, bannerSrc, productImgSrc, onImgError } from "@/lib/imageHelpers";
+import StoreSeoHead from "@/components/StoreSeoHead";
 
 /* ─── TikTok Icon ─── */
 function TikTokIcon({ className }: { className?: string }) {
@@ -162,6 +163,15 @@ const StoreDetail = () => {
 
   return (
     <main className="min-h-screen bg-secondary/30">
+      <StoreSeoHead
+        storeName={store.name}
+        storeSlug={store.slug}
+        storeDescription={store.description}
+        storeLogo={store.logo}
+        metaTitle={store.metaTitle}
+        metaDescription={store.metaDescription}
+        metaKeywords={store.metaKeywords}
+      />
       {/* ─── Banner + Store Info ─── */}
       <div className="relative">
         <div className="h-48 sm:h-60 overflow-hidden">
@@ -372,7 +382,7 @@ const StoreDetail = () => {
                 ) : (
                   <Link key={p.id} to={`/produto/${p.slug}`}
                     className="flex gap-4 p-3 rounded-xl border border-border bg-card hover:shadow-card-hover transition-all">
-                    <img src={p.images[0]} alt={p.name} className="h-24 w-24 rounded-lg object-cover bg-secondary" />
+                    <img src={productImgSrc(p.images[0])} alt={p.name} className="h-24 w-24 rounded-lg object-cover bg-secondary" />
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] text-primary font-medium">{p.store.name}</p>
                       <h3 className="text-sm font-medium truncate">{p.name}</h3>

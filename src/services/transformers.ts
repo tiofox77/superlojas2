@@ -42,6 +42,9 @@ interface ApiStore {
   payment_methods?: { type: string; label: string; details: string; account: string; is_active: boolean }[] | null;
   show_stock?: boolean;
   is_official?: boolean;
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
   products?: ApiProduct[];
   hero_slides?: ApiHeroSlide[];
 }
@@ -63,6 +66,8 @@ interface ApiProduct {
   stock: number;
   description: string;
   variants: { type: string; options: string[] }[];
+  flash_sale_start: string | null;
+  flash_sale_end: string | null;
 }
 
 interface ApiHeroSlide {
@@ -112,6 +117,9 @@ export function transformStore(api: ApiStore): Store {
     paymentMethods: api.payment_methods ?? undefined,
     showStock: api.show_stock ?? true,
     isOfficial: api.is_official ?? false,
+    metaTitle: api.meta_title || undefined,
+    metaDescription: api.meta_description || undefined,
+    metaKeywords: api.meta_keywords || undefined,
   };
 }
 
@@ -132,6 +140,8 @@ export function transformProduct(api: ApiProduct): Product {
     stock: api.stock,
     description: api.description,
     variants: api.variants ?? [],
+    flashSaleStart: api.flash_sale_start ?? undefined,
+    flashSaleEnd: api.flash_sale_end ?? undefined,
   };
 }
 

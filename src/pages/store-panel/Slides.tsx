@@ -24,7 +24,7 @@ const isNoneGradient = (v: string) => !v || v === "none";
 export default function StorePanelSlides() {
   const { token } = useAuth();
   const s = useAdminStyles();
-  const { slug } = useOutletContext<{ slug: string }>();
+  const { slug, storeInfo } = useOutletContext<{ slug: string; storeInfo?: { plan?: { max_hero_slides: number; name: string } | null } }>();
   const toast = useToastNotification();
   const [slides, setSlides] = useState<SlideItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +49,17 @@ export default function StorePanelSlides() {
 
   useEffect(() => { fetchSlides(); }, [token, slug]);
 
-  const openCreate = () => { setEditSlide(null); setForm(emptyForm); setImageFile(null); setImagePreview(""); setFormError(""); setModalOpen(true); };
+  const plan = storeInfo?.plan;
+  const maxSlides = plan?.max_hero_slides ?? 0; // 0 = unlimited
+  const isAtSlideLimit = maxSlides > 0 && slides.length >= maxSlides;
+
+  const openCreate = () => {
+    if (isAtSlideLimit) {
+      toast.error("Limite atingido", `O seu plano (${plan?.name}) permite no maximo ${maxSlides} slide(s). Faca upgrade para adicionar mais.`);
+      return;
+    }
+    setEditSlide(null); setForm(emptyForm); setImageFile(null); setImagePreview(""); setFormError(""); setModalOpen(true);
+  };
   const openEdit = (sl: SlideItem) => {
     setEditSlide(sl);
     setForm({ title: sl.title, subtitle: sl.subtitle, cta: sl.cta, cta_link: sl.cta_link, bg_color: sl.bg_color });
@@ -91,9 +101,9 @@ export default function StorePanelSlides() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className={`text-lg font-bold ${s.textPrimary}`}>Hero Slides</h2>
-          <p className={`text-xs ${s.textMuted}`}>{slides.length} slides da sua loja</p>
+          <p className={`text-xs ${s.textMuted}`}>{maxSlides > 0 ? `${slides.length}/${maxSlides} slides (${plan?.name})` : `${slides.length} slides da sua loja`}</p>
         </div>
-        <button onClick={openCreate} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl ${s.btnPrimary} text-xs font-semibold shadow-sm`}>
+        <button onClick={openCreate} disabled={isAtSlideLimit} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl ${s.btnPrimary} text-xs font-semibold shadow-sm disabled:opacity-50`}>
           <Plus className="h-4 w-4" /> Novo Slide
         </button>
       </div>

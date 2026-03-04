@@ -55,7 +55,7 @@ const Cart = () => {
               <div className="space-y-4">
                 {storeItems.map((item) => (
                   <div key={item.product.id} className="flex gap-4">
-                    <img src={item.product.images[0]} alt={item.product.name} className="h-20 w-20 rounded-lg object-cover" />
+                    <img src={productImgSrc(item.product.images[0])} alt={item.product.name} className="h-20 w-20 rounded-lg object-cover" />
                     <div className="flex-1">
                       <Link to={`/produto/${item.product.slug}`} className="text-sm font-medium hover:text-primary">
                         {item.product.name}
