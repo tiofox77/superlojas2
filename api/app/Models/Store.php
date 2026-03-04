@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Store extends Model
 {
@@ -125,5 +126,27 @@ class Store extends Model
     public function activeSubscription(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(Subscription::class)->where('status', 'active')->latestOfMany();
+    }
+
+    /**
+     * Accessor: return logo only if the physical file exists on disk.
+     * Prevents broken images when DB has a path but file was never
+     * uploaded to this server (e.g. created on localhost, missing on cPanel).
+     */
+    public function getLogoAttribute($value): string
+    {
+        if (!$value || !str_starts_with($value, '/storage/')) return $value ?? '';
+        $diskPath = str_replace('/storage/', '', $value);
+        return Storage::disk('public')->exists($diskPath) ? $value : '';
+    }
+
+    /**
+     * Accessor: return banner only if the physical file exists on disk.
+     */
+    public function getBannerAttribute($value): string
+    {
+        if (!$value || !str_starts_with($value, '/storage/')) return $value ?? '';
+        $diskPath = str_replace('/storage/', '', $value);
+        return Storage::disk('public')->exists($diskPath) ? $value : '';
     }
 }
