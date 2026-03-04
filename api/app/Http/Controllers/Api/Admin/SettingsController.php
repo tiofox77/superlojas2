@@ -16,7 +16,17 @@ class SettingsController extends Controller
 {
     public function index()
     {
-        $settings = Setting::all()->pluck('value', 'key');
+        $settings = Setting::all()->pluck('value', 'key')->toArray();
+
+        // Convert storage paths to absolute URLs for logo/favicon/pwa icons
+        $imageKeys = ['site_logo', 'site_favicon', 'pwa_icon_192', 'pwa_icon_512', 'seo_og_image'];
+        $base = rtrim(config('app.url', ''), '/');
+        foreach ($imageKeys as $key) {
+            if (!empty($settings[$key]) && str_starts_with($settings[$key], '/storage/')) {
+                $settings[$key] = $base . $settings[$key];
+            }
+        }
+
         return response()->json($settings);
     }
 
@@ -65,7 +75,8 @@ class SettingsController extends Controller
         $path = SeoFileName::storePublic($request->file('file'), $folder, $slug);
         Setting::set($type, $path);
 
-        return response()->json(['message' => 'Ficheiro carregado com sucesso.', 'url' => $path]);
+        $absoluteUrl = rtrim(config('app.url', ''), '/') . $path;
+        return response()->json(['message' => 'Ficheiro carregado com sucesso.', 'url' => $absoluteUrl]);
     }
 
     /**

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { useCategories } from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const navLinks = [
   { label: "Início", to: "/", icon: null },
@@ -21,6 +22,7 @@ export function Header() {
   const { totalItems: wishlistCount } = useWishlist();
   const { data: globalCategories = [] } = useCategories();
   const { user, isAuthenticated, logout } = useAuth();
+  const { data: settings } = useSiteSettings();
   const [mobileMenu, setMobileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCategories, setShowCategories] = useState(false);
@@ -54,13 +56,19 @@ export function Header() {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 font-extrabold text-lg shrink-0">
-            <div className="h-9 w-9 rounded-xl bg-hero-gradient flex items-center justify-center shadow-md">
-              <Store className="h-4.5 w-4.5 text-primary-foreground" />
-            </div>
-            <div className="hidden sm:flex flex-col leading-none">
-              <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">Marketplace</span>
-              <span className="text-base font-extrabold">Super<span className="text-gradient">Lojas</span></span>
-            </div>
+            {settings?.site_logo ? (
+              <img src={settings.site_logo} alt={settings.site_name || "SuperLojas"} className="h-9 max-w-[160px] object-contain" />
+            ) : (
+              <>
+                <div className="h-9 w-9 rounded-xl bg-hero-gradient flex items-center justify-center shadow-md">
+                  <Store className="h-4.5 w-4.5 text-primary-foreground" />
+                </div>
+                <div className="hidden sm:flex flex-col leading-none">
+                  <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">Marketplace</span>
+                  <span className="text-base font-extrabold">Super<span className="text-gradient">Lojas</span></span>
+                </div>
+              </>
+            )}
           </Link>
 
           {/* Search */}

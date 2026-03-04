@@ -19,8 +19,8 @@ class SiteSettingsController extends Controller
         $public = [
             'site_name'        => $all['site_name'] ?? 'SuperLojas',
             'site_description' => $all['site_description'] ?? '',
-            'site_logo'        => $all['site_logo'] ?? '',
-            'site_favicon'     => $all['site_favicon'] ?? '',
+            'site_logo'        => $this->absoluteUrl($all['site_logo'] ?? ''),
+            'site_favicon'     => $this->absoluteUrl($all['site_favicon'] ?? ''),
             'contact_email'    => $all['contact_email'] ?? '',
             'contact_phone'    => $all['contact_phone'] ?? '',
             'contact_whatsapp' => $all['contact_whatsapp'] ?? '',
@@ -86,5 +86,15 @@ class SiteSettingsController extends Controller
         if (!$value) return $default;
         $decoded = json_decode($value, true);
         return is_array($decoded) ? $decoded : $default;
+    }
+
+    /**
+     * Convert a /storage/... path to an absolute URL.
+     */
+    private function absoluteUrl(string $path): string
+    {
+        if (!$path) return '';
+        if (str_starts_with($path, 'http')) return $path;
+        return rtrim(config('app.url', ''), '/') . $path;
     }
 }

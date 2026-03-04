@@ -19,10 +19,16 @@ export function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
             <Link to="/" className="flex items-center gap-2 font-extrabold text-lg mb-4">
-              <div className="h-7 w-7 rounded-lg bg-hero-gradient flex items-center justify-center">
-                <Store className="h-3.5 w-3.5 text-primary-foreground" />
-              </div>
-              Super<span className="text-gradient">Lojas</span>
+              {settings?.site_logo ? (
+                <img src={settings.site_logo} alt={settings.site_name || "SuperLojas"} className="h-8 max-w-[140px] object-contain" />
+              ) : (
+                <>
+                  <div className="h-7 w-7 rounded-lg bg-hero-gradient flex items-center justify-center">
+                    <Store className="h-3.5 w-3.5 text-primary-foreground" />
+                  </div>
+                  Super<span className="text-gradient">Lojas</span>
+                </>
+              )}
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {settings?.site_description || "O maior marketplace de Angola. Conectando lojas e clientes em todo o país."}

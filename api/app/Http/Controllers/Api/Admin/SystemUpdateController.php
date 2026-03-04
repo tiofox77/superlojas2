@@ -14,27 +14,6 @@ use Illuminate\Support\Facades\Log;
 class SystemUpdateController extends Controller
 {
     /**
-     * Build an HTTP client for GitHub API requests.
-     * Falls back to verify=false if the configured CA cert file is missing (e.g. Laragon path on cPanel).
-     */
-    private function githubHttp(): \Illuminate\Http\Client\PendingRequest
-    {
-        $headers = ['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'SuperLojas-Updater'];
-        $token = Setting::get('github_token');
-        if ($token) {
-            $headers['Authorization'] = 'Bearer ' . $token;
-        }
-
-        $verify = true;
-        $caInfo = ini_get('curl.cainfo');
-        if ($caInfo && !file_exists($caInfo)) {
-            $verify = false;
-        }
-
-        return Http::withHeaders($headers)->withOptions(['verify' => $verify]);
-    }
-
-    /**
      * Get update configuration (repo URL + current version).
      */
     public function config()
@@ -120,7 +99,13 @@ class SystemUpdateController extends Controller
         }
 
         try {
-            $response = $this->githubHttp()
+            $headers = ['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'SuperLojas-Updater'];
+            $token = Setting::get('github_token');
+            if ($token) {
+                $headers['Authorization'] = 'Bearer ' . $token;
+            }
+
+            $response = Http::withHeaders($headers)
                 ->timeout(15)
                 ->get("https://api.github.com/repos/{$repo}/releases", ['per_page' => 20]);
 
@@ -194,7 +179,13 @@ class SystemUpdateController extends Controller
         }
 
         try {
-            $response = $this->githubHttp()
+            $headers = ['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'SuperLojas-Updater'];
+            $token = Setting::get('github_token');
+            if ($token) {
+                $headers['Authorization'] = 'Bearer ' . $token;
+            }
+
+            $response = Http::withHeaders($headers)
                 ->timeout(10)
                 ->get("https://api.github.com/repos/{$repo}/releases/latest");
 
@@ -270,11 +261,14 @@ class SystemUpdateController extends Controller
             // ─── Step 1: Download zip ───
             $steps[] = ['step' => 'download', 'status' => 'running', 'message' => 'A descarregar release...'];
 
-            $response = $this->githubHttp()
-                ->withOptions(array_merge(
-                    ['allow_redirects' => true],
-                    (($ca = ini_get('curl.cainfo')) && !file_exists($ca)) ? ['verify' => false] : []
-                ))
+            $headers = ['User-Agent' => 'SuperLojas-Updater', 'Accept' => 'application/vnd.github.v3+json'];
+            $token = Setting::get('github_token');
+            if ($token) {
+                $headers['Authorization'] = 'Bearer ' . $token;
+            }
+
+            $response = Http::withHeaders($headers)
+                ->withOptions(['allow_redirects' => true])
                 ->timeout(120)
                 ->get($zipUrl);
 
@@ -554,7 +548,13 @@ class SystemUpdateController extends Controller
         }
 
         try {
-            $response = $this->githubHttp()
+            $headers = ['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'SuperLojas-Updater'];
+            $token = Setting::get('github_token');
+            if ($token) {
+                $headers['Authorization'] = 'Bearer ' . $token;
+            }
+
+            $response = Http::withHeaders($headers)
                 ->timeout(10)
                 ->get("https://api.github.com/repos/{$repo}");
 

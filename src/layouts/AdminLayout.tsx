@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminThemeProvider, useAdminTheme } from "@/contexts/AdminThemeContext";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import { useState } from "react";
 import {
@@ -31,6 +32,7 @@ const sidebarNav = [
 function AdminLayoutInner() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const { isDark, toggleTheme } = useAdminTheme();
+  const { data: settings } = useSiteSettings();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const location = useLocation();
@@ -82,14 +84,20 @@ function AdminLayoutInner() {
         {/* Logo */}
         <div className={`flex items-center ${sidebarOpen ? "px-5" : "px-3 justify-center"} h-16 border-b ${borderColor}`}>
           <Link to="/admin" className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center shadow-lg shadow-orange-500/20 shrink-0">
-              <ShieldCheck className="h-5 w-5 text-white" />
-            </div>
-            {sidebarOpen && (
-              <div className="flex flex-col leading-none">
-                <span className={`text-[10px] font-medium ${textMuted} uppercase tracking-widest`}>Admin</span>
-                <span className={`text-sm font-bold ${textPrimary}`}>SuperLojas</span>
-              </div>
+            {settings?.site_logo ? (
+              <img src={settings.site_logo} alt={settings.site_name || "SuperLojas"} className={`${sidebarOpen ? "h-9 max-w-[140px]" : "h-8 w-8 rounded-lg"} object-contain`} />
+            ) : (
+              <>
+                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center shadow-lg shadow-orange-500/20 shrink-0">
+                  <ShieldCheck className="h-5 w-5 text-white" />
+                </div>
+                {sidebarOpen && (
+                  <div className="flex flex-col leading-none">
+                    <span className={`text-[10px] font-medium ${textMuted} uppercase tracking-widest`}>Admin</span>
+                    <span className={`text-sm font-bold ${textPrimary}`}>{settings?.site_name || "SuperLojas"}</span>
+                  </div>
+                )}
+              </>
             )}
           </Link>
         </div>
@@ -139,10 +147,16 @@ function AdminLayoutInner() {
           <aside className={`absolute left-0 top-0 bottom-0 w-72 ${isDark ? "bg-[#13151b]" : "bg-white"} border-r ${borderColor} flex flex-col`}>
             <div className={`flex items-center justify-between px-5 h-16 border-b ${borderColor}`}>
               <Link to="/admin" className="flex items-center gap-2.5" onClick={() => setMobileSidebar(false)}>
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center">
-                  <ShieldCheck className="h-5 w-5 text-white" />
-                </div>
-                <span className={`text-sm font-bold ${textPrimary}`}>SuperLojas</span>
+                {settings?.site_logo ? (
+                  <img src={settings.site_logo} alt={settings.site_name || "SuperLojas"} className="h-9 max-w-[140px] object-contain" />
+                ) : (
+                  <>
+                    <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center">
+                      <ShieldCheck className="h-5 w-5 text-white" />
+                    </div>
+                    <span className={`text-sm font-bold ${textPrimary}`}>{settings?.site_name || "SuperLojas"}</span>
+                  </>
+                )}
               </Link>
               <button onClick={() => setMobileSidebar(false)} className={textMuted}><X className="h-5 w-5" /></button>
             </div>
