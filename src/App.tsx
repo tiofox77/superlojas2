@@ -66,6 +66,8 @@ import ClientOrders from "./pages/client/Orders";
 import ClientProfile from "./pages/client/Profile";
 import ClientAddresses from "./pages/client/Addresses";
 import ClientSecurity from "./pages/client/Security";
+import ClientFollowing from "./pages/client/Following";
+import ClientFeed from "./pages/client/Feed";
 import { SubdomainStoreProvider } from "./contexts/SubdomainStoreContext";
 import SubdomainStoreLayout from "./layouts/SubdomainStoreLayout";
 import { isSubdomainMode } from "./hooks/useSubdomain";
@@ -171,6 +173,8 @@ const App = () => (
                   <Route path="perfil" element={<ClientProfile />} />
                   <Route path="enderecos" element={<ClientAddresses />} />
                   <Route path="seguranca" element={<ClientSecurity />} />
+                  <Route path="seguindo" element={<ClientFollowing />} />
+                  <Route path="feed" element={<ClientFeed />} />
                 </Route>
                 {/* Storefront — layout normal com Header/Footer */}
                 <Route path="/*" element={<StoreFrontLayout />} />

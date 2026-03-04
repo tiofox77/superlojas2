@@ -117,6 +117,11 @@ class Store extends Model
         return $this->hasMany(Subscription::class)->orderByDesc('created_at');
     }
 
+    public function followers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'store_follows')->withTimestamps();
+    }
+
     public function activeSubscription(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(Subscription::class)->where('status', 'active')->latestOfMany();

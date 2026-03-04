@@ -3,12 +3,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AdminThemeProvider, useAdminTheme } from "@/contexts/AdminThemeContext";
 import { useState } from "react";
 import {
-  LayoutDashboard, Package, MapPin, User, Lock,
+  LayoutDashboard, Package, MapPin, User, Lock, Rss,
   LogOut, Menu, X, Sun, Moon, ChevronLeft, ArrowLeft, Home, Heart, Store
 } from "lucide-react";
 
 const sidebarNav = [
   { label: "Dashboard", path: "", icon: LayoutDashboard, end: true, color: "text-blue-500" },
+  { label: "Feed", path: "/feed", icon: Rss, color: "text-orange-500" },
+  { label: "Lojas Seguidas", path: "/seguindo", icon: Heart, color: "text-pink-500" },
   { label: "Meus Pedidos", path: "/pedidos", icon: Package, color: "text-amber-500" },
   { label: "Enderecos", path: "/enderecos", icon: MapPin, color: "text-emerald-500" },
   { label: "Perfil", path: "/perfil", icon: User, color: "text-purple-500" },

@@ -18,6 +18,8 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { logoSrc, bannerSrc, productImgSrc, onImgError } from "@/lib/imageHelpers";
 import StoreSeoHead from "@/components/StoreSeoHead";
+import { useFollowStatus, useFollowToggle } from "@/hooks/useFollow";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* ─── TikTok Icon ─── */
 function TikTokIcon({ className }: { className?: string }) {
@@ -126,6 +128,9 @@ const StoreDetail = () => {
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const countdown = useCountdown();
+  const { isAuthenticated } = useAuth();
+  const { data: followData } = useFollowStatus(storeData?.id || "");
+  const followMutation = useFollowToggle(storeData?.id || "");
 
   if (isLoading) {
     return (
@@ -373,9 +378,25 @@ const StoreDetail = () => {
                     <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                   </Button>
                 </a>
-                <Button variant="outline" size="sm" className="gap-1 rounded-xl text-xs h-8 bg-card/80 backdrop-blur border-border">
-                  <Heart className="h-3.5 w-3.5" /> Seguir Loja
-                </Button>
+                {isAuthenticated ? (
+                  <Button
+                    variant={followData?.is_following ? "default" : "outline"}
+                    size="sm"
+                    className={`gap-1 rounded-xl text-xs h-8 ${followData?.is_following ? "bg-primary text-primary-foreground" : "bg-card/80 backdrop-blur border-border"}`}
+                    onClick={() => followMutation.mutate(followData?.is_following ? "unfollow" : "follow")}
+                    disabled={followMutation.isPending}
+                  >
+                    <Heart className={`h-3.5 w-3.5 ${followData?.is_following ? "fill-current" : ""}`} />
+                    {followData?.is_following ? "Seguindo" : "Seguir Loja"}
+                    {followData?.followers_count ? ` (${followData.followers_count})` : ""}
+                  </Button>
+                ) : (
+                  <Link to="/entrar">
+                    <Button variant="outline" size="sm" className="gap-1 rounded-xl text-xs h-8 bg-card/80 backdrop-blur border-border">
+                      <Heart className="h-3.5 w-3.5" /> Seguir Loja
+                    </Button>
+                  </Link>
+                )}
                 <Button variant="outline" size="sm" className="gap-1 rounded-xl text-xs h-8 bg-card/80 backdrop-blur border-border">
                   <Phone className="h-3.5 w-3.5" /> Ligar
                 </Button>

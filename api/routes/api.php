@@ -185,6 +185,13 @@ Route::middleware('auth:sanctum')->prefix('client')->group(function () {
     Route::put('/password', [ClientPanelController::class, 'changePassword']);
     Route::get('/addresses', [ClientPanelController::class, 'addresses']);
     Route::put('/addresses', [ClientPanelController::class, 'saveAddresses']);
+
+    // Follow stores
+    Route::post('/follow/{store}', [\App\Http\Controllers\Api\FollowController::class, 'follow']);
+    Route::delete('/follow/{store}', [\App\Http\Controllers\Api\FollowController::class, 'unfollow']);
+    Route::get('/follow/{store}/status', [\App\Http\Controllers\Api\FollowController::class, 'status']);
+    Route::get('/following', [\App\Http\Controllers\Api\FollowController::class, 'following']);
+    Route::get('/feed', [\App\Http\Controllers\Api\FollowController::class, 'feed']);
 });
 
 // ─── Store Owner Panel routes ────────────────────────────────
