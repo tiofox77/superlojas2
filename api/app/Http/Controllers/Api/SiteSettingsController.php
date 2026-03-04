@@ -21,6 +21,8 @@ class SiteSettingsController extends Controller
             'site_description' => $all['site_description'] ?? '',
             'site_logo'        => $this->absoluteUrl($all['site_logo'] ?? ''),
             'site_favicon'     => $this->absoluteUrl($all['site_favicon'] ?? ''),
+            'logo_navbar_height' => (int) ($all['logo_navbar_height'] ?? 40),
+            'logo_footer_height' => (int) ($all['logo_footer_height'] ?? 32),
             'contact_email'    => $all['contact_email'] ?? '',
             'contact_phone'    => $all['contact_phone'] ?? '',
             'contact_whatsapp' => $all['contact_whatsapp'] ?? '',

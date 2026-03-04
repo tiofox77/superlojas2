@@ -57,7 +57,7 @@ export function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 font-extrabold text-lg shrink-0">
             {settings?.site_logo ? (
-              <img src={settings.site_logo} alt={settings.site_name || "SuperLojas"} className="h-9 max-w-[160px] object-contain" />
+              <img src={settings.site_logo} alt={settings.site_name || "SuperLojas"} style={{ height: `${settings.logo_navbar_height || 40}px` }} className="max-w-[200px] object-contain" />
             ) : (
               <>
                 <div className="h-9 w-9 rounded-xl bg-hero-gradient flex items-center justify-center shadow-md">

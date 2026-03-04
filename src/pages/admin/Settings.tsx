@@ -96,6 +96,8 @@ export default function AdminSettings() {
   const [siteLogo, setSiteLogo] = useState("");
   const [siteFavicon, setSiteFavicon] = useState("");
   const [uploading, setUploading] = useState("");
+  const [logoNavbarHeight, setLogoNavbarHeight] = useState(40);
+  const [logoFooterHeight, setLogoFooterHeight] = useState(32);
   const logoRef = useRef<HTMLInputElement>(null);
   const faviconRef = useRef<HTMLInputElement>(null);
 
@@ -207,6 +209,8 @@ export default function AdminSettings() {
         // General images
         if (d.site_logo) setSiteLogo(d.site_logo);
         if (d.site_favicon) setSiteFavicon(d.site_favicon);
+        if (d.logo_navbar_height) setLogoNavbarHeight(parseInt(d.logo_navbar_height) || 40);
+        if (d.logo_footer_height) setLogoFooterHeight(parseInt(d.logo_footer_height) || 32);
         // SEO
         if (d.seo_title) setSeoTitle(d.seo_title);
         if (d.seo_description) setSeoDescription(d.seo_description);
@@ -257,6 +261,8 @@ export default function AdminSettings() {
     site_description: siteDescription,
     store_auto_approve: storeAutoApprove ? 'true' : 'false',
     category_themes_enabled: categoryThemesEnabled ? 'true' : 'false',
+    logo_navbar_height: String(logoNavbarHeight),
+    logo_footer_height: String(logoFooterHeight),
   });
 
   const saveMarquee = () => saveKV({
@@ -462,6 +468,46 @@ export default function AdminSettings() {
                   </button>
                   <p className={`text-[10px] ${s.textMuted}`}>PNG, ICO ate 512KB. Recomendado: 32x32 ou 64x64px</p>
                   <input ref={faviconRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f, "site_favicon"); e.target.value = ""; }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Logo Size Controls */}
+            <div className={`rounded-xl p-4 border ${s.borderLight} space-y-4`}>
+              <div className="flex items-center gap-2">
+                <Monitor className="h-4 w-4 text-blue-500" />
+                <span className={`text-xs font-semibold ${s.textPrimary}`}>Tamanho do Logo</span>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={`text-[11px] font-medium ${s.textMuted}`}>Navbar (Cabecalho)</label>
+                    <span className={`text-[11px] font-bold ${s.textPrimary}`}>{logoNavbarHeight}px</span>
+                  </div>
+                  <input type="range" min={20} max={80} step={2} value={logoNavbarHeight} onChange={(e) => setLogoNavbarHeight(Number(e.target.value))}
+                    className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-blue-500" />
+                  <div className="flex justify-between mt-0.5">
+                    <span className={`text-[9px] ${s.textMuted}`}>20px</span>
+                    <span className={`text-[9px] ${s.textMuted}`}>80px</span>
+                  </div>
+                  {siteLogo && <div className={`mt-2 p-2 rounded-lg border ${s.borderLight} flex items-center justify-center`}>
+                    <img src={siteLogo} alt="Preview navbar" style={{ height: `${logoNavbarHeight}px` }} className="object-contain max-w-[200px]" />
+                  </div>}
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={`text-[11px] font-medium ${s.textMuted}`}>Footer (Rodape)</label>
+                    <span className={`text-[11px] font-bold ${s.textPrimary}`}>{logoFooterHeight}px</span>
+                  </div>
+                  <input type="range" min={16} max={64} step={2} value={logoFooterHeight} onChange={(e) => setLogoFooterHeight(Number(e.target.value))}
+                    className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-blue-500" />
+                  <div className="flex justify-between mt-0.5">
+                    <span className={`text-[9px] ${s.textMuted}`}>16px</span>
+                    <span className={`text-[9px] ${s.textMuted}`}>64px</span>
+                  </div>
+                  {siteLogo && <div className={`mt-2 p-2 rounded-lg border ${s.borderLight} flex items-center justify-center`}>
+                    <img src={siteLogo} alt="Preview footer" style={{ height: `${logoFooterHeight}px` }} className="object-contain max-w-[180px]" />
+                  </div>}
                 </div>
               </div>
             </div>

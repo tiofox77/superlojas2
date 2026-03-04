@@ -6,6 +6,8 @@ export interface SiteSettings {
   site_description: string;
   site_logo: string;
   site_favicon: string;
+  logo_navbar_height: number;
+  logo_footer_height: number;
   contact_email: string;
   contact_phone: string;
   contact_whatsapp: string;
@@ -30,6 +32,8 @@ const DEFAULTS: SiteSettings = {
   site_description: "O maior marketplace de Angola",
   site_logo: "",
   site_favicon: "",
+  logo_navbar_height: 40,
+  logo_footer_height: 32,
   contact_email: "info@superlojas.ao",
   contact_phone: "+244 923 456 789",
   contact_whatsapp: "+244 923 456 789",

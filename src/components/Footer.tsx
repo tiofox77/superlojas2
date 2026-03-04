@@ -20,7 +20,7 @@ export function Footer() {
           <div>
             <Link to="/" className="flex items-center gap-2 font-extrabold text-lg mb-4">
               {settings?.site_logo ? (
-                <img src={settings.site_logo} alt={settings.site_name || "SuperLojas"} className="h-8 max-w-[140px] object-contain" />
+                <img src={settings.site_logo} alt={settings.site_name || "SuperLojas"} style={{ height: `${settings.logo_footer_height || 32}px` }} className="max-w-[180px] object-contain" />
               ) : (
                 <>
                   <div className="h-7 w-7 rounded-lg bg-hero-gradient flex items-center justify-center">
