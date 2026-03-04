@@ -96,7 +96,18 @@ class SiteSettingsController extends Controller
     private function absoluteUrl(string $path): string
     {
         if (!$path) return '';
-        if (str_starts_with($path, 'http')) return $path;
-        return rtrim(config('app.url', ''), '/') . $path;
+        if (str_starts_with($path, 'http')) {
+            // Upgrade to HTTPS if current request is HTTPS (prevents mixed content)
+            if (request()->isSecure() && str_starts_with($path, 'http://')) {
+                return 'https://' . substr($path, 7);
+            }
+            return $path;
+        }
+        $base = rtrim(config('app.url', ''), '/');
+        // Match scheme to current request to avoid mixed content
+        if (request()->isSecure() && str_starts_with($base, 'http://')) {
+            $base = 'https://' . substr($base, 7);
+        }
+        return $base . $path;
     }
 }
