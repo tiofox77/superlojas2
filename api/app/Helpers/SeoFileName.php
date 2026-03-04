@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class SeoFileName
@@ -31,20 +32,57 @@ class SeoFileName
 
         $name = $base . '-superloja.' . $ext;
 
+        // Ensure directory exists physically
+        $storage = Storage::disk($disk);
+        if (!$storage->exists($folder)) {
+            $storage->makeDirectory($folder);
+        }
+
         // Avoid overwriting: if file exists, append a short unique suffix
         $storagePath = $folder . '/' . $name;
-        if (\Illuminate\Support\Facades\Storage::disk($disk)->exists($storagePath)) {
+        if ($storage->exists($storagePath)) {
             $name = $base . '-' . substr(uniqid(), -5) . '-superloja.' . $ext;
         }
 
-        return $file->storeAs($folder, $name, $disk);
+        $result = $file->storeAs($folder, $name, $disk);
+
+        if ($result === false) {
+            throw new \RuntimeException("Falha ao guardar ficheiro em {$folder}/{$name}. Verifique permissoes do directorio storage.");
+        }
+
+        return $result;
     }
 
     /**
      * Convenience: store and return the public /storage/ prefixed path.
+     * Also ensures the storage:link symlink exists.
      */
     public static function storePublic(UploadedFile $file, string $folder, string $slug, string $suffix = ''): string
     {
+        static::ensureStorageLink();
         return '/storage/' . static::store($file, $folder, $slug, $suffix, 'public');
+    }
+
+    /**
+     * Ensure the public storage symlink exists.
+     * On cPanel/shared hosts, the symlink may be missing after deploys.
+     */
+    private static function ensureStorageLink(): void
+    {
+        $publicPath = public_path('storage');
+        $storagePath = storage_path('app/public');
+
+        if (!is_link($publicPath) && !is_dir($publicPath)) {
+            try {
+                // Try symlink first
+                if (@symlink($storagePath, $publicPath)) {
+                    return;
+                }
+                // Fallback: run artisan command
+                \Illuminate\Support\Facades\Artisan::call('storage:link');
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Could not create storage link: ' . $e->getMessage());
+            }
+        }
     }
 }

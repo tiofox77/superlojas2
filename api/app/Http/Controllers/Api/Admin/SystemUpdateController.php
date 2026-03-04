@@ -403,11 +403,13 @@ class SystemUpdateController extends Controller
                 Artisan::call('route:clear');
                 Artisan::call('view:clear');
                 Artisan::call('cache:clear');
+                // Ensure storage symlink exists after update
+                Artisan::call('storage:link');
             } catch (\Throwable $e) {
                 Log::warning('Cache clear error during update', ['error' => $e->getMessage()]);
             }
 
-            $steps[] = ['step' => 'cache', 'status' => 'done', 'message' => 'Caches limpos'];
+            $steps[] = ['step' => 'cache', 'status' => 'done', 'message' => 'Caches limpos + storage link verificado'];
 
             // ─── Step 7b: Patch dist/ with server .env values ───
             $steps[] = ['step' => 'patch_env', 'status' => 'running', 'message' => 'A aplicar variaveis de ambiente no frontend...'];
