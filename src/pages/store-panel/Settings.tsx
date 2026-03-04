@@ -8,6 +8,7 @@ import {
   Truck, MapPin, Phone, Mail, Info, ToggleLeft, ToggleRight, Package
 } from "lucide-react";
 import { useToastNotification } from "@/contexts/ToastContext";
+import { resolveStorageUrl } from "@/lib/imageHelpers";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
@@ -94,8 +95,8 @@ export default function StorePanelSettings() {
           delivery_zones: d.delivery_zones ? d.delivery_zones.join(", ") : "", min_order_value: d.min_order_value ? String(d.min_order_value) : "",
           socials: { instagram: d.socials?.instagram || "", facebook: d.socials?.facebook || "", tiktok: d.socials?.tiktok || "", website: d.socials?.website || "" },
         });
-        setLogoPreview(d.logo || "");
-        setBannerPreview(d.banner || "");
+        setLogoPreview(d.logo ? resolveStorageUrl(d.logo) : "");
+        setBannerPreview(d.banner ? resolveStorageUrl(d.banner) : "");
       })
       .finally(() => setLoading(false));
   }, [token, slug]);
@@ -139,7 +140,7 @@ export default function StorePanelSettings() {
     try {
       const res = await fetch(`${API}/store-panel/${slug}/settings`, { method: "POST", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }, body: fd });
       const data = await res.json();
-      if (res.ok) { setLogoPreview(data.logo || logoPreview); setBannerPreview(data.banner || bannerPreview); toast.success("Configuracoes guardadas", "As alteracoes foram aplicadas."); }
+      if (res.ok) { setLogoPreview(data.logo ? resolveStorageUrl(data.logo) : logoPreview); setBannerPreview(data.banner ? resolveStorageUrl(data.banner) : bannerPreview); toast.success("Configuracoes guardadas", "As alteracoes foram aplicadas."); }
       else { toast.error("Erro", data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.message || "Erro"); }
     } finally { setSaving(false); }
   };

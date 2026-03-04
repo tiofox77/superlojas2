@@ -409,6 +409,13 @@ class SystemUpdateController extends Controller
 
             $steps[] = ['step' => 'cache', 'status' => 'done', 'message' => 'Caches limpos'];
 
+            // ─── Step 7b: Patch dist/ with server .env values ───
+            $steps[] = ['step' => 'patch_env', 'status' => 'running', 'message' => 'A aplicar variaveis de ambiente no frontend...'];
+
+            $patched = $this->patchDistEnv($projectRoot);
+
+            $steps[] = ['step' => 'patch_env', 'status' => 'done', 'message' => $patched > 0 ? "{$patched} ficheiro(s) JS actualizados com .env do servidor" : 'Sem alteracoes necessarias'];
+
             // ─── Step 8: Update version ───
             $cleanTag = ltrim($tag, 'vV');
             Setting::set('current_version', $cleanTag);
@@ -538,6 +545,88 @@ class SystemUpdateController extends Controller
         }
 
         return $http;
+    }
+
+    /**
+     * Patch dist/ JS files with VITE_ env vars from the server's .env file.
+     * This ensures that after a GitHub release update, the frontend uses
+     * the correct API URL and domain instead of the dev machine's values.
+     */
+    private function patchDistEnv(string $projectRoot): int
+    {
+        $envFile = $projectRoot . '/.env';
+        if (!File::exists($envFile)) return 0;
+
+        // Parse VITE_ variables from the server's .env
+        $envContent = File::get($envFile);
+        $serverVars = [];
+        foreach (explode("\n", $envContent) as $line) {
+            $line = trim($line);
+            if (!$line || str_starts_with($line, '#')) continue;
+            if (str_starts_with($line, 'VITE_')) {
+                [$key, $value] = array_pad(explode('=', $line, 2), 2, '');
+                $serverVars[trim($key)] = trim($value, " \t\n\r\0\x0B\"'");
+            }
+        }
+
+        if (empty($serverVars)) return 0;
+
+        // Find all JS files in dist/assets/
+        $distDir = $projectRoot . '/dist/assets';
+        if (!is_dir($distDir)) return 0;
+
+        $patched = 0;
+        $jsFiles = glob($distDir . '/*.js');
+
+        foreach ($jsFiles as $jsFile) {
+            $content = File::get($jsFile);
+            $original = $content;
+
+            foreach ($serverVars as $key => $value) {
+                // Vite bakes env vars as string literals in the JS bundle
+                // Match patterns like: "http://127.0.0.1:8000/api" or "localhost"
+                // We search for the env key reference pattern and replace known dev values
+                // The safest approach: replace any URL that looks like a VITE_API_URL value
+                if ($key === 'VITE_API_URL') {
+                    // Replace common dev API URLs with the server's value
+                    $devPatterns = [
+                        'http://127.0.0.1:8000/api',
+                        'http://localhost:8000/api',
+                        'https://127.0.0.1:8000/api',
+                        'https://localhost:8000/api',
+                        'http://lojas.test/api',
+                        'https://lojas.test/api',
+                    ];
+                    foreach ($devPatterns as $devUrl) {
+                        if ($devUrl !== $value) {
+                            $content = str_replace($devUrl, $value, $content);
+                        }
+                    }
+                }
+                if ($key === 'VITE_BASE_DOMAIN') {
+                    $devDomains = [
+                        'lojas.test',
+                        'localhost',
+                        '127.0.0.1',
+                    ];
+                    foreach ($devDomains as $devDomain) {
+                        // Only replace in specific VITE context, not all occurrences
+                        // Look for the pattern: "lojas.test" (quoted string in JS)
+                        if ($devDomain !== $value) {
+                            $content = str_replace('"' . $devDomain . '"', '"' . $value . '"', $content);
+                            $content = str_replace("'" . $devDomain . "'", "'" . $value . "'", $content);
+                        }
+                    }
+                }
+            }
+
+            if ($content !== $original) {
+                File::put($jsFile, $content);
+                $patched++;
+            }
+        }
+
+        return $patched;
     }
 
     /**

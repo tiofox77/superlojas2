@@ -13,13 +13,13 @@ const PLACEHOLDER_PRODUCT =
 
 /** Get a safe logo URL with fallback */
 export function logoSrc(url: string | undefined | null, name = ""): string {
-  if (url && url.trim()) return url;
+  if (url && url.trim()) return resolveStorageUrl(url);
   return PLACEHOLDER_LOGO(name);
 }
 
 /** Get a safe banner URL with fallback */
 export function bannerSrc(url: string | undefined | null): string {
-  if (url && url.trim()) return url;
+  if (url && url.trim()) return resolveStorageUrl(url);
   return PLACEHOLDER_BANNER;
 }
 
