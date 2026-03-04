@@ -23,11 +23,12 @@ export function bannerSrc(url: string | undefined | null): string {
   return PLACEHOLDER_BANNER;
 }
 
-const BASE = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(/\/api\/?$/, "");
+const API_URL = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(/\/api\/?$/, "");
 
-/** Resolve /storage/ paths to absolute URLs */
+/** Resolve /storage/ paths to absolute URLs (storage lives under /api/storage/) */
 export function resolveStorageUrl(url: string): string {
-  return url.startsWith("/storage") ? `${BASE}${url}` : url;
+  if (!url || !url.startsWith("/storage")) return url;
+  return `${API_URL}/api${url}`;
 }
 
 /** Get a safe product image URL with fallback */
