@@ -99,14 +99,7 @@ class SystemUpdateController extends Controller
         }
 
         try {
-            $headers = ['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'SuperLojas-Updater'];
-            $token = Setting::get('github_token');
-            if ($token) {
-                $headers['Authorization'] = 'Bearer ' . $token;
-            }
-
-            $response = Http::withHeaders($headers)
-                ->timeout(15)
+            $response = $this->githubHttp(15)
                 ->get("https://api.github.com/repos/{$repo}/releases", ['per_page' => 20]);
 
             if ($response->failed()) {
@@ -179,14 +172,7 @@ class SystemUpdateController extends Controller
         }
 
         try {
-            $headers = ['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'SuperLojas-Updater'];
-            $token = Setting::get('github_token');
-            if ($token) {
-                $headers['Authorization'] = 'Bearer ' . $token;
-            }
-
-            $response = Http::withHeaders($headers)
-                ->timeout(10)
+            $response = $this->githubHttp(10)
                 ->get("https://api.github.com/repos/{$repo}/releases/latest");
 
             if ($response->failed()) {
@@ -261,15 +247,7 @@ class SystemUpdateController extends Controller
             // ─── Step 1: Download zip ───
             $steps[] = ['step' => 'download', 'status' => 'running', 'message' => 'A descarregar release...'];
 
-            $headers = ['User-Agent' => 'SuperLojas-Updater', 'Accept' => 'application/vnd.github.v3+json'];
-            $token = Setting::get('github_token');
-            if ($token) {
-                $headers['Authorization'] = 'Bearer ' . $token;
-            }
-
-            $response = Http::withHeaders($headers)
-                ->withOptions(['allow_redirects' => true])
-                ->timeout(120)
+            $response = $this->githubHttp(120)
                 ->get($zipUrl);
 
             if ($response->failed()) {
@@ -538,6 +516,31 @@ class SystemUpdateController extends Controller
     }
 
     /**
+     * Build an HTTP client for GitHub API with proper SSL handling.
+     */
+    private function githubHttp(int $timeout = 15): \Illuminate\Http\Client\PendingRequest
+    {
+        $headers = ['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'SuperLojas-Updater'];
+        $token = Setting::get('github_token');
+        if ($token) {
+            $headers['Authorization'] = 'Bearer ' . $token;
+        }
+
+        $http = Http::withHeaders($headers)->timeout($timeout);
+
+        // Use system CA bundle if available, otherwise disable verify
+        // This prevents cURL error 77 on misconfigured local/shared hosts
+        $caPath = ini_get('curl.cainfo') ?: ini_get('openssl.cafile');
+        if ($caPath && file_exists($caPath)) {
+            $http = $http->withOptions(['verify' => $caPath]);
+        } else {
+            $http = $http->withOptions(['verify' => false]);
+        }
+
+        return $http;
+    }
+
+    /**
      * Get repository info (stars, forks, etc.)
      */
     public function repoInfo()
@@ -548,14 +551,7 @@ class SystemUpdateController extends Controller
         }
 
         try {
-            $headers = ['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'SuperLojas-Updater'];
-            $token = Setting::get('github_token');
-            if ($token) {
-                $headers['Authorization'] = 'Bearer ' . $token;
-            }
-
-            $response = Http::withHeaders($headers)
-                ->timeout(10)
+            $response = $this->githubHttp(10)
                 ->get("https://api.github.com/repos/{$repo}");
 
             if ($response->failed()) {
