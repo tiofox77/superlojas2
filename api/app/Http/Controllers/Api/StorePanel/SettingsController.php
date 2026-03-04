@@ -94,18 +94,49 @@ class SettingsController extends Controller
             $data['socials'] = json_decode($data['socials'], true);
         }
 
+        $disk = Storage::disk('public');
+        $logoFolder = "stores/{$store->id}/logos";
+        $bannerFolder = "stores/{$store->id}/banners";
+
+        // Ensure store folders exist physically
+        if (!$disk->exists($logoFolder)) $disk->makeDirectory($logoFolder);
+        if (!$disk->exists($bannerFolder)) $disk->makeDirectory($bannerFolder);
+
         if ($request->hasFile('logo')) {
+            // Delete old file if it exists physically
             if ($store->logo && str_starts_with($store->logo, '/storage/')) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $store->logo));
+                $oldPath = str_replace('/storage/', '', $store->logo);
+                if ($disk->exists($oldPath)) {
+                    $disk->delete($oldPath);
+                }
             }
-            $data['logo'] = SeoFileName::storePublic($request->file('logo'), "stores/{$store->id}/logos", $store->slug, 'logo');
+            $data['logo'] = SeoFileName::storePublic($request->file('logo'), $logoFolder, $store->slug, 'logo');
+        } else {
+            // No new file uploaded — check if existing DB path points to a real file
+            if ($store->logo && str_starts_with($store->logo, '/storage/')) {
+                $existingPath = str_replace('/storage/', '', $store->logo);
+                if (!$disk->exists($existingPath)) {
+                    // File missing physically — clear the DB path so frontend shows placeholder
+                    $data['logo'] = '';
+                }
+            }
         }
 
         if ($request->hasFile('banner')) {
             if ($store->banner && str_starts_with($store->banner, '/storage/')) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $store->banner));
+                $oldPath = str_replace('/storage/', '', $store->banner);
+                if ($disk->exists($oldPath)) {
+                    $disk->delete($oldPath);
+                }
             }
-            $data['banner'] = SeoFileName::storePublic($request->file('banner'), "stores/{$store->id}/banners", $store->slug, 'banner');
+            $data['banner'] = SeoFileName::storePublic($request->file('banner'), $bannerFolder, $store->slug, 'banner');
+        } else {
+            if ($store->banner && str_starts_with($store->banner, '/storage/')) {
+                $existingPath = str_replace('/storage/', '', $store->banner);
+                if (!$disk->exists($existingPath)) {
+                    $data['banner'] = '';
+                }
+            }
         }
 
         $store->update($data);
