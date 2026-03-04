@@ -67,6 +67,9 @@ export interface Product {
   variants: ProductVariant[];
   flashSaleStart?: string;
   flashSaleEnd?: string;
+  subcategory?: string;
+  categoryId?: string;
+  subcategoryId?: string;
 }
 
 export interface HeroSlide {

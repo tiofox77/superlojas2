@@ -68,6 +68,10 @@ interface ApiProduct {
   variants: { type: string; options: string[] }[];
   flash_sale_start: string | null;
   flash_sale_end: string | null;
+  category_id: number | null;
+  subcategory_id: number | null;
+  subcategory?: { id: number; name: string; slug: string } | null;
+  category_relation?: { id: number; name: string; slug: string } | null;
 }
 
 interface ApiHeroSlide {
@@ -142,6 +146,9 @@ export function transformProduct(api: ApiProduct): Product {
     variants: api.variants ?? [],
     flashSaleStart: api.flash_sale_start ?? undefined,
     flashSaleEnd: api.flash_sale_end ?? undefined,
+    subcategory: api.subcategory?.name ?? undefined,
+    categoryId: api.category_id ? String(api.category_id) : undefined,
+    subcategoryId: api.subcategory_id ? String(api.subcategory_id) : undefined,
   };
 }
 

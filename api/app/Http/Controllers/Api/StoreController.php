@@ -36,7 +36,7 @@ class StoreController extends Controller
     public function show(string $slug)
     {
         $store = Store::where('slug', $slug)
-            ->with(['products', 'heroSlides' => function ($q) {
+            ->with(['products.subcategory', 'products.categoryRelation', 'heroSlides' => function ($q) {
                 $q->orderBy('sort_order');
             }])
             ->firstOrFail();
