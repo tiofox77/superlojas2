@@ -57,8 +57,8 @@ class SettingsController extends Controller
         $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
-            'logo' => 'sometimes|file|image|max:2048',
-            'banner' => 'sometimes|file|image|max:4096',
+            'logo' => 'sometimes|file|image|max:6144',
+            'banner' => 'sometimes|file|image|max:6144',
             'province' => 'sometimes|string',
             'city' => 'sometimes|string',
             'whatsapp' => 'sometimes|string',

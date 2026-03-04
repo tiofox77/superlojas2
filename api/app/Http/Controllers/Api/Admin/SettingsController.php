@@ -49,7 +49,7 @@ class SettingsController extends Controller
     public function uploadFile(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|image|max:2048',
+            'file' => 'required|file|image|max:6144',
             'type' => 'required|in:site_logo,site_favicon,pwa_icon_192,pwa_icon_512',
         ]);
 

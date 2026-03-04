@@ -106,7 +106,7 @@ class ClientPanelController extends Controller
         $request->validate([
             'name' => 'sometimes|string|max:255',
             'phone' => 'sometimes|nullable|string|max:30',
-            'avatar' => 'sometimes|nullable|file|image|max:2048',
+            'avatar' => 'sometimes|nullable|file|image|max:6144',
         ]);
 
         if ($request->has('name')) $user->name = $request->name;

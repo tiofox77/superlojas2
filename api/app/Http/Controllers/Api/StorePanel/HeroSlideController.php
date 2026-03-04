@@ -56,7 +56,7 @@ class HeroSlideController extends Controller
             'cta' => 'nullable|string|max:100',
             'cta_link' => 'nullable|string|max:255',
             'bg_color' => 'nullable|string|max:255',
-            'image' => 'nullable|file|image|max:4096',
+            'image' => 'nullable|file|image|max:6144',
         ]);
 
         $data = $request->except(['image']);
@@ -82,7 +82,7 @@ class HeroSlideController extends Controller
             'cta' => 'sometimes|string|max:100',
             'cta_link' => 'sometimes|string|max:255',
             'bg_color' => 'sometimes|string|max:255',
-            'image' => 'sometimes|file|image|max:4096',
+            'image' => 'sometimes|file|image|max:6144',
         ]);
 
         $data = $request->except(['image']);

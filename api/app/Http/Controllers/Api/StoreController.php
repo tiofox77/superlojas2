@@ -61,8 +61,8 @@ class StoreController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'logo' => 'required|file|image|max:2048',
-            'banner' => 'nullable|file|image|max:4096',
+            'logo' => 'required|file|image|max:6144',
+            'banner' => 'nullable|file|image|max:6144',
             'province' => 'required|string',
             'city' => 'required|string',
             'municipality' => 'nullable|string',
