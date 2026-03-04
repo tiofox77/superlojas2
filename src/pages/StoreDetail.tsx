@@ -174,9 +174,9 @@ const StoreDetail = () => {
       />
       {/* ─── Banner + Store Info ─── */}
       <div className="relative">
-        <div className="h-48 sm:h-60 overflow-hidden">
-          <img src={bannerSrc(store.banner)} alt={`Banner ${store.name}`} className="w-full h-full object-cover" onError={onImgError("banner")} />
-          <div className="absolute inset-0" style={{ background: theme.bannerGradient }} />
+        <div className="h-48 sm:h-60 overflow-hidden bg-gradient-to-r from-primary to-primary/80">
+          <img src={bannerSrc(store.banner)} alt={`Banner ${store.name}`} className="w-full h-full object-cover block" onError={onImgError("banner")} />
+          <div className="absolute inset-0 h-48 sm:h-60" style={{ background: theme.bannerGradient }} />
         </div>
         <div className="container relative -mt-24 z-10 pb-6">
           <div className="flex flex-col sm:flex-row items-start gap-4">
