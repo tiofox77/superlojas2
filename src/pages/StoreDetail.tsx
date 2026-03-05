@@ -132,27 +132,8 @@ const StoreDetail = () => {
   const { data: followData } = useFollowStatus(storeData?.id || "");
   const followMutation = useFollowToggle(storeData?.id || "");
 
-  if (isLoading) {
-    return (
-      <main className="container py-16 text-center min-h-screen">
-        <div className="h-8 w-48 bg-secondary animate-pulse rounded mx-auto" />
-      </main>
-    );
-  }
-
-  if (!storeData) {
-    return (
-      <main className="container py-16 text-center min-h-screen">
-        <h1 className="text-2xl font-bold mb-4">Loja não encontrada</h1>
-        <Link to="/lojas" className="text-primary hover:underline">Ver todas as lojas</Link>
-      </main>
-    );
-  }
-
-  const store = storeData;
-  const themesEnabled = siteSettings?.category_themes_enabled !== false;
-  const theme = themesEnabled ? getCategoryTheme(store.categories) : defaultTheme;
-  const allStoreProducts = storeData.products || [];
+  // ─── All useMemo hooks MUST be called before any early return ───
+  const allStoreProducts = storeData?.products || [];
   const promoProducts = allStoreProducts.filter((p) => p.badge === "Promo");
 
   // Build category tree: { category -> subcategories[] }
@@ -181,6 +162,27 @@ const StoreDetail = () => {
     allStoreProducts.forEach((p) => { if (p.badge) badges.add(p.badge); });
     return [...badges];
   }, [allStoreProducts]);
+
+  if (isLoading) {
+    return (
+      <main className="container py-16 text-center min-h-screen">
+        <div className="h-8 w-48 bg-secondary animate-pulse rounded mx-auto" />
+      </main>
+    );
+  }
+
+  if (!storeData) {
+    return (
+      <main className="container py-16 text-center min-h-screen">
+        <h1 className="text-2xl font-bold mb-4">Loja não encontrada</h1>
+        <Link to="/lojas" className="text-primary hover:underline">Ver todas as lojas</Link>
+      </main>
+    );
+  }
+
+  const store = storeData;
+  const themesEnabled = siteSettings?.category_themes_enabled !== false;
+  const theme = themesEnabled ? getCategoryTheme(store.categories) : defaultTheme;
 
   let filtered = activeCategory
     ? allStoreProducts.filter((p) => p.category === activeCategory)

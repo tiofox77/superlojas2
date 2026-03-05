@@ -75,7 +75,11 @@ export default function StorePanelDashboard() {
   const BASE_DOMAIN = import.meta.env.VITE_BASE_DOMAIN || "superloja.vip";
   const hasSubdomain = !!(data.has_subdomain || data.plan?.custom_domain || data.store?.plan?.custom_domain);
   const planName = data.plan_name || data.plan?.name || data.store?.plan?.name;
-  const subdomainUrl = `https://${data.store.slug}.${BASE_DOMAIN}`;
+  // Avoid doubled subdomain like "superloja.superloja.vip" when slug matches domain prefix
+  const domainPrefix = BASE_DOMAIN.split(".")[0];
+  const subdomainUrl = data.store.slug === domainPrefix
+    ? `https://${BASE_DOMAIN}`
+    : `https://${data.store.slug}.${BASE_DOMAIN}`;
   const storeUrl = `https://${BASE_DOMAIN}/lojas/${data.store.slug}`;
 
   const statusBadge = data.stats.status === "approved"
