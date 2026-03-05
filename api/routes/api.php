@@ -51,6 +51,21 @@ Route::get('/provinces', [ProvinceController::class, 'index']);
 Route::post('/pre-orders', [\App\Http\Controllers\Api\PreOrderController::class, 'store']);
 
 Route::get('/site-settings', [App\Http\Controllers\Api\SiteSettingsController::class, 'index']);
+
+/**
+ * Fallback: serve storage files through Laravel when the web server
+ * can't resolve the public/storage symlink (common on cPanel).
+ */
+Route::get('/storage/{path}', function (string $path) {
+    $disk = \Illuminate\Support\Facades\Storage::disk('public');
+    if (!$disk->exists($path)) abort(404);
+    $fullPath = $disk->path($path);
+    $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+    return response()->file($fullPath, [
+        'Content-Type' => $mime,
+        'Cache-Control' => 'public, max-age=31536000',
+    ]);
+})->where('path', '.*');
 Route::post('/contact', [App\Http\Controllers\Api\SiteSettingsController::class, 'contact']);
 
 // ─── PWA Manifest (dynamic from settings) ────────────────────
@@ -399,6 +414,99 @@ Route::middleware(['auth:sanctum', 'super_admin'])->prefix('admin')->group(funct
     Route::put('/system-update/set-version', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'setVersion']);
     Route::get('/system-update/repo-info', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'repoInfo']);
     Route::post('/system-update/install', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'install']);
+
+    // Diagnostic endpoint — shows DB, environment, paths
+    Route::get('/diagnostics', function () {
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        $storagePath = $disk->path('');
+        $symlinkPath = public_path('storage');
+        $projectRoot = base_path();
+
+        // Check storage symlink
+        $symlinkExists = file_exists($symlinkPath);
+        $symlinkTarget = $symlinkExists && is_link($symlinkPath) ? readlink($symlinkPath) : null;
+
+        // Check a sample store folder
+        $sampleFolders = [];
+        foreach (range(1, 10) as $id) {
+            $logoDir = "stores/{$id}/logos";
+            $bannerDir = "stores/{$id}/banners";
+            $productDir = "stores/{$id}/products";
+            if ($disk->exists("stores/{$id}")) {
+                $sampleFolders["store_{$id}"] = [
+                    'logos_exists' => $disk->exists($logoDir),
+                    'logos_path' => $disk->path($logoDir),
+                    'logos_files' => $disk->exists($logoDir) ? $disk->files($logoDir) : [],
+                    'banners_exists' => $disk->exists($bannerDir),
+                    'products_exists' => $disk->exists($productDir),
+                    'products_files' => $disk->exists($productDir) ? count($disk->files($productDir)) : 0,
+                ];
+            }
+        }
+
+        $info = [
+            'environment' => [
+                'app_env' => config('app.env'),
+                'app_debug' => config('app.debug'),
+                'app_url' => config('app.url'),
+                'is_production' => app()->isProduction(),
+                'is_local' => app()->isLocal(),
+                'hostname' => gethostname(),
+                'server_name' => $_SERVER['SERVER_NAME'] ?? 'N/A',
+                'server_addr' => $_SERVER['SERVER_ADDR'] ?? 'N/A',
+                'php_sapi' => php_sapi_name(),
+            ],
+            'database' => [
+                'connection' => config('database.default'),
+                'driver' => config('database.connections.' . config('database.default') . '.driver'),
+                'host' => config('database.connections.' . config('database.default') . '.host'),
+                'port' => config('database.connections.' . config('database.default') . '.port'),
+                'database' => config('database.connections.' . config('database.default') . '.database'),
+                'username' => config('database.connections.' . config('database.default') . '.username'),
+                // password omitted for security
+            ],
+            'storage' => [
+                'public_disk_path' => $storagePath,
+                'public_disk_url' => config('filesystems.disks.public.url'),
+                'symlink_path' => $symlinkPath,
+                'symlink_exists' => $symlinkExists,
+                'symlink_is_link' => is_link($symlinkPath),
+                'symlink_target' => $symlinkTarget,
+                'storage_path' => storage_path(),
+                'public_path' => public_path(),
+            ],
+            'paths' => [
+                'base_path' => $projectRoot,
+                'config_path' => config_path(),
+                'env_file_exists' => file_exists(base_path('.env')),
+                'parent_env_exists' => file_exists(dirname(base_path()) . '/.env'),
+            ],
+            'vite_env' => [
+                'parent_env_VITE_API_URL' => null,
+                'parent_env_VITE_BASE_DOMAIN' => null,
+            ],
+            'store_folders' => $sampleFolders,
+        ];
+
+        // Read parent .env for VITE_ values
+        $parentEnv = dirname(base_path()) . '/.env';
+        if (file_exists($parentEnv)) {
+            $lines = file($parentEnv, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                if (str_starts_with($line, 'VITE_API_URL=')) {
+                    $info['vite_env']['parent_env_VITE_API_URL'] = trim(substr($line, 13));
+                }
+                if (str_starts_with($line, 'VITE_BASE_DOMAIN=')) {
+                    $info['vite_env']['parent_env_VITE_BASE_DOMAIN'] = trim(substr($line, 17));
+                }
+            }
+        }
+
+        // Log it too
+        \Illuminate\Support\Facades\Log::info('=== DIAGNOSTICS ===', $info);
+
+        return response()->json($info);
+    });
 
     // Email Logs
     Route::get('/email-logs', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'index']);

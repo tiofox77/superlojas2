@@ -6,6 +6,7 @@ use App\Helpers\SeoFileName;
 use App\Http\Controllers\Controller;
 use App\Models\Store;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class SettingsController extends Controller
@@ -98,49 +99,116 @@ class SettingsController extends Controller
         $logoFolder = "stores/{$store->id}/logos";
         $bannerFolder = "stores/{$store->id}/banners";
 
+        // ─── DIAGNOSTIC LOG ───
+        $rawLogo = $store->getRawOriginal('logo');
+        $rawBanner = $store->getRawOriginal('banner');
+        Log::info('=== STORE SETTINGS UPDATE ===', [
+            'store_id' => $store->id,
+            'store_slug' => $store->slug,
+            'environment' => [
+                'app_env' => config('app.env'),
+                'app_url' => config('app.url'),
+                'is_production' => app()->isProduction(),
+                'hostname' => gethostname(),
+            ],
+            'database' => [
+                'connection' => config('database.default'),
+                'host' => config('database.connections.' . config('database.default') . '.host'),
+                'database' => config('database.connections.' . config('database.default') . '.database'),
+            ],
+            'storage' => [
+                'disk_path' => $disk->path(''),
+                'logo_folder_path' => $disk->path($logoFolder),
+                'logo_folder_exists' => $disk->exists($logoFolder),
+                'banner_folder_path' => $disk->path($bannerFolder),
+                'banner_folder_exists' => $disk->exists($bannerFolder),
+                'symlink_path' => public_path('storage'),
+                'symlink_exists' => file_exists(public_path('storage')),
+            ],
+            'current_db_values' => [
+                'logo_raw' => $rawLogo,
+                'banner_raw' => $rawBanner,
+                'logo_file_exists' => $rawLogo && str_starts_with($rawLogo, '/storage/')
+                    ? $disk->exists(str_replace('/storage/', '', $rawLogo)) : 'N/A',
+                'banner_file_exists' => $rawBanner && str_starts_with($rawBanner, '/storage/')
+                    ? $disk->exists(str_replace('/storage/', '', $rawBanner)) : 'N/A',
+            ],
+            'request' => [
+                'has_logo_file' => $request->hasFile('logo'),
+                'has_banner_file' => $request->hasFile('banner'),
+                'method' => $request->method(),
+                'url' => $request->fullUrl(),
+            ],
+        ]);
+
         // Ensure store folders exist physically
-        if (!$disk->exists($logoFolder)) $disk->makeDirectory($logoFolder);
-        if (!$disk->exists($bannerFolder)) $disk->makeDirectory($bannerFolder);
+        if (!$disk->exists($logoFolder)) {
+            $disk->makeDirectory($logoFolder);
+            Log::info("Created logo folder: {$logoFolder}", ['full_path' => $disk->path($logoFolder)]);
+        }
+        if (!$disk->exists($bannerFolder)) {
+            $disk->makeDirectory($bannerFolder);
+            Log::info("Created banner folder: {$bannerFolder}", ['full_path' => $disk->path($bannerFolder)]);
+        }
 
         if ($request->hasFile('logo')) {
             // Delete old file if it exists physically
-            if ($store->logo && str_starts_with($store->logo, '/storage/')) {
-                $oldPath = str_replace('/storage/', '', $store->logo);
+            if ($rawLogo && str_starts_with($rawLogo, '/storage/')) {
+                $oldPath = str_replace('/storage/', '', $rawLogo);
                 if ($disk->exists($oldPath)) {
                     $disk->delete($oldPath);
+                    Log::info("Deleted old logo: {$oldPath}");
                 }
             }
             $data['logo'] = SeoFileName::storePublic($request->file('logo'), $logoFolder, $store->slug, 'logo');
+            Log::info("Uploaded new logo", [
+                'path' => $data['logo'],
+                'full_disk_path' => $disk->path(str_replace('/storage/', '', $data['logo'])),
+                'file_exists_after_save' => $disk->exists(str_replace('/storage/', '', $data['logo'])),
+            ]);
         } else {
-            // No new file uploaded — check if existing DB path points to a real file
-            if ($store->logo && str_starts_with($store->logo, '/storage/')) {
-                $existingPath = str_replace('/storage/', '', $store->logo);
+            if ($rawLogo && str_starts_with($rawLogo, '/storage/')) {
+                $existingPath = str_replace('/storage/', '', $rawLogo);
                 if (!$disk->exists($existingPath)) {
-                    // File missing physically — clear the DB path so frontend shows placeholder
                     $data['logo'] = '';
+                    Log::warning("Logo file missing physically, clearing DB", ['path' => $rawLogo, 'disk_path' => $disk->path($existingPath)]);
                 }
             }
         }
 
         if ($request->hasFile('banner')) {
-            if ($store->banner && str_starts_with($store->banner, '/storage/')) {
-                $oldPath = str_replace('/storage/', '', $store->banner);
+            if ($rawBanner && str_starts_with($rawBanner, '/storage/')) {
+                $oldPath = str_replace('/storage/', '', $rawBanner);
                 if ($disk->exists($oldPath)) {
                     $disk->delete($oldPath);
+                    Log::info("Deleted old banner: {$oldPath}");
                 }
             }
             $data['banner'] = SeoFileName::storePublic($request->file('banner'), $bannerFolder, $store->slug, 'banner');
+            Log::info("Uploaded new banner", [
+                'path' => $data['banner'],
+                'full_disk_path' => $disk->path(str_replace('/storage/', '', $data['banner'])),
+                'file_exists_after_save' => $disk->exists(str_replace('/storage/', '', $data['banner'])),
+            ]);
         } else {
-            if ($store->banner && str_starts_with($store->banner, '/storage/')) {
-                $existingPath = str_replace('/storage/', '', $store->banner);
+            if ($rawBanner && str_starts_with($rawBanner, '/storage/')) {
+                $existingPath = str_replace('/storage/', '', $rawBanner);
                 if (!$disk->exists($existingPath)) {
                     $data['banner'] = '';
+                    Log::warning("Banner file missing physically, clearing DB", ['path' => $rawBanner, 'disk_path' => $disk->path($existingPath)]);
                 }
             }
         }
 
         $store->update($data);
 
-        return response()->json($store->fresh()->load('user'));
+        $fresh = $store->fresh();
+        Log::info('=== STORE SETTINGS SAVED ===', [
+            'store_id' => $fresh->id,
+            'logo_saved' => $fresh->getRawOriginal('logo'),
+            'banner_saved' => $fresh->getRawOriginal('banner'),
+        ]);
+
+        return response()->json($fresh->load('user'));
     }
 }
