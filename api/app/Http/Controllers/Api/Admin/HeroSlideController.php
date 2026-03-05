@@ -43,6 +43,10 @@ class HeroSlideController extends Controller
         ]);
 
         $data = $request->except(['image']);
+        $data['subtitle'] = $data['subtitle'] ?? '';
+        $data['cta'] = $data['cta'] ?? '';
+        $data['cta_link'] = $data['cta_link'] ?? '';
+        $data['bg_color'] = $data['bg_color'] ?? '';
 
         if (isset($data['store_slug']) && $data['store_slug'] === '') {
             $data['store_slug'] = null;
