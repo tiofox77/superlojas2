@@ -549,6 +549,10 @@ Route::middleware(['auth:sanctum', 'super_admin'])->prefix('admin')->group(funct
     Route::post('/aliexpress/import-jobs', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'enqueueImportJob']);
     Route::delete('/aliexpress/import-jobs/{importJob}', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'deleteImportJob']);
     Route::post('/aliexpress/webhook-test', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'webhookTest']);
+    Route::get('/aliexpress/test', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'testApi']);
+    Route::post('/aliexpress/freight', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'freight']);
+    Route::post('/supplier-orders/{supplierOrder}/place', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'placeSupplierOrder']);
+    Route::post('/supplier-orders/{supplierOrder}/sync', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'syncSupplierOrder']);
     Route::get('/supplier-orders', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'index']);
     Route::post('/supplier-orders', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'store']);
     Route::get('/supplier-orders/{supplierOrder}', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'show']);

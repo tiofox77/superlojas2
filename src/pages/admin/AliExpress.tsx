@@ -248,6 +248,33 @@ export default function AdminAliExpress() {
   const edit = (id: number, field: keyof SupplierOrder, value: string) =>
     setEditing((e) => ({ ...e, [id]: { ...e[id], [field]: value } }));
 
+  const testApiFn = async () => {
+    try {
+      const res = await fetch(`${API}/admin/aliexpress/test`, { headers: hdrs });
+      const d = await res.json();
+      if (d.ok) toast.success(d.message || "API OK"); else toast.error(d.message || "Falhou");
+    } catch { toast.error("Erro ao testar API"); }
+  };
+
+  const syncOrder = async (id: number) => {
+    try {
+      const res = await fetch(`${API}/admin/supplier-orders/${id}/sync`, { method: "POST", headers: hdrs });
+      const d = await res.json();
+      if (!res.ok || d.ok === false) { toast.error(d.error || "Falha ao sincronizar"); return; }
+      toast.success("Rastreio sincronizado"); loadOrders();
+    } catch { toast.error("Erro de rede"); }
+  };
+
+  const placeOrder = async (id: number) => {
+    if (!confirm("Encomendar este produto no AliExpress? Esta ação GASTA DINHEIRO (paga o fornecedor).")) return;
+    try {
+      const res = await fetch(`${API}/admin/supplier-orders/${id}/place`, { method: "POST", headers: hdrs });
+      const d = await res.json();
+      if (!res.ok || d.ok === false) { toast.error(d.error || "Falha ao encomendar"); return; }
+      toast.success("Encomenda feita no AliExpress"); loadOrders();
+    } catch { toast.error("Erro de rede"); }
+  };
+
   const margin = (o: SupplierOrder) => {
     if (o.sale_total == null || o.cost == null) return null;
     return (parseFloat(o.sale_total) - parseFloat(o.cost)).toFixed(2);
@@ -267,6 +294,7 @@ export default function AdminAliExpress() {
           <StatusPill ok={status.ai_configured} label={`IA (${status.ai_model})`} s={s} />
           <span className={s.textSecondary}>Envio para: <b className={s.textPrimary}>{status.ship_to}</b></span>
           <span className={s.textSecondary}>Moeda: <b className={s.textPrimary}>{status.currency}</b></span>
+          <button onClick={testApiFn} className={`ml-auto text-xs px-2.5 py-1 rounded-lg ${s.btnSecondary}`}>Testar API oficial</button>
         </div>
       )}
 
@@ -591,6 +619,15 @@ export default function AdminAliExpress() {
                         {dirty && (
                           <button onClick={() => saveOrder(o.id)} className={`p-1.5 rounded-lg ${s.btnPrimary}`} title="Guardar">
                             <Save className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {o.ae_order_id ? (
+                          <button onClick={() => syncOrder(o.id)} className={`p-1.5 rounded-lg ${s.btnSecondary}`} title="Sincronizar rastreio">
+                            <RefreshCw className="w-3.5 h-3.5" />
+                          </button>
+                        ) : (
+                          <button onClick={() => placeOrder(o.id)} className={`p-1.5 rounded-lg ${s.btnSecondary}`} title="Encomendar no AliExpress (gasta dinheiro)">
+                            <ShoppingCart className="w-3.5 h-3.5" />
                           </button>
                         )}
                         <button onClick={() => deleteOrder(o.id)} className={`p-1.5 rounded-lg ${s.btnDanger}`} title="Remover">

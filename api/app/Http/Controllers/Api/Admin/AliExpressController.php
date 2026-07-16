@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\ImportJob;
+use App\Models\Product;
 use App\Models\Setting;
 use App\Models\SupplierOrder;
 use App\Services\AiService;
@@ -345,5 +346,119 @@ class AliExpressController extends Controller
     {
         $supplierOrder->delete();
         return response()->json(['message' => 'Encomenda de fornecedor removida.']);
+    }
+
+    // ─── Fase 2: testar a API oficial ─────────────────────────────
+
+    public function testApi(AliExpressService $ae)
+    {
+        return response()->json($ae->testConnection());
+    }
+
+    /** Estimate shipping cost for a product to Angola (read-only). */
+    public function freight(Request $request, AliExpressService $ae)
+    {
+        $data = $request->validate([
+            'product_id' => 'required|string|max:64',
+            'quantity' => 'sometimes|integer|min:1',
+        ]);
+        try {
+            return response()->json(['ok' => true, 'result' => $ae->freightQuery($data['product_id'], $data['quantity'] ?? 1)]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
+
+    // ─── Fase 5: encomendar no AliExpress + rastrear ──────────────
+
+    /**
+     * Sync tracking/status for a supplier order from AliExpress (read-only, safe).
+     */
+    public function syncSupplierOrder(SupplierOrder $supplierOrder, AliExpressService $ae)
+    {
+        if (!$supplierOrder->ae_order_id) {
+            return response()->json(['error' => 'Sem ae_order_id para sincronizar.'], 422);
+        }
+        try {
+            $resp = $ae->orderTracking($supplierOrder->ae_order_id);
+            $tracking = data_get($resp, 'aliexpress_ds_order_tracking_get_response.result.tracking_detail_line_list.tracking_detail.0.mail_no')
+                ?? data_get($resp, 'result.tracking_number');
+            $status = data_get($resp, 'aliexpress_ds_order_tracking_get_response.result.official_website')
+                ?? $supplierOrder->status;
+
+            $supplierOrder->update([
+                'tracking_number' => $tracking ?: $supplierOrder->tracking_number,
+                'last_synced_at' => now(),
+                'raw' => $resp,
+            ]);
+            return response()->json(['ok' => true, 'supplier_order' => $supplierOrder->fresh()]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Place the order at AliExpress for a supplier order. SPENDS MONEY — only
+     * ever called by an explicit admin action (button + confirmation).
+     */
+    public function placeSupplierOrder(SupplierOrder $supplierOrder, AliExpressService $ae)
+    {
+        if (!$ae->canOrder()) {
+            return response()->json(['error' => 'Encomenda requer App Key/Secret + Access Token (OAuth) configurados.'], 422);
+        }
+        if ($supplierOrder->ae_order_id) {
+            return response()->json(['error' => 'Esta encomenda já foi feita no AliExpress.'], 422);
+        }
+
+        $order = $supplierOrder->order()->with('items')->first();
+        if (!$order) {
+            return response()->json(['error' => 'Encomenda de cliente não vinculada.'], 422);
+        }
+
+        // Build product items from the customer order's products (need ae_product_id).
+        $items = [];
+        foreach ($order->items as $it) {
+            $p = Product::find($it->product_id);
+            if ($p && $p->ae_product_id) {
+                $items[] = [
+                    'product_id' => $p->ae_product_id,
+                    'product_count' => $it->quantity,
+                    'sku_attr' => '',
+                    'logistics_service_name' => '',
+                ];
+            }
+        }
+        if (empty($items)) {
+            return response()->json(['error' => 'Nenhum produto desta encomenda tem ae_product_id (não veio do AliExpress).'], 422);
+        }
+
+        $address = [
+            'contact_person' => $order->customer_name,
+            'full_name' => $order->customer_name,
+            'mobile_no' => preg_replace('/\D/', '', (string) $order->customer_phone),
+            'phone_country' => '244',
+            'country' => Setting::get('aliexpress_ship_to', 'AO'),
+            'province' => $order->customer_province,
+            'city' => $order->customer_province,
+            'address' => $order->customer_address,
+            'zip' => '0000',
+        ];
+
+        try {
+            $resp = $ae->placeOrder($items, $address, $order->order_number);
+            $aeOrderId = data_get($resp, 'aliexpress_ds_order_create_response.result.order_list.number.0')
+                ?? data_get($resp, 'result.order_list.0')
+                ?? null;
+
+            $supplierOrder->update([
+                'ae_order_id' => $aeOrderId ? (string) $aeOrderId : null,
+                'status' => 'placed',
+                'placed_at' => now(),
+                'raw' => $resp,
+            ]);
+            return response()->json(['ok' => true, 'supplier_order' => $supplierOrder->fresh(), 'raw' => $resp]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
     }
 }

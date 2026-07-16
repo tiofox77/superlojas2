@@ -170,6 +170,78 @@ class AliExpressService
         ];
     }
 
+    /** True if we can place orders (needs app key/secret AND an OAuth token). */
+    public function canOrder(): bool
+    {
+        return $this->isConfigured() && !empty($this->accessToken);
+    }
+
+    /**
+     * Verify the official API credentials by calling a lightweight method.
+     * Returns [ok, message]. Used by the admin "testar API" button.
+     */
+    public function testConnection(): array
+    {
+        if (!$this->isConfigured()) {
+            return ['ok' => false, 'message' => 'Faltam App Key/Secret.'];
+        }
+        try {
+            // A cheap, read-only call — category list. Any non-error response = creds OK.
+            $this->call('aliexpress.ds.category.get', ['language' => $this->language]);
+            return ['ok' => true, 'message' => 'Credenciais válidas — API respondeu.'];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Estimate shipping (freight) for a product to the configured country.
+     */
+    public function freightQuery(string $productId, int $quantity = 1): array
+    {
+        return $this->call('aliexpress.ds.freight.query', [
+            'queryDeliveryReq' => json_encode([
+                'productId' => $productId,
+                'quantity' => $quantity,
+                'shipToCountry' => $this->shipTo,
+                'currency' => $this->currency,
+                'language' => $this->language,
+            ]),
+        ]);
+    }
+
+    /**
+     * Place a dropshipping order at AliExpress. Spends money — must be triggered
+     * by a human action, never automatically. Requires an OAuth access token.
+     *
+     * @param array $productItems  [['product_id'=>..,'sku_attr'=>..,'product_count'=>..], ...]
+     * @param array $address       logistics address fields
+     */
+    public function placeOrder(array $productItems, array $address, ?string $outRef = null): array
+    {
+        if (!$this->canOrder()) {
+            throw new \RuntimeException('Encomenda requer App Key/Secret + Access Token (OAuth) configurados.');
+        }
+        return $this->call('aliexpress.ds.order.create', [
+            'ds_extend_request' => json_encode([
+                'product_items' => $productItems,
+                'logistics_address' => $address,
+                'out_order_id' => $outRef,
+            ]),
+        ]);
+    }
+
+    /**
+     * Get tracking / status for a placed AliExpress order (read-only).
+     */
+    public function orderTracking(string $aeOrderId): array
+    {
+        return $this->call('aliexpress.ds.order.tracking.get', [
+            'ae_order_id' => $aeOrderId,
+            'language' => $this->language,
+        ]);
+    }
+
     /**
      * Make a signed request to the Open Platform gateway.
      */
