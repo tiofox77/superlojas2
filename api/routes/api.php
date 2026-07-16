@@ -17,10 +17,13 @@ use App\Http\Controllers\Api\Admin\HeroSlideController as AdminHeroSlideControll
 use App\Http\Controllers\Api\Admin\SubcategoryController as AdminSubcategoryController;
 
 // ─── Auth ─────────────────────────────────────────────────────
-Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+// Throttle auth endpoints to mitigate brute-force and email-spam abuse.
+Route::middleware('throttle:8,1')->group(function () {
+    Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
@@ -28,6 +31,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
     Route::put('/auth/password', [AuthController::class, 'changePassword']);
 });
+
+// ─── Push Notifications (public) ─────────────────────────────
+Route::get('/push/vapid-key', [\App\Http\Controllers\Api\PushNotificationController::class, 'vapidPublicKey']);
+Route::post('/push/subscribe', [\App\Http\Controllers\Api\PushNotificationController::class, 'subscribe']);
+Route::post('/push/unsubscribe', [\App\Http\Controllers\Api\PushNotificationController::class, 'unsubscribe']);
 
 // ─── Public API routes ────────────────────────────────────────
 Route::get('/categories', [CategoryController::class, 'index']);
@@ -39,6 +47,8 @@ Route::get('/stores/{slug}', [StoreController::class, 'show']);
 
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/trending', [ProductController::class, 'trending']);
+Route::get('/products/latest', [ProductController::class, 'latest']);
+Route::get('/products/featured', [ProductController::class, 'featured']);
 Route::get('/products/flash-sale', [ProductController::class, 'flashSale']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 
@@ -48,7 +58,7 @@ Route::get('/hero-slides/store/{slug}', [HeroSlideController::class, 'byStore'])
 Route::get('/provinces', [ProvinceController::class, 'index']);
 
 // ─── Pre-orders (encomendas) ─────────────────────────────────
-Route::post('/pre-orders', [\App\Http\Controllers\Api\PreOrderController::class, 'store']);
+Route::middleware('throttle:20,1')->post('/pre-orders', [\App\Http\Controllers\Api\PreOrderController::class, 'store']);
 
 Route::get('/site-settings', [App\Http\Controllers\Api\SiteSettingsController::class, 'index']);
 
@@ -66,7 +76,7 @@ Route::get('/storage/{path}', function (string $path) {
         'Cache-Control' => 'public, max-age=31536000',
     ]);
 })->where('path', '.*');
-Route::post('/contact', [App\Http\Controllers\Api\SiteSettingsController::class, 'contact']);
+Route::middleware('throttle:10,1')->post('/contact', [App\Http\Controllers\Api\SiteSettingsController::class, 'contact']);
 
 // ─── PWA Manifest (dynamic from settings) ────────────────────
 Route::get('/pwa/manifest.json', function () {
@@ -121,7 +131,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // ─── Page Tracking ──────────────────────────────────────────
-Route::post('/track', [\App\Http\Controllers\Api\TrackingController::class, 'track']);
+Route::middleware('throttle:120,1')->post('/track', [\App\Http\Controllers\Api\TrackingController::class, 'track']);
 
 // ─── Subdomain resolution ────────────────────────────────────
 Route::get('/subdomain/resolve/{slug}', function (string $slug) {
@@ -181,8 +191,10 @@ Route::post('/stores/payment-methods', function (\Illuminate\Http\Request $reque
     return response()->json($result);
 });
 
-Route::post('/checkout', [App\Http\Controllers\Api\CheckoutController::class, 'process']);
-Route::post('/checkout/validate-stock', [App\Http\Controllers\Api\CheckoutController::class, 'validateStock']);
+Route::middleware('throttle:20,1')->group(function () {
+    Route::post('/checkout', [App\Http\Controllers\Api\CheckoutController::class, 'process']);
+    Route::post('/checkout/validate-stock', [App\Http\Controllers\Api\CheckoutController::class, 'validateStock']);
+});
 
 // ─── Store registration (works with or without auth) ─────────
 Route::middleware('auth:sanctum')->post('/stores/register', [StoreController::class, 'register']);
@@ -223,6 +235,9 @@ Route::middleware(['auth:sanctum', 'store_approved'])->prefix('store-panel/{slug
     Route::post('/products', [StorePanelProduct::class, 'store']);
     Route::match(['put', 'post'], '/products/{product}', [StorePanelProduct::class, 'update']);
     Route::delete('/products/{product}', [StorePanelProduct::class, 'destroy']);
+    Route::patch('/products/{product}/toggle-featured', [StorePanelProduct::class, 'toggleFeatured']);
+    Route::patch('/products/{product}/toggle-active', [StorePanelProduct::class, 'toggleActive']);
+    Route::post('/products/bulk-action', [StorePanelProduct::class, 'bulkAction']);
     Route::get('/slides', [StorePanelHeroSlide::class, 'index']);
     Route::post('/slides', [StorePanelHeroSlide::class, 'store']);
     Route::match(['put', 'post'], '/slides/{heroSlide}', [StorePanelHeroSlide::class, 'update']);
@@ -294,6 +309,13 @@ Route::middleware(['auth:sanctum', 'store_approved'])->prefix('store-panel/{slug
 Route::middleware(\App\Http\Middleware\StoreApiAuth::class)->prefix('store-api/{slug}')->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\StoreApiController::class, 'info']);
     Route::get('/products', [\App\Http\Controllers\Api\StoreApiController::class, 'products']);
+    Route::post('/products/import-aliexpress', [\App\Http\Controllers\Api\StoreApiController::class, 'importAliexpress']);
+    Route::get('/products/hermes-spec', [\App\Http\Controllers\Api\StoreApiController::class, 'hermesSpec']);
+    Route::post('/products/from-hermes', [\App\Http\Controllers\Api\StoreApiController::class, 'fromHermes']);
+    // Import job queue — Hermes polls next, posts result back
+    Route::get('/products/import-jobs/next', [\App\Http\Controllers\Api\StoreApiController::class, 'nextImportJob']);
+    Route::post('/products/import-jobs/{jobId}/complete', [\App\Http\Controllers\Api\StoreApiController::class, 'completeImportJob']);
+    Route::post('/products/import-jobs/{jobId}/fail', [\App\Http\Controllers\Api\StoreApiController::class, 'failImportJob']);
     Route::get('/products/{productId}', [\App\Http\Controllers\Api\StoreApiController::class, 'productShow']);
     Route::post('/products', [\App\Http\Controllers\Api\StoreApiController::class, 'productStore']);
     Route::put('/products/{productId}', [\App\Http\Controllers\Api\StoreApiController::class, 'productUpdate']);
@@ -328,8 +350,12 @@ Route::middleware(['auth:sanctum', 'super_admin'])->prefix('admin')->group(funct
 
     // Products
     Route::get('/products/check-slug', [AdminProductController::class, 'checkSlug']);
+    Route::get('/products/pending-featured', [AdminProductController::class, 'pendingFeatured']);
     Route::apiResource('products', AdminProductController::class);
     Route::post('/products/bulk-delete', [AdminProductController::class, 'bulkDelete']);
+    Route::patch('/products/{product}/approve-featured', [AdminProductController::class, 'approveFeatured']);
+    Route::patch('/products/{product}/reject-featured', [AdminProductController::class, 'rejectFeatured']);
+    Route::patch('/products/{product}/toggle-active', [AdminProductController::class, 'toggleActive']);
 
     // Categories
     Route::apiResource('categories', AdminCategoryController::class);
@@ -385,6 +411,7 @@ Route::middleware(['auth:sanctum', 'super_admin'])->prefix('admin')->group(funct
         Route::get('/referrers', [\App\Http\Controllers\Api\Admin\AnalyticsController::class, 'referrers']);
         Route::get('/geography', [\App\Http\Controllers\Api\Admin\AnalyticsController::class, 'geography']);
         Route::get('/technology', [\App\Http\Controllers\Api\Admin\AnalyticsController::class, 'technology']);
+        Route::get('/search', [\App\Http\Controllers\Api\Admin\AnalyticsController::class, 'search']);
         Route::get('/realtime', [\App\Http\Controllers\Api\Admin\AnalyticsController::class, 'realtime']);
         Route::get('/logs', [\App\Http\Controllers\Api\Admin\AnalyticsController::class, 'logs']);
         Route::get('/online-users', [\App\Http\Controllers\Api\Admin\AnalyticsController::class, 'onlineUsers']);
@@ -405,10 +432,15 @@ Route::middleware(['auth:sanctum', 'super_admin'])->prefix('admin')->group(funct
     Route::delete('/notifications/cleanup', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'cleanup']);
     Route::post('/notifications/send', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'send']);
 
+    // Push Notifications (admin)
+    Route::post('/push/send', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'sendPush']);
+    Route::get('/push/subscribers', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'pushSubscribers']);
+
     // System Updates
     Route::get('/system-update/config', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'config']);
     Route::put('/system-update/config', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'saveConfig']);
     Route::delete('/system-update/token', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'removeToken']);
+    Route::get('/system-update/test', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'testConnection']);
     Route::get('/system-update/releases', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'releases']);
     Route::get('/system-update/check-latest', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'checkLatest']);
     Route::put('/system-update/set-version', [\App\Http\Controllers\Api\Admin\SystemUpdateController::class, 'setVersion']);
@@ -506,6 +538,27 @@ Route::middleware(['auth:sanctum', 'super_admin'])->prefix('admin')->group(funct
         \Illuminate\Support\Facades\Log::info('=== DIAGNOSTICS ===', $info);
 
         return response()->json($info);
+    });
+
+    // ─── AliExpress integration + supplier orders ────────────────
+    Route::get('/aliexpress/status', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'status']);
+    Route::get('/aliexpress/config', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'config']);
+    Route::put('/aliexpress/config', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'saveConfig']);
+    Route::post('/aliexpress/preview', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'preview']);
+    Route::get('/aliexpress/import-jobs', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'importJobs']);
+    Route::post('/aliexpress/import-jobs', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'enqueueImportJob']);
+    Route::delete('/aliexpress/import-jobs/{importJob}', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'deleteImportJob']);
+    Route::post('/aliexpress/webhook-test', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'webhookTest']);
+    Route::get('/supplier-orders', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'index']);
+    Route::post('/supplier-orders', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'store']);
+    Route::get('/supplier-orders/{supplierOrder}', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'show']);
+    Route::put('/supplier-orders/{supplierOrder}', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'update']);
+    Route::delete('/supplier-orders/{supplierOrder}', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'destroy']);
+
+    // Run pending database migrations (host has no SSH). Guarded by super_admin.
+    Route::post('/system/migrate', function () {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        return response()->json(['output' => \Illuminate\Support\Facades\Artisan::output()]);
     });
 
     // Email Logs

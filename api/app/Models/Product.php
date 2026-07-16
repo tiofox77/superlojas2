@@ -26,6 +26,14 @@ class Product extends Model
         'variants',
         'flash_sale_start',
         'flash_sale_end',
+        'is_featured',
+        'featured_status',
+        'is_active',
+        'ae_product_id',
+        'ae_source_url',
+        'ae_cost',
+        'ae_currency',
+        'ae_last_synced_at',
     ];
 
     protected $casts = [
@@ -34,8 +42,14 @@ class Product extends Model
         'price' => 'decimal:2',
         'original_price' => 'decimal:2',
         'rating' => 'decimal:1',
+        'stock' => 'integer',
+        'review_count' => 'integer',
         'flash_sale_start' => 'datetime',
         'flash_sale_end' => 'datetime',
+        'is_featured' => 'boolean',
+        'is_active' => 'boolean',
+        'ae_cost' => 'decimal:2',
+        'ae_last_synced_at' => 'datetime',
     ];
 
     public function store(): BelongsTo

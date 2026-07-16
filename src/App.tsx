@@ -19,6 +19,7 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Auth from "./pages/Auth";
 import FlashSale from "./pages/FlashSale";
+import SearchResults from "./pages/SearchResults";
 import Categories from "./pages/Categories";
 import CategoryDetail from "./pages/CategoryDetail";
 import Wishlist from "./pages/Wishlist";
@@ -28,6 +29,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
+import ApiDocs from "./pages/ApiDocs";
 import MyStore from "./pages/MyStore";
 import NotFound from "./pages/NotFound";
 import DynamicHead from "./components/DynamicHead";
@@ -48,6 +50,7 @@ import AdminEmailLogs from "./pages/admin/EmailLogs";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminAnalyticsReports from "./pages/admin/AnalyticsReports";
 import AdminSystemUpdate from "./pages/admin/SystemUpdate";
+import AdminAliExpress from "./pages/admin/AliExpress";
 import StorePanelLayout from "./layouts/StorePanelLayout";
 import StorePanelDashboard from "./pages/store-panel/Dashboard";
 import StorePanelProducts from "./pages/store-panel/Products";
@@ -69,9 +72,12 @@ import ClientSecurity from "./pages/client/Security";
 import ClientFollowing from "./pages/client/Following";
 import ClientFeed from "./pages/client/Feed";
 import PwaInstallPrompt from "./components/PwaInstallPrompt";
+import PwaBottomNav from "./components/PwaBottomNav";
 import { SubdomainStoreProvider } from "./contexts/SubdomainStoreContext";
 import SubdomainStoreLayout from "./layouts/SubdomainStoreLayout";
 import { isSubdomainMode } from "./hooks/useSubdomain";
+import { usePwaUpdate } from "./hooks/usePwaUpdate";
+import { useAutoSubscribe } from "./hooks/usePushNotifications";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -94,6 +100,7 @@ const StoreFrontLayout = () => (
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/entrar" element={<Auth />} />
       <Route path="/ofertas" element={<FlashSale />} />
+      <Route path="/pesquisa" element={<SearchResults />} />
       <Route path="/categorias" element={<Categories />} />
       <Route path="/categoria/:slug" element={<CategoryDetail />} />
       <Route path="/favoritos" element={<Wishlist />} />
@@ -103,14 +110,22 @@ const StoreFrontLayout = () => (
       <Route path="/privacidade" element={<Privacy />} />
       <Route path="/faq" element={<FAQ />} />
       <Route path="/contacto" element={<Contact />} />
+      <Route path="/api-docs" element={<ApiDocs />} />
       <Route path="/minha-loja" element={<MyStore />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     <Footer />
+    <PwaBottomNav />
   </>
 );
 
 const subdomain = isSubdomainMode();
+
+function PwaUpdateListener() {
+  usePwaUpdate();
+  useAutoSubscribe(8000);
+  return null;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -125,6 +140,7 @@ const App = () => (
             <DynamicHead />
             <ScrollToTop />
             <PageTracker />
+            <PwaUpdateListener />
             <PwaInstallPrompt />
             {subdomain ? (
               /* ─── Subdomain mode: loja individual ─── */
@@ -152,6 +168,7 @@ const App = () => (
                   <Route path="emails" element={<AdminEmailLogs />} />
                   <Route path="analytics" element={<AdminAnalytics />} />
                   <Route path="relatorios" element={<AdminAnalyticsReports />} />
+                  <Route path="aliexpress" element={<AdminAliExpress />} />
                   <Route path="actualizacoes" element={<AdminSystemUpdate />} />
                 </Route>
                 {/* Store Owner Panel */}

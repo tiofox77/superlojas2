@@ -43,12 +43,30 @@ class CheckoutController extends Controller
         $perStorePayments = $data['payment_methods'] ?? [];
 
         // Collect receipt files keyed by store_id (receipt_<store_id>)
+        // Validate each file: only images/PDF up to 5MB, to prevent arbitrary
+        // (e.g. executable) file uploads into public storage.
         $receipts = [];
+        $allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'pdf'];
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
         foreach ($request->allFiles() as $key => $file) {
-            if (str_starts_with($key, 'receipt_')) {
-                $storeId = str_replace('receipt_', '', $key);
-                $receipts[$storeId] = $file;
+            if (!str_starts_with($key, 'receipt_')) {
+                continue;
             }
+            if (!$file->isValid()) {
+                return response()->json(['error' => 'Ficheiro de comprovativo invalido.'], 422);
+            }
+            $ext = strtolower($file->getClientOriginalExtension());
+            $mime = $file->getMimeType();
+            if (!in_array($ext, $allowedExt, true) || !in_array($mime, $allowedMimes, true)) {
+                return response()->json([
+                    'error' => 'Comprovativo deve ser uma imagem (JPG, PNG, WEBP, GIF) ou PDF.',
+                ], 422);
+            }
+            if ($file->getSize() > 5 * 1024 * 1024) {
+                return response()->json(['error' => 'Comprovativo excede o tamanho maximo de 5MB.'], 422);
+            }
+            $storeId = str_replace('receipt_', '', $key);
+            $receipts[$storeId] = $file;
         }
 
         // Load products and validate stock
