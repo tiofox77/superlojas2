@@ -397,10 +397,13 @@ class StoreApiController extends Controller
         $created = null;
         $note = null;
         if ($create) {
-            if (($data['price'] ?? null) === null) {
-                $note = 'Rascunho pronto, mas falta "price" (preco de venda) para criar o produto.';
+            // Use the explicit sale price, or fall back to the auto-suggested
+            // price (USD->AOA + margin) when configured.
+            $salePrice = $data['price'] ?? $draft['suggested_price'] ?? null;
+            if ($salePrice === null) {
+                $note = 'Rascunho pronto, mas falta "price" — envie o preco de venda ou configure a taxa USD->AOA.';
             } else {
-                $created = $this->createFromDraft($store, $draft, (float) $data['price'], $data['stock'] ?? 0);
+                $created = $this->createFromDraft($store, $draft, (float) $salePrice, $data['stock'] ?? 0);
             }
         }
 

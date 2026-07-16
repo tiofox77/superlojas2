@@ -26,6 +26,7 @@ interface Draft {
   images?: string[];
   ae_cost?: number | null;
   ae_currency?: string;
+  suggested_price?: number | null;
   category_id?: number | null;
   subcategory_id?: number | null;
   meta_title?: string;
@@ -78,6 +79,7 @@ export default function AdminAliExpress() {
   const [cfg, setCfg] = useState({
     aliexpress_app_key: "", aliexpress_app_secret: "", aliexpress_access_token: "",
     aliexpress_ship_to: "AO", aliexpress_currency: "USD", aliexpress_scrape_enabled: true,
+    aliexpress_usd_to_aoa: "", aliexpress_margin_pct: "",
     ai_base_url: "", ai_api_key: "", ai_model: "gpt-4o-mini",
     hermes_webhook_url: "", hermes_webhook_secret: "",
   });
@@ -137,6 +139,8 @@ export default function AdminAliExpress() {
         aliexpress_ship_to: d.aliexpress?.ship_to || "AO",
         aliexpress_currency: d.aliexpress?.currency || "USD",
         aliexpress_scrape_enabled: !!d.aliexpress?.scrape_enabled,
+        aliexpress_usd_to_aoa: d.aliexpress?.usd_to_aoa ? String(d.aliexpress.usd_to_aoa) : "",
+        aliexpress_margin_pct: d.aliexpress?.margin_pct ? String(d.aliexpress.margin_pct) : "",
         ai_base_url: d.ai?.base_url || "",
         ai_model: d.ai?.model || "gpt-4o-mini",
         hermes_webhook_url: d.hermes?.webhook_url || "",
@@ -321,6 +325,19 @@ export default function AdminAliExpress() {
                   className={`w-24 px-3 py-2 rounded-xl border text-sm ${s.input}`} />
               </Field>
             </div>
+            <div className="flex gap-3">
+              <Field label="Taxa USD→Kz" s={s}>
+                <input type="number" step="0.01" value={cfg.aliexpress_usd_to_aoa}
+                  onChange={(e) => setCfg({ ...cfg, aliexpress_usd_to_aoa: e.target.value })}
+                  placeholder="ex: 830" className={`w-28 px-3 py-2 rounded-xl border text-sm ${s.input}`} />
+              </Field>
+              <Field label="Margem %" s={s}>
+                <input type="number" step="1" value={cfg.aliexpress_margin_pct}
+                  onChange={(e) => setCfg({ ...cfg, aliexpress_margin_pct: e.target.value })}
+                  placeholder="ex: 40" className={`w-24 px-3 py-2 rounded-xl border text-sm ${s.input}`} />
+              </Field>
+            </div>
+            <p className={`text-xs ${s.textMuted}`}>Usado para sugerir o preço de venda automaticamente a partir do custo em USD.</p>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input type="checkbox" checked={cfg.aliexpress_scrape_enabled}
                 onChange={(e) => setCfg({ ...cfg, aliexpress_scrape_enabled: e.target.checked })} />
@@ -425,6 +442,7 @@ export default function AdminAliExpress() {
             <div className="flex flex-wrap gap-4 text-sm">
               <span className={s.textSecondary}>ID: <b className={s.textPrimary}>{draft.ae_product_id || "—"}</b></span>
               <span className={s.textSecondary}>Custo AE: <b className={s.textPrimary}>{draft.ae_cost != null ? `${draft.ae_cost} ${draft.ae_currency}` : "—"}</b></span>
+              <span className={s.textSecondary}>Preço sugerido: <b className="text-emerald-500">{draft.suggested_price != null ? `${Number(draft.suggested_price).toLocaleString("pt-PT")} Kz` : "—"}</b></span>
               <span className={s.textSecondary}>Categoria sugerida: <b className={s.textPrimary}>{draft.category_id ?? "—"}</b></span>
             </div>
             {draft.images && draft.images.length > 0 && (

@@ -54,6 +54,9 @@ return [
         // Best-effort HTML scraping fallback when the official API is not configured.
         'scrape_enabled' => env('ALIEXPRESS_SCRAPE_ENABLED', true),
         'scrape_user_agent' => env('ALIEXPRESS_SCRAPE_UA', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'),
+        // Pricing: convert supplier cost (USD) to sale price (AOA) with a markup.
+        'usd_to_aoa' => env('ALIEXPRESS_USD_TO_AOA', 0),   // exchange rate, 0 = disabled
+        'margin_pct' => env('ALIEXPRESS_MARGIN_PCT', 0),   // markup percentage
     ],
 
     // Generic AI provider (OpenAI-compatible chat/completions).

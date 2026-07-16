@@ -43,6 +43,8 @@ class AliExpressController extends Controller
                 'ship_to' => Setting::get('aliexpress_ship_to', 'AO'),
                 'currency' => Setting::get('aliexpress_currency', 'USD'),
                 'scrape_enabled' => filter_var(Setting::get('aliexpress_scrape_enabled', true), FILTER_VALIDATE_BOOL),
+                'usd_to_aoa' => (float) Setting::get('aliexpress_usd_to_aoa', 0),
+                'margin_pct' => (float) Setting::get('aliexpress_margin_pct', 0),
             ],
             'ai' => [
                 'base_url' => Setting::get('ai_base_url'),
@@ -71,6 +73,8 @@ class AliExpressController extends Controller
             'aliexpress_ship_to' => 'sometimes|nullable|string|max:8',
             'aliexpress_currency' => 'sometimes|nullable|string|max:8',
             'aliexpress_scrape_enabled' => 'sometimes|boolean',
+            'aliexpress_usd_to_aoa' => 'sometimes|nullable|numeric|min:0',
+            'aliexpress_margin_pct' => 'sometimes|nullable|numeric|min:0',
             'ai_base_url' => 'sometimes|nullable|string|max:255',
             'ai_api_key' => 'sometimes|nullable|string|max:255',
             'ai_model' => 'sometimes|nullable|string|max:120',
@@ -79,7 +83,7 @@ class AliExpressController extends Controller
         ]);
 
         // Non-secret fields: always set when present.
-        foreach (['aliexpress_app_key', 'aliexpress_ship_to', 'aliexpress_currency', 'ai_base_url', 'ai_model', 'hermes_webhook_url'] as $k) {
+        foreach (['aliexpress_app_key', 'aliexpress_ship_to', 'aliexpress_currency', 'aliexpress_usd_to_aoa', 'aliexpress_margin_pct', 'ai_base_url', 'ai_model', 'hermes_webhook_url'] as $k) {
             if (array_key_exists($k, $data)) {
                 Setting::set($k, $data[$k] ?? '');
             }

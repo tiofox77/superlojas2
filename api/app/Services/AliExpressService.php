@@ -24,6 +24,8 @@ class AliExpressService
     private string $language;
     private bool $scrapeEnabled;
     private string $scrapeUa;
+    private float $usdToAoa;
+    private float $marginPct;
 
     public function __construct()
     {
@@ -36,6 +38,28 @@ class AliExpressService
         $this->language = self::setting('aliexpress_language', config('services.aliexpress.language', 'pt')) ?: 'pt';
         $this->scrapeEnabled = filter_var(self::setting('aliexpress_scrape_enabled', config('services.aliexpress.scrape_enabled', true)), FILTER_VALIDATE_BOOL);
         $this->scrapeUa = self::setting('aliexpress_scrape_ua', config('services.aliexpress.scrape_user_agent')) ?: 'Mozilla/5.0';
+        $this->usdToAoa = (float) self::setting('aliexpress_usd_to_aoa', config('services.aliexpress.usd_to_aoa', 0));
+        $this->marginPct = (float) self::setting('aliexpress_margin_pct', config('services.aliexpress.margin_pct', 0));
+    }
+
+    /**
+     * Suggest a sale price (AOA) from the supplier cost, using the configured
+     * USD->AOA rate + margin. Returns null if rate not configured. Rounded to 100 Kz.
+     */
+    public function suggestedPrice(?float $aeCost): ?float
+    {
+        if ($aeCost === null || $this->usdToAoa <= 0) {
+            return null;
+        }
+        $price = $aeCost * $this->usdToAoa * (1 + $this->marginPct / 100);
+        return round($price / 100) * 100;
+    }
+
+    /** Attach suggested_price to a draft based on its ae_cost. */
+    private function withSuggested(array $draft): array
+    {
+        $draft['suggested_price'] = $this->suggestedPrice($draft['ae_cost'] ?? null);
+        return $draft;
     }
 
     /**
@@ -277,7 +301,7 @@ class AliExpressService
         // Consider it empty if we got neither a name nor any image.
         $empty = empty($name) && empty($images);
 
-        return ['ok' => true, 'empty' => $empty, 'draft' => $draft];
+        return ['ok' => true, 'empty' => $empty, 'draft' => $this->withSuggested($draft)];
     }
 
     /**
@@ -295,7 +319,7 @@ class AliExpressService
             $images = array_values(array_filter(array_map('trim', preg_split('/[\n,]+/', $images))));
         }
 
-        return [
+        return $this->withSuggested([
             'ae_product_id' => $productId,
             'ae_source_url' => $sourceUrl,
             'name' => $fields['name'] ?? null,
@@ -305,7 +329,7 @@ class AliExpressService
             'ae_cost' => isset($fields['ae_cost']) ? (float) $fields['ae_cost'] : null,
             'ae_currency' => $fields['ae_currency'] ?? $this->currency,
             'variants' => $fields['variants'] ?? [],
-        ];
+        ]);
     }
 
     /**
@@ -357,7 +381,7 @@ class AliExpressService
             ?? data_get($result, 'ae_item_base_info_dto.sale_price')
             ?? null;
 
-        return [
+        return $this->withSuggested([
             'ae_product_id' => $productId,
             'ae_source_url' => $sourceUrl,
             'name' => $name,
@@ -368,6 +392,6 @@ class AliExpressService
             'ae_currency' => $this->currency,
             'variants' => data_get($result, 'ae_item_sku_info_dtos', []),
             '_raw' => $result,
-        ];
+        ]);
     }
 }
