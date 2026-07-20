@@ -10,8 +10,9 @@ class PageView extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'session_id', 'visitor_hash', 'path', 'store_slug',
-        'referrer', 'referrer_domain', 'country', 'province', 'city',
+        'session_id', 'session_key', 'visitor_hash', 'path', 'store_slug',
+        'referrer', 'referrer_domain', 'search_term', 'search_engine',
+        'country', 'province', 'city',
         'device', 'browser', 'os', 'ip_hash', 'user_id',
         'is_unique_today', 'created_at',
     ];

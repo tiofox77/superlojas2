@@ -37,6 +37,8 @@ class TrackingController extends Controller
         // Parse referrer domain
         $referrer = $request->input('referrer');
         $referrerDomain = null;
+        $searchEngine = null;
+        $searchTerm = null;
         if ($referrer) {
             try {
                 $parsed = parse_url($referrer);
@@ -49,6 +51,9 @@ class TrackingController extends Controller
                 if ($referrerDomain === $appHost || $referrerDomain === 'localhost' || $referrerDomain === 'lojas.test') {
                     $referrer = null;
                     $referrerDomain = null;
+                } else {
+                    // Detect search engine and extract search term
+                    [$searchEngine, $searchTerm] = $this->detectSearchEngine($referrerDomain, $parsed['query'] ?? '');
                 }
             } catch (\Throwable $e) {
                 $referrerDomain = null;
@@ -81,13 +86,17 @@ class TrackingController extends Controller
             if ($user) $userId = $user->id;
         } catch (\Throwable $e) {}
 
-        PageView::create([
-            'session_id'      => substr($visitorId, 0, 64),
+        $sessionId = substr($visitorId, 0, 64);
+
+        $data = [
+            'session_id'      => $sessionId,
             'visitor_hash'    => $visitorHash,
             'path'            => Str::limit($path, 500),
             'store_slug'      => $storeSlug,
             'referrer'        => $referrer ? Str::limit($referrer, 1000) : null,
             'referrer_domain' => $referrerDomain,
+            'search_engine'   => $searchEngine,
+            'search_term'     => $searchTerm ? Str::limit($searchTerm, 500) : null,
             'country'         => $country,
             'province'        => $province,
             'city'            => null,
@@ -98,7 +107,24 @@ class TrackingController extends Controller
             'user_id'         => $userId,
             'is_unique_today' => $isUniqueToday,
             'created_at'      => now(),
-        ]);
+        ];
+
+        // Session key (30-min inactivity window) models real visits, while
+        // session_id stays the persistent visitor id. Only written if the
+        // column exists, so this is safe even before the migration is applied.
+        $hasSessionKey = \Illuminate\Support\Facades\Cache::remember(
+            'pv_has_session_key', now()->addMinutes(10),
+            fn () => \Illuminate\Support\Facades\Schema::hasColumn('page_views', 'session_key')
+        );
+        if ($hasSessionKey) {
+            $recent = PageView::where('session_id', $sessionId)
+                ->where('created_at', '>=', now()->subMinutes(30))
+                ->orderByDesc('created_at')
+                ->value('session_key');
+            $data['session_key'] = $recent ?: (string) Str::uuid();
+        }
+
+        PageView::create($data);
 
         return response()->json(['ok' => true]);
     }
@@ -129,6 +155,37 @@ class TrackingController extends Controller
         if (str_contains($ua, 'Android')) return 'Android';
         if (str_contains($ua, 'iPhone') || str_contains($ua, 'iPad')) return 'iOS';
         return 'Other';
+    }
+
+    /**
+     * Detect search engine and extract search query from referrer.
+     */
+    private function detectSearchEngine(?string $domain, string $queryString): array
+    {
+        if (!$domain) return [null, null];
+
+        $engines = [
+            'google'     => ['domains' => ['google.com', 'google.co.ao', 'google.pt', 'google.com.br', 'google.co.uk', 'google.fr', 'google.es', 'google.de'], 'param' => 'q'],
+            'bing'       => ['domains' => ['bing.com'], 'param' => 'q'],
+            'yahoo'      => ['domains' => ['yahoo.com', 'search.yahoo.com'], 'param' => 'p'],
+            'duckduckgo'=> ['domains' => ['duckduckgo.com'], 'param' => 'q'],
+            'yandex'     => ['domains' => ['yandex.com', 'yandex.ru'], 'param' => 'text'],
+            'baidu'      => ['domains' => ['baidu.com'], 'param' => 'wd'],
+            'ecosia'     => ['domains' => ['ecosia.org'], 'param' => 'q'],
+            'brave'      => ['domains' => ['search.brave.com'], 'param' => 'q'],
+        ];
+
+        foreach ($engines as $name => $config) {
+            foreach ($config['domains'] as $d) {
+                if ($domain === $d || str_ends_with($domain, '.' . $d)) {
+                    parse_str($queryString, $params);
+                    $term = $params[$config['param']] ?? null;
+                    return [ucfirst($name), $term ?: null];
+                }
+            }
+        }
+
+        return [null, null];
     }
 
     private function detectCountryFromHeaders(Request $request): string

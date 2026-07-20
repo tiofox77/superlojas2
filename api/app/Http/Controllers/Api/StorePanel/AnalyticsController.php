@@ -26,6 +26,16 @@ class AnalyticsController extends Controller
         return $store;
     }
 
+    /** Session SQL expression: real session_key when present, else visitor id. */
+    private function sessionExpr(): string
+    {
+        static $has = null;
+        if ($has === null) {
+            $has = \Illuminate\Support\Facades\Schema::hasColumn('page_views', 'session_key');
+        }
+        return $has ? 'COALESCE(session_key, session_id)' : 'session_id';
+    }
+
     /**
      * Check if the store has analytics access (used by frontend to gate the page).
      */
@@ -62,13 +72,15 @@ class AnalyticsController extends Controller
         $todayViews = (clone $query)->whereDate('created_at', today())->count();
         $todayUnique = (clone $query)->whereDate('created_at', today())->where('is_unique_today', true)->count();
 
-        // Bounce rate
-        $totalSessions = (clone $query)->where('created_at', '>=', $from)->distinct('session_id')->count('session_id');
+        // Bounce rate: real sessions (30-min window).
+        $sessionExpr = $this->sessionExpr();
+        $totalSessions = (clone $query)->where('created_at', '>=', $from)
+            ->count(DB::raw("DISTINCT {$sessionExpr}"));
         $singlePage = DB::table('page_views')
             ->where('store_slug', $store->slug)
             ->where('created_at', '>=', $from)
-            ->select('session_id')
-            ->groupBy('session_id')
+            ->select(DB::raw("{$sessionExpr} as sk"))
+            ->groupBy('sk')
             ->havingRaw('COUNT(*) = 1')
             ->get()->count();
         $bounceRate = $totalSessions > 0 ? round(($singlePage / $totalSessions) * 100, 1) : 0;

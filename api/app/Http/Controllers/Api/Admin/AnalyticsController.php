@@ -12,6 +12,20 @@ use Illuminate\Support\Facades\DB;
 class AnalyticsController extends Controller
 {
     /**
+     * SQL expression for a "session": the real session_key when present,
+     * falling back to the persistent visitor id for pre-migration rows /
+     * environments. Cached per request.
+     */
+    private function sessionExpr(): string
+    {
+        static $has = null;
+        if ($has === null) {
+            $has = \Illuminate\Support\Facades\Schema::hasColumn('page_views', 'session_key');
+        }
+        return $has ? 'COALESCE(session_key, session_id)' : 'session_id';
+    }
+
+    /**
      * Main dashboard: summary cards + chart data.
      */
     public function dashboard(Request $request)
@@ -30,12 +44,14 @@ class AnalyticsController extends Controller
         $loggedInUsers = PageView::where('created_at', '>=', $from)->whereNotNull('user_id')->distinct('user_id')->count('user_id');
         $storesAccessed = PageView::where('created_at', '>=', $from)->whereNotNull('store_slug')->distinct('store_slug')->count('store_slug');
 
-        // Bounce rate approximation: sessions with only 1 page view
-        $totalSessions = PageView::where('created_at', '>=', $from)->distinct('session_id')->count('session_id');
+        // Bounce rate: real sessions (30-min window) with only 1 page view.
+        $sessionExpr = $this->sessionExpr();
+        $totalSessions = PageView::where('created_at', '>=', $from)
+            ->count(DB::raw("DISTINCT {$sessionExpr}"));
         $singlePageSessions = DB::table('page_views')
             ->where('created_at', '>=', $from)
-            ->select('session_id')
-            ->groupBy('session_id')
+            ->select(DB::raw("{$sessionExpr} as sk"))
+            ->groupBy('sk')
             ->havingRaw('COUNT(*) = 1')
             ->get()
             ->count();
