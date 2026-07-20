@@ -14,7 +14,7 @@ class AnalyticsController extends Controller
     {
         $store = Store::where('slug', $slug)->firstOrFail();
         $user = $request->user();
-        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && $user->store_id === $store->id)) {
+        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && (int)$store->user_id === (int)$user->id)) {
             abort(403, 'Sem permissao.');
         }
 
@@ -33,7 +33,7 @@ class AnalyticsController extends Controller
     {
         $store = Store::where('slug', $slug)->firstOrFail();
         $user = $request->user();
-        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && $user->store_id === $store->id)) {
+        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && (int)$store->user_id === (int)$user->id)) {
             abort(403);
         }
         $store->load('plan');
@@ -56,7 +56,9 @@ class AnalyticsController extends Controller
 
         // Summary
         $totalViews = (clone $query)->where('created_at', '>=', $from)->count();
-        $uniqueVisitors = (clone $query)->where('created_at', '>=', $from)->where('is_unique_today', true)->count();
+        // Distinct persistent visitor id over the period (not the per-day flag,
+        // which over-counts returning visitors).
+        $uniqueVisitors = (clone $query)->where('created_at', '>=', $from)->distinct('session_id')->count('session_id');
         $todayViews = (clone $query)->whereDate('created_at', today())->count();
         $todayUnique = (clone $query)->whereDate('created_at', today())->where('is_unique_today', true)->count();
 
@@ -76,7 +78,7 @@ class AnalyticsController extends Controller
         $prevFrom = now()->subDays($days * 2)->startOfDay();
         $prevTo = $from;
         $prevViews = (clone $query)->whereBetween('created_at', [$prevFrom, $prevTo])->count();
-        $prevUnique = (clone $query)->whereBetween('created_at', [$prevFrom, $prevTo])->where('is_unique_today', true)->count();
+        $prevUnique = (clone $query)->whereBetween('created_at', [$prevFrom, $prevTo])->distinct('session_id')->count('session_id');
         $viewsChange = $prevViews > 0 ? round((($totalViews - $prevViews) / $prevViews) * 100, 1) : 0;
         $uniqueChange = $prevUnique > 0 ? round((($uniqueVisitors - $prevUnique) / $prevUnique) * 100, 1) : 0;
 
@@ -87,7 +89,8 @@ class AnalyticsController extends Controller
                 DB::raw('COUNT(*) as views'),
                 DB::raw('SUM(is_unique_today) as visitors')
             )
-            ->groupBy('date')->orderBy('date')->get();
+            ->groupBy('date')->orderBy('date')->get()
+            ->map(fn ($r) => ['date' => $r->date, 'views' => (int) $r->views, 'visitors' => (int) $r->visitors]);
 
         // Hourly chart (today)
         $hourlyChart = (clone $query)->whereDate('created_at', today())
@@ -95,7 +98,8 @@ class AnalyticsController extends Controller
                 DB::raw('HOUR(created_at) as hour'),
                 DB::raw('COUNT(*) as views')
             )
-            ->groupBy('hour')->orderBy('hour')->get();
+            ->groupBy('hour')->orderBy('hour')->get()
+            ->map(fn ($r) => ['hour' => (int) $r->hour, 'views' => (int) $r->views]);
 
         return response()->json([
             'summary' => [
@@ -130,7 +134,8 @@ class AnalyticsController extends Controller
             ->groupBy('path')
             ->orderByDesc('views')
             ->limit($limit)
-            ->get();
+            ->get()
+            ->map(fn ($r) => ['path' => $r->path, 'views' => (int) $r->views, 'unique_views' => (int) $r->unique_views]);
 
         return response()->json($pages);
     }
@@ -151,7 +156,8 @@ class AnalyticsController extends Controller
             ->groupBy('referrer_domain')
             ->orderByDesc('visits')
             ->limit(10)
-            ->get();
+            ->get()
+            ->map(fn ($r) => ['referrer_domain' => $r->referrer_domain, 'visits' => (int) $r->visits]);
 
         $total = (clone $query)->count();
         $directCount = (clone $query)->whereNull('referrer_domain')->count();
@@ -182,7 +188,8 @@ class AnalyticsController extends Controller
             ->groupBy('country')
             ->orderByDesc('visits')
             ->limit(10)
-            ->get();
+            ->get()
+            ->map(fn ($r) => ['country' => $r->country, 'visits' => (int) $r->visits, 'unique_visits' => (int) $r->unique_visits]);
 
         return response()->json(['countries' => $countries]);
     }
@@ -200,11 +207,13 @@ class AnalyticsController extends Controller
 
         $devices = (clone $query)->whereNotNull('device')
             ->select('device as name', DB::raw('COUNT(*) as count'))
-            ->groupBy('device')->orderByDesc('count')->get();
+            ->groupBy('device')->orderByDesc('count')->get()
+            ->map(fn ($r) => ['name' => $r->name, 'count' => (int) $r->count]);
 
         $browsers = (clone $query)->whereNotNull('browser')
             ->select('browser as name', DB::raw('COUNT(*) as count'))
-            ->groupBy('browser')->orderByDesc('count')->get();
+            ->groupBy('browser')->orderByDesc('count')->get()
+            ->map(fn ($r) => ['name' => $r->name, 'count' => (int) $r->count]);
 
         return response()->json(['devices' => $devices, 'browsers' => $browsers]);
     }

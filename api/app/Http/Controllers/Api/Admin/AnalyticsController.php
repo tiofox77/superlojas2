@@ -21,7 +21,10 @@ class AnalyticsController extends Controller
 
         // Summary cards
         $totalViews = PageView::where('created_at', '>=', $from)->count();
-        $uniqueVisitors = PageView::where('created_at', '>=', $from)->where('is_unique_today', true)->count();
+        // Unique visitors over the whole period = distinct persistent visitor id
+        // (session_id). Summing the per-day is_unique_today flag over-counts
+        // returning visitors (once per day). See tracking: session_id is stable.
+        $uniqueVisitors = PageView::where('created_at', '>=', $from)->distinct('session_id')->count('session_id');
         $todayViews = PageView::whereDate('created_at', today())->count();
         $todayUnique = PageView::whereDate('created_at', today())->where('is_unique_today', true)->count();
         $loggedInUsers = PageView::where('created_at', '>=', $from)->whereNotNull('user_id')->distinct('user_id')->count('user_id');
@@ -45,7 +48,7 @@ class AnalyticsController extends Controller
         $prevFrom = now()->subDays($days * 2)->startOfDay();
         $prevTo = $from;
         $prevViews = PageView::whereBetween('created_at', [$prevFrom, $prevTo])->count();
-        $prevUnique = PageView::whereBetween('created_at', [$prevFrom, $prevTo])->where('is_unique_today', true)->count();
+        $prevUnique = PageView::whereBetween('created_at', [$prevFrom, $prevTo])->distinct('session_id')->count('session_id');
         $viewsChange = $prevViews > 0 ? round((($totalViews - $prevViews) / $prevViews) * 100, 1) : 0;
         $uniqueChange = $prevUnique > 0 ? round((($uniqueVisitors - $prevUnique) / $prevUnique) * 100, 1) : 0;
 
@@ -58,7 +61,8 @@ class AnalyticsController extends Controller
             )
             ->groupBy('date')
             ->orderBy('date')
-            ->get();
+            ->get()
+            ->map(fn ($r) => ['date' => $r->date, 'views' => (int) $r->views, 'visitors' => (int) $r->visitors]);
 
         // Hourly distribution (today)
         $hourlyChart = PageView::whereDate('created_at', today())
@@ -75,7 +79,7 @@ class AnalyticsController extends Controller
         for ($h = 0; $h < 24; $h++) {
             $hourly[] = [
                 'hour' => sprintf('%02d:00', $h),
-                'views' => $hourlyChart[$h]->views ?? 0,
+                'views' => (int) (optional($hourlyChart[$h] ?? null)->views ?? 0),
             ];
         }
 
@@ -111,7 +115,8 @@ class AnalyticsController extends Controller
             ->groupBy('path')
             ->orderByDesc('views')
             ->limit($limit)
-            ->get();
+            ->get()
+            ->map(fn ($r) => ['path' => $r->path, 'views' => (int) $r->views, 'visitors' => (int) $r->visitors]);
 
         return response()->json($pages);
     }
@@ -125,19 +130,25 @@ class AnalyticsController extends Controller
         $from = now()->subDays($days)->startOfDay();
         $limit = min((int) $request->get('limit', 20), 50);
 
-        $stores = PageView::where('created_at', '>=', $from)
+        $rows = PageView::where('created_at', '>=', $from)
             ->whereNotNull('store_slug')
             ->select('store_slug', DB::raw('COUNT(*) as views'), DB::raw('SUM(is_unique_today) as visitors'))
             ->groupBy('store_slug')
             ->orderByDesc('views')
             ->limit($limit)
-            ->get()
-            ->map(function ($row) {
-                $store = Store::where('slug', $row->store_slug)->first(['name', 'logo']);
-                $row->store_name = $store?->name ?? $row->store_slug;
-                $row->store_logo = $store?->logo ?? null;
-                return $row;
-            });
+            ->get();
+
+        // Batch-load stores once (avoids an N+1 query per row).
+        $storesBySlug = Store::whereIn('slug', $rows->pluck('store_slug'))->get(['slug', 'name', 'logo'])->keyBy('slug');
+
+        $stores = $rows->map(function ($row) use ($storesBySlug) {
+            $store = $storesBySlug->get($row->store_slug);
+            $row->store_name = $store?->name ?? $row->store_slug;
+            $row->store_logo = $store?->logo ?? null;
+            $row->views = (int) $row->views;
+            $row->visitors = (int) $row->visitors;
+            return $row;
+        });
 
         return response()->json($stores);
     }
@@ -157,7 +168,8 @@ class AnalyticsController extends Controller
             ->groupBy('referrer_domain')
             ->orderByDesc('views')
             ->limit($limit)
-            ->get();
+            ->get()
+            ->map(fn ($r) => ['referrer_domain' => $r->referrer_domain, 'views' => (int) $r->views, 'visitors' => (int) $r->visitors]);
 
         // Also: traffic sources breakdown (direct, search, social, referral)
         $totalPeriod = PageView::where('created_at', '>=', $from)->count();
@@ -193,7 +205,8 @@ class AnalyticsController extends Controller
             ->groupBy('country')
             ->orderByDesc('views')
             ->limit(20)
-            ->get();
+            ->get()
+            ->map(fn ($r) => ['country' => $r->country, 'views' => (int) $r->views, 'visitors' => (int) $r->visitors]);
 
         $provinces = PageView::where('created_at', '>=', $from)
             ->whereNotNull('province')
@@ -201,11 +214,44 @@ class AnalyticsController extends Controller
             ->groupBy('province')
             ->orderByDesc('views')
             ->limit(20)
-            ->get();
+            ->get()
+            ->map(fn ($r) => ['province' => $r->province, 'views' => (int) $r->views]);
 
         return response()->json([
             'countries' => $countries,
             'provinces' => $provinces,
+        ]);
+    }
+
+    /**
+     * Search terms and search engines.
+     */
+    public function search(Request $request)
+    {
+        $days = (int) $request->get('days', 30);
+        $from = now()->subDays($days)->startOfDay();
+
+        $searchTerms = PageView::where('created_at', '>=', $from)
+            ->whereNotNull('search_term')
+            ->where('search_term', '!=', '')
+            ->select('search_term', DB::raw('COUNT(*) as views'))
+            ->groupBy('search_term')
+            ->orderByDesc('views')
+            ->limit(20)
+            ->get()
+            ->map(fn ($r) => ['term' => $r->search_term, 'views' => (int) $r->views]);
+
+        $searchEngines = PageView::where('created_at', '>=', $from)
+            ->whereNotNull('search_engine')
+            ->select('search_engine', DB::raw('COUNT(*) as views'))
+            ->groupBy('search_engine')
+            ->orderByDesc('views')
+            ->get()
+            ->map(fn ($r) => ['engine' => $r->search_engine, 'views' => (int) $r->views]);
+
+        return response()->json([
+            'search_terms' => $searchTerms,
+            'search_engines' => $searchEngines,
         ]);
     }
 
@@ -218,22 +264,28 @@ class AnalyticsController extends Controller
         $from = now()->subDays($days)->startOfDay();
 
         $devices = PageView::where('created_at', '>=', $from)
+            ->whereNotNull('device')
             ->select('device', DB::raw('COUNT(*) as views'))
             ->groupBy('device')
             ->orderByDesc('views')
-            ->get();
+            ->get()
+            ->map(fn ($r) => ['device' => $r->device, 'views' => (int) $r->views]);
 
         $browsers = PageView::where('created_at', '>=', $from)
+            ->whereNotNull('browser')
             ->select('browser', DB::raw('COUNT(*) as views'))
             ->groupBy('browser')
             ->orderByDesc('views')
-            ->get();
+            ->get()
+            ->map(fn ($r) => ['browser' => $r->browser, 'views' => (int) $r->views]);
 
         $oses = PageView::where('created_at', '>=', $from)
+            ->whereNotNull('os')
             ->select('os', DB::raw('COUNT(*) as views'))
             ->groupBy('os')
             ->orderByDesc('views')
-            ->get();
+            ->get()
+            ->map(fn ($r) => ['os' => $r->os, 'views' => (int) $r->views]);
 
         return response()->json([
             'devices' => $devices,
@@ -302,7 +354,7 @@ class AnalyticsController extends Controller
         }
 
         return response()->json(
-            $query->paginate($request->get('per_page', 50))
+            $query->paginate(min((int) $request->get('per_page', 50), 200))
         );
     }
 
@@ -313,34 +365,41 @@ class AnalyticsController extends Controller
     {
         $since = now()->subMinutes(15);
 
-        $users = PageView::where('created_at', '>=', $since)
+        // Pull recent authed views (15-min window is small) and reduce in PHP to
+        // get the ACTUAL most-recent path per user. MAX(path) in SQL returns the
+        // lexicographically-largest path, not the last one visited.
+        $rows = PageView::where('created_at', '>=', $since)
             ->whereNotNull('user_id')
-            ->select('user_id', DB::raw('MAX(created_at) as last_seen'), DB::raw('MAX(path) as last_page'))
-            ->groupBy('user_id')
-            ->orderByDesc('last_seen')
-            ->limit(50)
-            ->get()
-            ->map(function ($row) {
-                $user = User::find($row->user_id, ['id', 'name', 'email', 'role', 'store_id']);
-                if (!$user) return null;
-                $storeName = null;
-                if ($user->store_id) {
-                    $store = Store::find($user->store_id, ['name', 'slug']);
-                    $storeName = $store?->name;
-                }
-                return [
-                    'user_id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'store_name' => $storeName,
-                    'last_seen' => $row->last_seen,
-                    'last_page' => $row->last_page,
-                ];
-            })
-            ->filter()
-            ->values();
+            ->orderByDesc('created_at')
+            ->get(['user_id', 'path', 'created_at']);
 
-        return response()->json($users);
+        $latest = [];
+        foreach ($rows as $r) {
+            if (!isset($latest[$r->user_id])) {
+                $latest[$r->user_id] = ['last_seen' => $r->created_at, 'last_page' => $r->path];
+            }
+        }
+        $userIds = array_slice(array_keys($latest), 0, 50);
+
+        // Batch-load users and their store names once (avoids N+1).
+        $users = User::whereIn('id', $userIds)->get(['id', 'name', 'email', 'role', 'store_id'])->keyBy('id');
+        $storesByUser = Store::whereIn('user_id', $userIds)->get(['user_id', 'name'])->groupBy('user_id');
+
+        $result = collect($userIds)->map(function ($uid) use ($latest, $users, $storesByUser) {
+            $user = $users->get($uid);
+            if (!$user) return null;
+            $stores = $storesByUser->get($uid);
+            return [
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'store_name' => $stores && $stores->isNotEmpty() ? $stores->first()->name : null,
+                'last_seen' => $latest[$uid]['last_seen'],
+                'last_page' => $latest[$uid]['last_page'],
+            ];
+        })->filter()->values();
+
+        return response()->json($result);
     }
 }
