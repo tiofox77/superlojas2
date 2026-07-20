@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
-import { useEffect, useState, useCallback, type ReactNode } from "react";
+import { useEffect, useState, useCallback, useRef, type ReactNode } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
   Facebook, Loader2, CheckCircle2, AlertTriangle, HelpCircle, ChevronDown,
@@ -22,6 +22,7 @@ export default function StorePanelFacebook() {
   };
 
   const [step, setStep] = useState(1);
+  const initedRef = useRef(false);
   const [cfg, setCfg] = useState({
     fb_enabled: true, fb_access_token: "",
     fb_catalog_id: "", fb_business_id: "", fb_currency: "AOA", fb_pixel_id: "",
@@ -52,6 +53,11 @@ export default function StorePanelFacebook() {
         fb_pixel_id: d.pixel_id || "",
       }));
       setMeta({ token_preview: d.access_token_preview, token_set: d.access_token_set, last_sync: d.last_sync, feed_url: d.feed_url, product_count: d.product_count });
+      // Already configured? Skip straight to the sync step (steps 1-2 shown done).
+      if (!initedRef.current) {
+        initedRef.current = true;
+        if (d.access_token_set && d.catalog_id) setStep(d.last_sync ? 4 : 3);
+      }
     } catch { /* ignore */ }
   }, [slug, token]);
 
@@ -121,6 +127,7 @@ export default function StorePanelFacebook() {
   const catalogUrl = cfg.fb_catalog_id
     ? `https://business.facebook.com/commerce/catalogs/${cfg.fb_catalog_id}/products`
     : null;
+  const configured = !!(meta.token_set && cfg.fb_catalog_id);
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -141,7 +148,7 @@ export default function StorePanelFacebook() {
             const active = step === n;
             return (
               <div key={label} className="flex items-center flex-1 last:flex-none">
-                <button onClick={() => n < step && setStep(n)} className="flex items-center gap-2 shrink-0">
+                <button onClick={() => (configured || n < step) && setStep(n)} className="flex items-center gap-2 shrink-0">
                   <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${done ? "bg-green-500 text-white" : active ? "bg-blue-600 text-white" : s.badge("gray")}`}>
                     {done ? <CheckCircle2 className="w-4 h-4" /> : n}
                   </span>
