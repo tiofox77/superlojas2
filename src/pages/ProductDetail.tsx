@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { productImgSrc } from "@/lib/imageHelpers";
 import ProductSeoHead from "@/components/ProductSeoHead";
 import { useSubdomainStore } from "@/contexts/SubdomainStoreContext";
-import { pixelTrack } from "@/lib/facebookPixel";
+import { initPixel, pixelTrack } from "@/lib/facebookPixel";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -21,18 +21,23 @@ const ProductDetail = () => {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { store: subdomainStore } = useSubdomainStore();
 
-  // Fire Facebook Pixel ViewContent when the product loads (store's pixel).
+  // The store's pixel — from the subdomain context, or the product's own store
+  // when browsing the main marketplace.
+  const storePixelId = subdomainStore?.fb_pixel_id || (product as { store?: { fb_pixel_id?: string | null } })?.store?.fb_pixel_id;
+
+  // Fire ViewContent when the product loads. Bootstrap the pixel here on the
+  // main marketplace (on the subdomain the context already inits it).
   useEffect(() => {
-    const pixelId = subdomainStore?.fb_pixel_id;
-    if (!pixelId || !product) return;
-    pixelTrack(pixelId, "ViewContent", {
+    if (!storePixelId || !product) return;
+    if (!subdomainStore?.fb_pixel_id) initPixel(storePixelId);
+    pixelTrack(storePixelId, "ViewContent", {
       content_ids: [`SL-${product.id}`],
       content_name: product.name,
       content_type: "product",
       value: Number(product.price) || 0,
       currency: "AOA",
     });
-  }, [subdomainStore?.fb_pixel_id, product]);
+  }, [storePixelId, subdomainStore?.fb_pixel_id, product]);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [selectedImage, setSelectedImage] = useState(0);
@@ -304,7 +309,7 @@ const ProductDetail = () => {
                   if (missing.length > 0) { setVariantAlert(`Selecione: ${missing.join(", ")}`); return; }
                   if (quantity > product.stock) { setStockAlert(`Apenas ${product.stock} unidades disponiveis.`); setQuantity(product.stock); return; }
                   addItem(product, quantity, selectedVariants);
-                  pixelTrack(subdomainStore?.fb_pixel_id, "AddToCart", {
+                  pixelTrack(storePixelId, "AddToCart", {
                     content_ids: [`SL-${product.id}`],
                     content_name: product.name,
                     content_type: "product",

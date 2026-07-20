@@ -1,17 +1,18 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useStoreSlug } from "@/hooks/useStoreSlug";
 import { useStore, useStoreHeroSlides } from "@/hooks/useApi";
 import { ProductCard } from "@/components/ProductCard";
 import { ReviewSection } from "@/components/ReviewSection";
 import { getCategoryTheme, defaultTheme } from "@/lib/categoryThemes";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { initPixel } from "@/lib/facebookPixel";
 import {
   Star, MapPin, MessageCircle, Clock, Heart, Phone, Mail,
   ChevronLeft, ChevronRight, Zap, Grid3X3, List,
   CheckCircle2, Truck, ShieldCheck, RotateCcw, Search,
   Instagram, Facebook, Globe, ExternalLink,
   CreditCard, Smartphone, Building2, Wallet, HandCoins, Banknote, QrCode,
-  SlidersHorizontal, ChevronDown, X, Filter, Tag
+  SlidersHorizontal, ChevronDown, X, Filter, Tag, TrendingUp, Award, Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useMemo } from "react";
@@ -45,47 +46,50 @@ function StoreHeroSlider({ storeSlug }: { storeSlug: string }) {
   const slide = slides[current];
 
   return (
-    <div className="relative overflow-hidden rounded-2xl">
-      <AnimatePresence mode="wait">
-        <motion.div
+    <div className="relative overflow-hidden rounded-2xl min-h-[220px] sm:min-h-[280px]">
+      {/* All slides stacked, only current visible via opacity */}
+      {slides.map((slide, i) => (
+        <div
           key={slide.id}
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -40 }}
-          transition={{ duration: 0.35 }}
-          className={`${!slide.bgColor || slide.bgColor === "none" ? "bg-gray-900" : `bg-gradient-to-r ${slide.bgColor}`} px-8 py-14 sm:px-12 sm:py-20 text-primary-foreground relative overflow-hidden`}
+          className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${i === current ? "opacity-100 z-10" : "opacity-0 z-0"}`}
         >
+          <div className={`absolute inset-0 ${!slide.bgColor || slide.bgColor === "none" ? "bg-gray-900" : `bg-gradient-to-r ${slide.bgColor}`}`} />
           {slide.image && (
-            <img src={slide.image} alt="" className={`absolute inset-0 w-full h-full object-cover ${!slide.bgColor || slide.bgColor === "none" ? "" : "mix-blend-overlay opacity-60"}`} />
+            <img src={slide.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
           )}
-          <div className="max-w-lg relative z-10">
-            <h2 className="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight">{slide.title}</h2>
-            {slide.subtitle && <p className="text-primary-foreground/80 text-sm mb-5">{slide.subtitle}</p>}
-            {slide.cta && slide.ctaLink && (
-              <Link
-                to={slide.ctaLink}
-                className="inline-block rounded-xl bg-card text-foreground px-6 py-2.5 font-semibold text-sm hover:opacity-90 transition-opacity shadow-md"
-              >
-                {slide.cta} →
-              </Link>
-            )}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/25 to-transparent" />
+          <div className="relative z-10 px-8 py-14 sm:px-12 sm:py-20 h-full flex flex-col justify-center">
+            <div className="max-w-lg">
+              <h2 className="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight text-white drop-shadow-lg">{slide.title}</h2>
+              {slide.subtitle && <p className="text-white/85 text-sm mb-5 drop-shadow">{slide.subtitle}</p>}
+              {slide.cta && slide.ctaLink && (
+                <Link
+                  to={slide.ctaLink}
+                  className="inline-block rounded-xl bg-white text-gray-900 px-6 py-2.5 font-semibold text-sm hover:bg-white/90 transition-colors shadow-lg"
+                >
+                  {slide.cta} →
+                </Link>
+              )}
+            </div>
           </div>
-        </motion.div>
-      </AnimatePresence>
+        </div>
+      ))}
+      {/* Spacer */}
+      <div className="invisible px-8 py-14 sm:px-12 sm:py-20 min-h-[220px] sm:min-h-[280px]" />
       {slides.length > 1 && (
         <>
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20">
             {slides.map((_, i) => (
               <button key={i} onClick={() => setCurrent(i)}
-                className={`h-2 rounded-full transition-all ${i === current ? "w-6 bg-primary-foreground" : "w-2 bg-primary-foreground/40"}`} />
+                className={`h-2 rounded-full transition-all ${i === current ? "w-6 bg-white" : "w-2 bg-white/40"}`} />
             ))}
           </div>
           <button onClick={() => setCurrent((p) => (p - 1 + slides.length) % slides.length)}
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-card/20 backdrop-blur flex items-center justify-center text-primary-foreground hover:bg-card/40">
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/20 backdrop-blur flex items-center justify-center text-white hover:bg-black/40 z-20">
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button onClick={() => setCurrent((p) => (p + 1) % slides.length)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-card/20 backdrop-blur flex items-center justify-center text-primary-foreground hover:bg-card/40">
+            className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/20 backdrop-blur flex items-center justify-center text-white hover:bg-black/40 z-20">
             <ChevronRight className="h-4 w-4" />
           </button>
         </>
@@ -116,6 +120,11 @@ const StoreDetail = () => {
   const slug = useStoreSlug();
   const { data: storeData, isLoading } = useStore(slug || "");
   const { data: siteSettings } = useSiteSettings();
+
+  // Inject the store's Facebook Pixel (PageView) on its marketplace page.
+  useEffect(() => {
+    initPixel((storeData as { fb_pixel_id?: string | null })?.fb_pixel_id);
+  }, [storeData]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeSubcategory, setActiveSubcategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"relevance" | "price-asc" | "price-desc" | "rating">("relevance");
@@ -127,14 +136,41 @@ const StoreDetail = () => {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [mobileSidebar, setMobileSidebar] = useState(false);
+  const [showFlashSale, setShowFlashSale] = useState(false);
+  const [showAllProducts, setShowAllProducts] = useState(false);
+  const [showContact, setShowContact] = useState(false);
+  const location = useLocation();
   const countdown = useCountdown();
+
+  // Auto-activate tab based on URL path (subdomain mode)
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === "/produtos") {
+      setShowAllProducts(true);
+      setShowFlashSale(false);
+      setActiveCategory(null);
+      setShowContact(false);
+    } else if (path === "/contacto") {
+      setShowContact(true);
+      setShowAllProducts(false);
+      setShowFlashSale(false);
+      setActiveCategory(null);
+    } else if (path === "/") {
+      setShowAllProducts(false);
+      setShowFlashSale(false);
+      setActiveCategory(null);
+      setShowContact(false);
+    }
+  }, [location.pathname]);
   const { isAuthenticated } = useAuth();
   const { data: followData } = useFollowStatus(storeData?.id || "");
   const followMutation = useFollowToggle(storeData?.id || "");
 
   // ─── All useMemo hooks MUST be called before any early return ───
   const allStoreProducts = storeData?.products || [];
-  const promoProducts = allStoreProducts.filter((p) => p.badge === "Promo");
+  const promoProducts = allStoreProducts.filter((p) => p.badge === "Promo" && (!p.flashSaleEnd || new Date(p.flashSaleEnd) > new Date()));
+  const featuredStoreProducts = useMemo(() => allStoreProducts.filter((p) => p.isFeatured && p.featuredStatus === "approved").slice(0, 8), [allStoreProducts]);
+  const trendingStoreProducts = useMemo(() => [...allStoreProducts].sort((a, b) => b.rating - a.rating).slice(0, 8), [allStoreProducts]);
 
   // Build category tree: { category -> subcategories[] }
   const categoryTree = useMemo(() => {
@@ -184,9 +220,11 @@ const StoreDetail = () => {
   const themesEnabled = siteSettings?.category_themes_enabled !== false;
   const theme = themesEnabled ? getCategoryTheme(store.categories) : defaultTheme;
 
-  let filtered = activeCategory
-    ? allStoreProducts.filter((p) => p.category === activeCategory)
-    : allStoreProducts;
+  let filtered = showFlashSale
+    ? promoProducts
+    : activeCategory
+      ? allStoreProducts.filter((p) => p.category === activeCategory)
+      : allStoreProducts;
 
   if (activeSubcategory) {
     filtered = filtered.filter((p) => p.subcategory === activeSubcategory);
@@ -228,9 +266,14 @@ const StoreDetail = () => {
     setBadgeFilter(null);
     setInStockOnly(false);
     setSearchQuery("");
+    setShowFlashSale(false);
+    setShowAllProducts(false);
+    setShowContact(false);
   };
 
-  const hasActiveFilters = activeCategory || activeSubcategory || priceMin || priceMax || badgeFilter || inStockOnly || searchQuery;
+  const hasActiveFilters = !!(activeCategory || activeSubcategory || priceMin || priceMax || badgeFilter || inStockOnly || searchQuery || showFlashSale);
+  const activeFilterCount = [activeCategory, activeSubcategory, priceMin, priceMax, badgeFilter, inStockOnly && "stock", searchQuery, showFlashSale && "flash"].filter(Boolean).length;
+  const isHomePage = !activeCategory && !showFlashSale && !showAllProducts && !showContact;
 
   const SidebarContent = () => (
     <div className="space-y-5">
@@ -349,12 +392,15 @@ const StoreDetail = () => {
         metaKeywords={store.metaKeywords}
       />
       {/* ─── Banner + Store Info ─── */}
-      <div className="relative">
-        <div className="h-48 sm:h-60 overflow-hidden bg-gradient-to-r from-primary to-primary/80">
-          <img src={bannerSrc(store.banner)} alt={`Banner ${store.name}`} className="w-full h-full object-cover block" onError={onImgError("banner")} />
-          <div className="absolute inset-0 h-48 sm:h-60" style={{ background: theme.bannerGradient }} />
+      <div className="relative bg-gradient-to-r from-primary to-primary/80">
+        {/* Banner image area — keeps 3:1 aspect ratio (matches recommended 1200×400) */}
+        <div className="relative w-full aspect-[3/1] max-h-[420px] overflow-hidden">
+          <img src={bannerSrc(store.banner)} alt={`Banner ${store.name}`} className="absolute inset-0 w-full h-full object-cover block" onError={onImgError("banner")} />
+          <div className="absolute inset-0" style={{ background: theme.bannerGradient }} />
         </div>
-        <div className="container relative -mt-24 z-10 pb-6">
+        {/* Store info card — overlaps banner from below, same gradient bg keeps white text readable */}
+        <div className="container relative z-10">
+          <div className="-mt-20 sm:-mt-24 pb-6">
           <div className="flex flex-col sm:flex-row items-start gap-4">
             <img src={logoSrc(store.logo, store.name)} alt={store.name}
               className="h-24 w-24 rounded-2xl border-4 border-card shadow-lg bg-card" onError={onImgError("logo", store.name)} />
@@ -434,6 +480,7 @@ const StoreDetail = () => {
               </div>
             </div>
           </div>
+          </div>
         </div>
       </div>
 
@@ -441,30 +488,70 @@ const StoreDetail = () => {
       <div className="sticky top-16 z-40 bg-card border-b border-border">
         <div className="container">
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide h-11 text-sm">
-            <button onClick={() => { setActiveCategory(null); setActiveSubcategory(null); }}
-              className={`px-4 h-full shrink-0 font-medium transition-colors border-b-2 ${!activeCategory ? theme.navActive : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+            <button onClick={() => { setActiveCategory(null); setActiveSubcategory(null); setShowFlashSale(false); setShowAllProducts(false); }}
+              className={`px-4 h-full shrink-0 font-medium transition-colors border-b-2 ${isHomePage ? theme.navActive : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               Início
             </button>
+            <button onClick={() => { setShowAllProducts(true); setActiveCategory(null); setActiveSubcategory(null); setShowFlashSale(false); }}
+              className={`px-4 h-full shrink-0 font-medium transition-colors border-b-2 flex items-center gap-1.5 ${showAllProducts && !activeCategory ? theme.navActive : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              <Package className="h-3.5 w-3.5" /> Todos Produtos
+            </button>
             {uniqueCategories.map((cat) => (
-              <button key={cat} onClick={() => { setActiveCategory(cat); setActiveSubcategory(null); }}
+              <button key={cat} onClick={() => { setActiveCategory(cat); setActiveSubcategory(null); setShowFlashSale(false); setShowAllProducts(true); }}
                 className={`px-4 h-full shrink-0 font-medium transition-colors border-b-2 ${activeCategory === cat ? theme.navActive : "border-transparent text-muted-foreground hover:text-foreground"}`}>
                 {cat}
               </button>
             ))}
+            {promoProducts.length > 0 && (
+              <button onClick={() => { setShowFlashSale(true); setActiveCategory(null); setActiveSubcategory(null); setShowAllProducts(false); }}
+                className={`px-4 h-full shrink-0 font-medium transition-colors border-b-2 flex items-center gap-1.5 ${showFlashSale ? "border-destructive text-destructive" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                <Zap className="h-3.5 w-3.5" /> Flash Sale
+                <span className="text-[10px] bg-destructive text-white px-1.5 py-0.5 rounded-full font-bold leading-none">{promoProducts.length}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       <div className="container py-6">
         {/* ─── Hero Slider ─── */}
-        {!activeCategory && (
+        {isHomePage && (
           <section className="mb-8">
             <StoreHeroSlider storeSlug={store.slug} />
           </section>
         )}
 
-        {/* ─── Flash Deals ─── */}
-        {!activeCategory && promoProducts.length > 0 && (
+        {/* ─── Flash Sale Header (when tab active) ─── */}
+        {showFlashSale && (
+          <section className="mb-6">
+            <div className="rounded-2xl bg-gradient-to-r from-red-500 to-orange-500 p-5 sm:p-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                  <Zap className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold">Flash Sale</h2>
+                  <p className="text-white/80 text-sm">{promoProducts.length} produto{promoProducts.length !== 1 ? "s" : ""} em promocao</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-white/70 text-xs font-medium mr-1">Termina em</span>
+                {[
+                  { v: countdown.h, l: "h" },
+                  { v: countdown.m, l: "m" },
+                  { v: countdown.s, l: "s" },
+                ].map(({ v, l }) => (
+                  <span key={l} className="bg-white/20 backdrop-blur text-white text-sm font-bold px-2.5 py-1.5 rounded-lg min-w-[36px] text-center">
+                    {String(v).padStart(2, "0")}{l}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ─── Flash Deals (homepage preview) ─── */}
+        {isHomePage && promoProducts.length > 0 && (
           <section className="mb-8">
             <div className={`rounded-2xl border ${theme.flashAccent} bg-card overflow-hidden`}>
               <div className={`flex items-center justify-between px-5 py-3 ${theme.accentBgLight} border-b ${theme.highlightBorder}`}>
@@ -474,21 +561,27 @@ const StoreDetail = () => {
                   </div>
                   <h3 className="font-bold text-sm">Flash Sale</h3>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-muted-foreground font-medium mr-1">Termina em</span>
-                  {[
-                    { v: countdown.h, l: "h" },
-                    { v: countdown.m, l: "m" },
-                    { v: countdown.s, l: "s" },
-                  ].map(({ v, l }) => (
-                    <span key={l} className="bg-foreground text-background text-xs font-bold px-1.5 py-0.5 rounded-md min-w-[26px] text-center">
-                      {String(v).padStart(2, "0")}{l}
-                    </span>
-                  ))}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-muted-foreground font-medium mr-1">Termina em</span>
+                    {[
+                      { v: countdown.h, l: "h" },
+                      { v: countdown.m, l: "m" },
+                      { v: countdown.s, l: "s" },
+                    ].map(({ v, l }) => (
+                      <span key={l} className="bg-foreground text-background text-xs font-bold px-1.5 py-0.5 rounded-md min-w-[26px] text-center">
+                        {String(v).padStart(2, "0")}{l}
+                      </span>
+                    ))}
+                  </div>
+                  <button onClick={() => { setShowFlashSale(true); setActiveCategory(null); setActiveSubcategory(null); setShowAllProducts(false); }}
+                    className="text-[11px] font-semibold text-destructive hover:underline whitespace-nowrap">
+                    Ver Todos →
+                  </button>
                 </div>
               </div>
               <div className="p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {promoProducts.map((p) => (
+                {promoProducts.slice(0, 4).map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}
               </div>
@@ -496,8 +589,46 @@ const StoreDetail = () => {
           </section>
         )}
 
+        {/* ─── Featured Products (store homepage) ─── */}
+        {isHomePage && featuredStoreProducts.length > 0 && (
+          <section className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Award className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <h3 className="font-bold text-sm">Produtos em Destaque</h3>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {featuredStoreProducts.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ─── Trending Products (store homepage) ─── */}
+        {isHomePage && trendingStoreProducts.length > 0 && (
+          <section className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-warning/10 flex items-center justify-center">
+                  <TrendingUp className="h-3.5 w-3.5 text-warning" />
+                </div>
+                <h3 className="font-bold text-sm">Produtos em Alta</h3>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {trendingStoreProducts.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* ─── Policies ─── */}
-        {!activeCategory && (
+        {isHomePage && (
           <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
             {[
               { icon: <Truck className={`h-5 w-5 ${theme.policyIconColor}`} />, title: "Entrega Rápida", desc: "2-5 dias úteis" },
@@ -517,7 +648,7 @@ const StoreDetail = () => {
         )}
 
         {/* ─── Products with Sidebar ─── */}
-        <section>
+        {!isHomePage && !showContact && <section>
           <div className="flex gap-6">
             {/* Desktop Sidebar */}
             <aside className="hidden lg:block w-64 shrink-0">
@@ -526,30 +657,43 @@ const StoreDetail = () => {
               </div>
             </aside>
 
-            {/* Mobile Filter Button */}
-            <div className="lg:hidden fixed bottom-4 right-4 z-50">
-              <button onClick={() => setMobileSidebar(true)}
-                className={`flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-xs font-semibold text-primary-foreground ${theme.pillActive} bg-primary`}>
-                <SlidersHorizontal className="h-4 w-4" /> Filtros
-                {hasActiveFilters && <span className="h-2 w-2 rounded-full bg-destructive" />}
-              </button>
-            </div>
-
-            {/* Mobile Sidebar Overlay */}
+            {/* Mobile Bottom-Sheet Drawer */}
             {mobileSidebar && (
               <div className="fixed inset-0 z-50 lg:hidden">
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileSidebar(false)} />
-                <aside className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-card border-l border-border overflow-y-auto">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                    <h3 className="text-sm font-bold flex items-center gap-2">
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setMobileSidebar(false)} />
+                <aside className="absolute inset-x-0 bottom-0 max-h-[88vh] bg-card rounded-t-3xl shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300">
+                  {/* Grab handle */}
+                  <div className="flex justify-center pt-2.5 pb-1">
+                    <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+                  </div>
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-5 py-2 border-b border-border">
+                    <h3 className="text-base font-bold flex items-center gap-2">
                       <SlidersHorizontal className="h-4 w-4" /> Filtros
+                      {activeFilterCount > 0 && (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${theme.pillActive}`}>{activeFilterCount}</span>
+                      )}
                     </h3>
-                    <button onClick={() => setMobileSidebar(false)} className="p-1 text-muted-foreground hover:text-foreground">
+                    <button onClick={() => setMobileSidebar(false)} className="p-1.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground">
                       <X className="h-5 w-5" />
                     </button>
                   </div>
-                  <div className="p-4">
+                  {/* Scrollable content */}
+                  <div className="flex-1 overflow-y-auto px-5 py-4">
                     <SidebarContent />
+                  </div>
+                  {/* Sticky footer */}
+                  <div className="flex gap-2 px-5 py-3 border-t border-border bg-card">
+                    {hasActiveFilters && (
+                      <button onClick={clearFilters}
+                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold border border-border text-muted-foreground hover:bg-secondary">
+                        Limpar Tudo
+                      </button>
+                    )}
+                    <button onClick={() => setMobileSidebar(false)}
+                      className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold ${theme.pillActive} shadow-sm`}>
+                      Ver {sorted.length} produto{sorted.length !== 1 ? "s" : ""}
+                    </button>
                   </div>
                 </aside>
               </div>
@@ -557,14 +701,59 @@ const StoreDetail = () => {
 
             {/* Main Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+              {/* ─── Mobile/Tablet Sticky Toolbar ─── */}
+              <div className="lg:hidden sticky top-[7rem] z-30 -mx-4 sm:mx-0 px-4 sm:px-0 pt-2 pb-2.5 mb-3 bg-secondary/95 backdrop-blur supports-[backdrop-filter]:bg-secondary/80 sm:bg-transparent sm:backdrop-blur-0 border-b border-border sm:border-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input type="text" placeholder="Buscar produtos..." value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-9 py-2.5 text-sm rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-ring" />
+                    {searchQuery && (
+                      <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <button onClick={() => setMobileSidebar(true)}
+                    className={`relative shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold border ${hasActiveFilters ? `${theme.pillActive} border-transparent` : "bg-card border-border"}`}>
+                    <SlidersHorizontal className="h-4 w-4" />
+                    <span className="hidden sm:inline">Filtros</span>
+                    {activeFilterCount > 0 && (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${hasActiveFilters ? "bg-white/25" : `${theme.pillActive}`}`}>{activeFilterCount}</span>
+                    )}
+                  </button>
+                </div>
+                {/* Quick chips: sort + stock + first categories */}
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                    className="shrink-0 text-[11px] rounded-full border border-border bg-card px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring font-medium">
+                    <option value="relevance">Mais relevantes</option>
+                    <option value="price-asc">Preço ↑</option>
+                    <option value="price-desc">Preço ↓</option>
+                    <option value="rating">Melhor avaliados</option>
+                  </select>
+                  <button onClick={() => setInStockOnly(!inStockOnly)}
+                    className={`shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-medium border whitespace-nowrap ${inStockOnly ? `${theme.pillActive} border-transparent` : "bg-card border-border text-muted-foreground"}`}>
+                    {inStockOnly && <Check className="h-3 w-3" />} Em stock
+                  </button>
+                  {availableBadges.map((b) => (
+                    <button key={b} onClick={() => setBadgeFilter(badgeFilter === b ? null : b)}
+                      className={`shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-medium border whitespace-nowrap ${badgeFilter === b ? `${theme.pillActive} border-transparent` : "bg-card border-border text-muted-foreground"}`}>
+                      {b === "Promo" ? "🔥" : b === "Novo" ? "✨" : null} {b}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ─── Desktop Toolbar ─── */}
+              <div className="hidden lg:flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
                 <div>
                   <h2 className="text-lg font-bold">
                     {activeSubcategory || activeCategory || "Todos os Produtos"}
                   </h2>
                   <p className="text-xs text-muted-foreground">
                     {sorted.length} produto{sorted.length !== 1 ? "s" : ""}
-                    {hasActiveFilters && <span className="ml-1 text-primary cursor-pointer hover:underline" onClick={clearFilters}>(limpar filtros)</span>}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -572,7 +761,7 @@ const StoreDetail = () => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                     <input type="text" placeholder="Buscar nesta loja..." value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 pr-3 py-1.5 text-xs rounded-lg border border-border bg-card w-40 sm:w-52 focus:outline-none focus:ring-2 focus:ring-ring" />
+                      className="pl-9 pr-3 py-1.5 text-xs rounded-lg border border-border bg-card w-52 focus:outline-none focus:ring-2 focus:ring-ring" />
                   </div>
                   <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                     className="text-xs border border-border rounded-lg px-3 py-1.5 bg-card focus:outline-none focus:ring-2 focus:ring-ring">
@@ -581,7 +770,7 @@ const StoreDetail = () => {
                     <option value="price-desc">Preço ↓</option>
                     <option value="rating">Avaliação</option>
                   </select>
-                  <div className="hidden sm:flex border border-border rounded-lg overflow-hidden">
+                  <div className="flex border border-border rounded-lg overflow-hidden">
                     <button onClick={() => setViewGrid(true)}
                       className={`p-1.5 ${viewGrid ? `${theme.pillActive}` : "bg-card text-muted-foreground"}`}>
                       <Grid3X3 className="h-3.5 w-3.5" />
@@ -594,8 +783,63 @@ const StoreDetail = () => {
                 </div>
               </div>
 
+              {/* ─── Title (mobile/tablet) ─── */}
+              <div className="lg:hidden flex items-baseline justify-between mb-2">
+                <h2 className="text-base font-bold truncate">
+                  {activeSubcategory || activeCategory || (showFlashSale ? "Flash Sale" : "Todos os Produtos")}
+                </h2>
+                <span className="text-[11px] text-muted-foreground shrink-0 ml-2">{sorted.length} resultado{sorted.length !== 1 ? "s" : ""}</span>
+              </div>
+
+              {/* ─── Active filter chips ─── */}
+              {hasActiveFilters && (
+                <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                  {activeCategory && (
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium ${theme.accentBgLight} ${theme.accentText}`}>
+                      {activeCategory}
+                      <button onClick={() => { setActiveCategory(null); setActiveSubcategory(null); }} className="hover:bg-black/10 rounded-full p-0.5"><X className="h-3 w-3" /></button>
+                    </span>
+                  )}
+                  {activeSubcategory && (
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium ${theme.accentBgLight} ${theme.accentText}`}>
+                      {activeSubcategory}
+                      <button onClick={() => setActiveSubcategory(null)} className="hover:bg-black/10 rounded-full p-0.5"><X className="h-3 w-3" /></button>
+                    </span>
+                  )}
+                  {badgeFilter && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-secondary text-foreground">
+                      {badgeFilter}
+                      <button onClick={() => setBadgeFilter(null)} className="hover:bg-black/10 rounded-full p-0.5"><X className="h-3 w-3" /></button>
+                    </span>
+                  )}
+                  {(priceMin || priceMax) && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-secondary text-foreground">
+                      {priceMin || "0"} - {priceMax || "∞"} Kz
+                      <button onClick={() => { setPriceMin(""); setPriceMax(""); }} className="hover:bg-black/10 rounded-full p-0.5"><X className="h-3 w-3" /></button>
+                    </span>
+                  )}
+                  {inStockOnly && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-700">
+                      Em stock
+                      <button onClick={() => setInStockOnly(false)} className="hover:bg-black/10 rounded-full p-0.5"><X className="h-3 w-3" /></button>
+                    </span>
+                  )}
+                  {searchQuery && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-secondary text-foreground">
+                      "{searchQuery}"
+                      <button onClick={() => setSearchQuery("")} className="hover:bg-black/10 rounded-full p-0.5"><X className="h-3 w-3" /></button>
+                    </span>
+                  )}
+                  {activeFilterCount > 1 && (
+                    <button onClick={clearFilters} className="text-[11px] font-semibold text-destructive hover:underline ml-1">
+                      Limpar tudo
+                    </button>
+                  )}
+                </div>
+              )}
+
               {sorted.length > 0 ? (
-                <div className={viewGrid ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3" : "flex flex-col gap-3"}>
+                <div className={viewGrid ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3" : "flex flex-col gap-3"}>
                   {sorted.map((p) =>
                     viewGrid ? (
                       <ProductCard key={p.id} product={p} />
@@ -633,10 +877,27 @@ const StoreDetail = () => {
               )}
             </div>
           </div>
-        </section>
+        </section>}
+
+        {/* ─── Contact Header (when contact tab active) ─── */}
+        {showContact && (
+          <section className="mb-6">
+            <div className="rounded-2xl bg-gradient-to-r from-primary to-primary/80 p-5 sm:p-6 text-primary-foreground">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                  <MessageCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold">Contacto</h2>
+                  <p className="text-primary-foreground/80 text-sm">Entre em contacto com {store.name}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ─── Payment Methods ─── */}
-        {store.paymentMethods && store.paymentMethods.filter((pm: any) => pm.is_active).length > 0 && (
+        {(isHomePage || showContact) && store.paymentMethods && store.paymentMethods.filter((pm: any) => pm.is_active).length > 0 && (
           <section className="mt-10">
             <h3 className="font-bold mb-3 flex items-center gap-2"><CreditCard className={`h-4 w-4 ${theme.accentText}`} /> Formas de Pagamento</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -664,7 +925,7 @@ const StoreDetail = () => {
         )}
 
         {/* ─── Contact / About / Social ─── */}
-        <section className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {(isHomePage || showContact) && <section className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="rounded-2xl border border-border bg-card p-6">
             <h3 className="font-bold mb-3">Sobre a Loja</h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">{store.description}</p>
@@ -716,7 +977,7 @@ const StoreDetail = () => {
               totalReviews={store.reviewCount}
             />
           </div>
-        </section>
+        </section>}
       </div>
     </main>
   );
