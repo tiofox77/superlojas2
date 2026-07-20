@@ -117,6 +117,10 @@ export default function StorePanelFacebook() {
   const btnPrimary = `px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 ${s.btnPrimary} disabled:opacity-50`;
   const btnGhost = `px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 ${s.btnSecondary}`;
 
+  const catalogUrl = cfg.fb_catalog_id
+    ? `https://business.facebook.com/commerce/catalogs/${cfg.fb_catalog_id}/products`
+    : null;
+
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center gap-3">
@@ -246,8 +250,13 @@ export default function StorePanelFacebook() {
             Sincronizar agora
           </button>
           {syncDone !== null && (
-            <div className={`rounded-xl p-3 text-sm flex items-center gap-2 ${s.badge("green")}`}>
+            <div className={`rounded-xl p-3 text-sm flex flex-wrap items-center gap-2 ${s.badge("green")}`}>
               <CheckCircle2 className="w-4 h-4" /> {syncDone} produtos sincronizados com sucesso.
+              {catalogUrl && (
+                <a href={catalogUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline font-medium ml-1">
+                  Ver catálogo no Facebook <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
             </div>
           )}
           <div className="flex justify-between pt-2">
@@ -276,6 +285,11 @@ export default function StorePanelFacebook() {
             <li>Vá a <b>Fontes de dados → Adicionar itens → Feed agendado</b>.</li>
             <li>Cole o URL acima, escolha a frequência (ex.: diária) e conclua.</li>
           </ol>
+          {catalogUrl && (
+            <a href={catalogUrl} target="_blank" rel="noreferrer" className={`${btnGhost} w-fit`}>
+              <Facebook className="w-4 h-4 text-blue-600" /> Ver catálogo no Facebook <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
           <div className="flex justify-between pt-2">
             <button onClick={() => setStep(3)} className={btnGhost}><ArrowLeft className="w-4 h-4" /> Voltar</button>
             <button onClick={() => { toast.success("Tudo pronto!", "A sua loja está ligada ao Facebook."); }} className={btnPrimary}>
