@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, CreditCard, MapPin, Phone, User, Mail, CheckCircle2, Truck, ShieldCheck, Loader2, AlertTriangle, BookmarkCheck, PenLine, Upload, Building2, Copy, FileText } from "lucide-react";
+import { ArrowLeft, CreditCard, MapPin, User, Mail, CheckCircle2, Truck, ShieldCheck, Loader2, AlertTriangle, BookmarkCheck, PenLine, Upload, Building2, Copy, FileText } from "lucide-react";
+import PhoneInput from "@/components/PhoneInput";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { logoSrc, productImgSrc, onImgError } from "@/lib/imageHelpers";
+import { useSubdomainStore } from "@/contexts/SubdomainStoreContext";
+import { pixelTrack } from "@/lib/facebookPixel";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
@@ -21,6 +24,20 @@ const isTransferType = (type: string) => TRANSFER_TYPES.some(t => type.toLowerCa
 
 const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
+  const { store: subdomainStore } = useSubdomainStore();
+
+  // Facebook Pixel: InitiateCheckout when the store's checkout opens with items.
+  useEffect(() => {
+    if (subdomainStore?.fb_pixel_id && items.length > 0) {
+      pixelTrack(subdomainStore.fb_pixel_id, "InitiateCheckout", {
+        content_ids: items.map((i) => `SL-${i.product.id}`),
+        num_items: items.reduce((n, i) => n + i.quantity, 0),
+        value: totalPrice,
+        currency: "AOA",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subdomainStore?.fb_pixel_id]);
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const formatPrice = (val: number) => new Intl.NumberFormat("pt-AO").format(val);
@@ -274,11 +291,7 @@ const Checkout = () => {
                     </div>
                     <div>
                       <label className="text-sm font-medium mb-1.5 block">Telefone *</label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <input type="tel" value={form.phone} onChange={(e) => handleUpdate("phone", e.target.value)}
-                          placeholder="+244 9XX XXX XXX" className={`${inputCls} pl-10`} />
-                      </div>
+                      <PhoneInput value={form.phone} onChange={(v) => handleUpdate("phone", v)} className={inputCls} />
                     </div>
                     <div>
                       <label className="text-sm font-medium mb-1.5 block">Provincia *</label>
@@ -511,7 +524,16 @@ const Checkout = () => {
                       body: fd,
                     });
                     const d = await res.json();
-                    if (res.ok) { setOrderNumbers(d.order_numbers || []); clearCart(); setStep("done"); }
+                    if (res.ok) {
+                      pixelTrack(subdomainStore?.fb_pixel_id, "Purchase", {
+                        content_ids: items.map((i) => `SL-${i.product.id}`),
+                        content_type: "product",
+                        num_items: items.reduce((n, i) => n + i.quantity, 0),
+                        value: totalPrice + deliveryFee,
+                        currency: "AOA",
+                      });
+                      setOrderNumbers(d.order_numbers || []); clearCart(); setStep("done");
+                    }
                     else { setStockErrors(d.stock_errors || [d.error || "Erro ao processar pedido."]); }
                   } catch { setStockErrors(["Erro de conexao. Tente novamente."]); }
                   finally { setProcessing(false); }

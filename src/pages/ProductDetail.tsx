@@ -304,6 +304,13 @@ const ProductDetail = () => {
                   if (missing.length > 0) { setVariantAlert(`Selecione: ${missing.join(", ")}`); return; }
                   if (quantity > product.stock) { setStockAlert(`Apenas ${product.stock} unidades disponiveis.`); setQuantity(product.stock); return; }
                   addItem(product, quantity, selectedVariants);
+                  pixelTrack(subdomainStore?.fb_pixel_id, "AddToCart", {
+                    content_ids: [`SL-${product.id}`],
+                    content_name: product.name,
+                    content_type: "product",
+                    value: (Number(product.price) || 0) * quantity,
+                    currency: "AOA",
+                  });
                   setStockAlert(""); setVariantAlert("");
                   toast.success(`"${product.name}" adicionado ao carrinho`);
                 }}
