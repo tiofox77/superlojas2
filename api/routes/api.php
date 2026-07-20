@@ -176,6 +176,7 @@ Route::get('/subdomain/resolve/{slug}', function (string $slug) {
             'rating' => $store->rating,
             'review_count' => $store->review_count,
             'is_official' => $store->is_official,
+            'fb_pixel_id' => $store->fb_pixel_id,
             'meta_title' => $store->meta_title,
             'meta_description' => $store->meta_description,
             'meta_keywords' => $store->meta_keywords,

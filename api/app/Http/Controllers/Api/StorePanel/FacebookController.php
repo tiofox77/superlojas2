@@ -46,6 +46,7 @@ class FacebookController extends Controller
             'catalog_id' => $store->fb_catalog_id,
             'business_id' => $store->fb_business_id,
             'currency' => $store->fb_currency ?: 'AOA',
+            'pixel_id' => $store->fb_pixel_id,
             'last_sync' => $store->fb_last_synced_at,
             'feed_url' => $this->feedUrl($store),
             'product_count' => Product::where('store_id', $store->id)->where('is_active', true)->count(),
@@ -62,9 +63,10 @@ class FacebookController extends Controller
             'fb_catalog_id' => 'sometimes|nullable|string|max:64',
             'fb_business_id' => 'sometimes|nullable|string|max:64',
             'fb_currency' => 'sometimes|nullable|string|max:8',
+            'fb_pixel_id' => 'sometimes|nullable|string|max:32',
         ]);
 
-        foreach (['fb_catalog_id', 'fb_business_id', 'fb_currency'] as $k) {
+        foreach (['fb_catalog_id', 'fb_business_id', 'fb_currency', 'fb_pixel_id'] as $k) {
             if (array_key_exists($k, $data)) {
                 $store->{$k} = $data[$k] ?? '';
             }

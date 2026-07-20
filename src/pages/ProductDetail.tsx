@@ -3,12 +3,15 @@ import { useProduct, useProducts } from "@/hooks/useApi";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { Star, ShoppingCart, MessageCircle, ChevronRight, Minus, Plus, Truck, Heart, AlertTriangle, Clock, PackageCheck, Loader2, X } from "lucide-react";
+import PhoneInput from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { ReviewSection } from "@/components/ReviewSection";
 import { toast } from "sonner";
 import { productImgSrc } from "@/lib/imageHelpers";
 import ProductSeoHead from "@/components/ProductSeoHead";
+import { useSubdomainStore } from "@/contexts/SubdomainStoreContext";
+import { pixelTrack } from "@/lib/facebookPixel";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -16,6 +19,20 @@ const ProductDetail = () => {
   const { data: relatedProducts = [] } = useProducts(product ? { category: product.category } : undefined);
   const { addItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { store: subdomainStore } = useSubdomainStore();
+
+  // Fire Facebook Pixel ViewContent when the product loads (store's pixel).
+  useEffect(() => {
+    const pixelId = subdomainStore?.fb_pixel_id;
+    if (!pixelId || !product) return;
+    pixelTrack(pixelId, "ViewContent", {
+      content_ids: [`SL-${product.id}`],
+      content_name: product.name,
+      content_type: "product",
+      value: Number(product.price) || 0,
+      currency: "AOA",
+    });
+  }, [subdomainStore?.fb_pixel_id, product]);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [selectedImage, setSelectedImage] = useState(0);
@@ -415,9 +432,7 @@ const ProductDetail = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">Telefone <span className="text-destructive">*</span></label>
-                  <input type="tel" value={preOrderForm.phone} onChange={(e) => setPreOrderForm(f => ({ ...f, phone: e.target.value }))}
-                    placeholder="+244 9XX XXX XXX"
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20" />
+                  <PhoneInput value={preOrderForm.phone} onChange={(v) => setPreOrderForm(f => ({ ...f, phone: v }))} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">Provincia <span className="text-destructive">*</span></label>

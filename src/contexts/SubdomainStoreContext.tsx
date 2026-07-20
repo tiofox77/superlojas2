@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { getStoreSlugFromSubdomain } from "@/hooks/useSubdomain";
+import { initPixel } from "@/lib/facebookPixel";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
@@ -28,6 +29,7 @@ interface SubdomainStore {
   meta_description: string | null;
   meta_keywords: string | null;
   plan: string;
+  fb_pixel_id?: string | null;
 }
 
 interface SubdomainStoreContextType {
@@ -67,6 +69,7 @@ export function SubdomainStoreProvider({ children }: { children: ReactNode }) {
         const data = await res.json();
         if (res.ok) {
           setStore(data.store);
+          initPixel(data.store?.fb_pixel_id); // fire the store's FB Pixel (PageView)
         } else if (res.status === 403 && data.upgrade) {
           setNeedsUpgrade(true);
           setError(data.error);

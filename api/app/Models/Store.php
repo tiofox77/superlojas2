@@ -58,6 +58,7 @@ class Store extends Model
         'fb_currency',
         'fb_feed_key',
         'fb_last_synced_at',
+        'fb_pixel_id',
         'categories',
         'categories_changed_at',
         'socials',

@@ -24,7 +24,7 @@ export default function StorePanelFacebook() {
   const [step, setStep] = useState(1);
   const [cfg, setCfg] = useState({
     fb_enabled: true, fb_access_token: "",
-    fb_catalog_id: "", fb_business_id: "", fb_currency: "AOA",
+    fb_catalog_id: "", fb_business_id: "", fb_currency: "AOA", fb_pixel_id: "",
   });
   const [meta, setMeta] = useState<{ token_preview?: string | null; token_set?: boolean; last_sync?: string | null; feed_url?: string; product_count?: number }>({});
   const [saving, setSaving] = useState(false);
@@ -49,6 +49,7 @@ export default function StorePanelFacebook() {
         fb_catalog_id: d.catalog_id || "",
         fb_business_id: d.business_id || "",
         fb_currency: d.currency || "AOA",
+        fb_pixel_id: d.pixel_id || "",
       }));
       setMeta({ token_preview: d.access_token_preview, token_set: d.access_token_set, last_sync: d.last_sync, feed_url: d.feed_url, product_count: d.product_count });
     } catch { /* ignore */ }
@@ -204,7 +205,14 @@ export default function StorePanelFacebook() {
             <Field label="Moeda" s={s}>
               <input value={cfg.fb_currency} onChange={(e) => setCfg({ ...cfg, fb_currency: e.target.value })} className={`w-full px-3 py-2 rounded-xl border text-sm ${s.input}`} />
             </Field>
+            <Field label="Pixel ID (rastreio automático) — opcional" s={s}>
+              <input value={cfg.fb_pixel_id} onChange={(e) => setCfg({ ...cfg, fb_pixel_id: e.target.value })}
+                placeholder="ex: 123456789012345" className={`w-full px-3 py-2 rounded-xl border text-sm ${s.input}`} />
+            </Field>
           </div>
+          <p className={`text-xs ${s.textMuted}`}>
+            O <b>Pixel</b> mede visitas e conversões da sua loja para anúncios. Cole o ID do <a href="https://business.facebook.com/events_manager2" target="_blank" rel="noreferrer" className="text-blue-500 inline-flex items-center gap-1">Gestor de Eventos <ExternalLink className="w-3 h-3" /></a> — o site injecta-o automaticamente e dispara PageView e ViewContent.
+          </p>
 
           <div className="flex justify-end pt-2">
             <button onClick={saveAndNext} disabled={saving || (!cfg.fb_catalog_id && !meta.token_set)} className={btnPrimary}>
