@@ -90,6 +90,7 @@ class Store extends Model
     protected $hidden = [
         'api_key',
         'api_secret',
+        'fb_access_token',
     ];
 
     public function products(): HasMany
