@@ -144,7 +144,11 @@ class FacebookService
             ]);
             $json = $res->json();
             if (isset($json['error'])) {
-                return ['ok' => false, 'error' => $json['error']['message'] ?? 'Erro do Facebook.'];
+                $msg = $json['error']['message'] ?? 'Erro do Facebook.';
+                if (stripos($msg, 'access token') !== false || stripos($msg, 'OAuth') !== false) {
+                    $msg .= ' — Verifique se colou um Access Token válido (system user, começa por "EAA...") com as permissões business_management e catalog_management.';
+                }
+                return ['ok' => false, 'error' => $msg];
             }
             $businesses = [];
             foreach (($json['data'] ?? []) as $b) {

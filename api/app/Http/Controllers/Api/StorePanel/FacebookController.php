@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\StorePanel;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use App\Models\Store;
 use App\Services\FacebookService;
 use Illuminate\Http\Request;
@@ -47,6 +48,7 @@ class FacebookController extends Controller
             'currency' => $store->fb_currency ?: 'AOA',
             'last_sync' => $store->fb_last_synced_at,
             'feed_url' => $this->feedUrl($store),
+            'product_count' => Product::where('store_id', $store->id)->where('is_active', true)->count(),
         ]);
     }
 
@@ -70,9 +72,9 @@ class FacebookController extends Controller
         if (array_key_exists('fb_enabled', $data)) {
             $store->fb_enabled = (bool) $data['fb_enabled'];
         }
-        // Secret: only overwrite when provided.
+        // Secret: only overwrite when provided (trim paste whitespace/newlines).
         if (!empty($data['fb_access_token'])) {
-            $store->fb_access_token = $data['fb_access_token'];
+            $store->fb_access_token = trim($data['fb_access_token']);
         }
         $store->save();
 
@@ -94,7 +96,7 @@ class FacebookController extends Controller
     {
         $store = $this->getStore($request, $slug);
         $data = $request->validate(['access_token' => 'sometimes|nullable|string|max:1000']);
-        $token = !empty($data['access_token']) ? $data['access_token'] : $store->fb_access_token;
+        $token = !empty($data['access_token']) ? trim($data['access_token']) : $store->fb_access_token;
         return response()->json((new FacebookService($store))->listCatalogs($token));
     }
 
