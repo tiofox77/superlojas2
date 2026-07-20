@@ -51,6 +51,7 @@ import AdminAnalytics from "./pages/admin/Analytics";
 import AdminAnalyticsReports from "./pages/admin/AnalyticsReports";
 import AdminSystemUpdate from "./pages/admin/SystemUpdate";
 import AdminAliExpress from "./pages/admin/AliExpress";
+import AdminFacebook from "./pages/admin/Facebook";
 import StorePanelLayout from "./layouts/StorePanelLayout";
 import StorePanelDashboard from "./pages/store-panel/Dashboard";
 import StorePanelProducts from "./pages/store-panel/Products";
@@ -169,6 +170,7 @@ const App = () => (
                   <Route path="analytics" element={<AdminAnalytics />} />
                   <Route path="relatorios" element={<AdminAnalyticsReports />} />
                   <Route path="aliexpress" element={<AdminAliExpress />} />
+                  <Route path="facebook" element={<AdminFacebook />} />
                   <Route path="actualizacoes" element={<AdminSystemUpdate />} />
                 </Route>
                 {/* Store Owner Panel */}

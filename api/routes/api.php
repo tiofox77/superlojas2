@@ -62,6 +62,9 @@ Route::middleware('throttle:20,1')->post('/pre-orders', [\App\Http\Controllers\A
 
 Route::get('/site-settings', [App\Http\Controllers\Api\SiteSettingsController::class, 'index']);
 
+// ─── Facebook catalog feed (public, key-protected — Facebook pulls this) ──
+Route::get('/feed/facebook', [\App\Http\Controllers\Api\Admin\FacebookController::class, 'feed']);
+
 /**
  * Fallback: serve storage files through Laravel when the web server
  * can't resolve the public/storage symlink (common on cPanel).
@@ -553,6 +556,13 @@ Route::middleware(['auth:sanctum', 'super_admin'])->prefix('admin')->group(funct
     Route::post('/aliexpress/freight', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'freight']);
     Route::post('/supplier-orders/{supplierOrder}/place', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'placeSupplierOrder']);
     Route::post('/supplier-orders/{supplierOrder}/sync', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'syncSupplierOrder']);
+
+    // ─── Facebook catalog integration ────────────────────────────
+    Route::get('/facebook/config', [\App\Http\Controllers\Api\Admin\FacebookController::class, 'config']);
+    Route::put('/facebook/config', [\App\Http\Controllers\Api\Admin\FacebookController::class, 'saveConfig']);
+    Route::get('/facebook/test', [\App\Http\Controllers\Api\Admin\FacebookController::class, 'test']);
+    Route::post('/facebook/sync', [\App\Http\Controllers\Api\Admin\FacebookController::class, 'sync']);
+    Route::post('/facebook/regenerate-feed-key', [\App\Http\Controllers\Api\Admin\FacebookController::class, 'regenerateFeedKey']);
     Route::get('/supplier-orders', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'index']);
     Route::post('/supplier-orders', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'store']);
     Route::get('/supplier-orders/{supplierOrder}', [\App\Http\Controllers\Api\Admin\AliExpressController::class, 'show']);

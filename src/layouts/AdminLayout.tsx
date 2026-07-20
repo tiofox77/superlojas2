@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Store, Package, Tag, Users, Image, Settings,
   LogOut, ChevronDown, Menu, X, Bell, Search, ShieldCheck,
   ChevronLeft, Globe, Sun, Moon, Send, Megaphone, CreditCard, Crown, Mail,
-  BarChart3, FileText, Download, ShoppingCart
+  BarChart3, FileText, Download, ShoppingCart, Facebook
 } from "lucide-react";
 
 const sidebarNav = [
@@ -26,6 +26,7 @@ const sidebarNav = [
   { label: "Analytics", to: "/admin/analytics", icon: BarChart3, color: "text-rose-500" },
   { label: "Relatorios", to: "/admin/relatorios", icon: FileText, color: "text-sky-500" },
   { label: "AliExpress", to: "/admin/aliexpress", icon: ShoppingCart, color: "text-orange-500" },
+  { label: "Facebook", to: "/admin/facebook", icon: Facebook, color: "text-blue-600" },
   { label: "Configuracoes", to: "/admin/configuracoes", icon: Settings, color: "text-gray-500" },
   { label: "Actualizacoes", to: "/admin/actualizacoes", icon: Download, color: "text-teal-500" },
 ];
