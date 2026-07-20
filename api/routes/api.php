@@ -62,8 +62,9 @@ Route::middleware('throttle:20,1')->post('/pre-orders', [\App\Http\Controllers\A
 
 Route::get('/site-settings', [App\Http\Controllers\Api\SiteSettingsController::class, 'index']);
 
-// ─── Facebook catalog feed (public, key-protected — Facebook pulls this) ──
-Route::get('/feed/facebook', [\App\Http\Controllers\Api\Admin\FacebookController::class, 'feed']);
+// ─── Facebook catalog feeds (public, key-protected — Facebook pulls these) ──
+Route::get('/feed/facebook', [\App\Http\Controllers\Api\Admin\FacebookController::class, 'feed']);           // marketplace-wide
+Route::get('/feed/facebook/{slug}', [\App\Http\Controllers\Api\StorePanel\FacebookController::class, 'feed']); // per-store
 
 /**
  * Fallback: serve storage files through Laravel when the web server
@@ -249,6 +250,13 @@ Route::middleware(['auth:sanctum', 'store_approved'])->prefix('store-panel/{slug
     Route::match(['put', 'post'], '/settings', [StorePanelSettings::class, 'update']);
     Route::get('/payments', [StorePanelPayment::class, 'index']);
     Route::put('/payments', [StorePanelPayment::class, 'update']);
+
+    // Facebook catalog (per store)
+    Route::get('/facebook/config', [\App\Http\Controllers\Api\StorePanel\FacebookController::class, 'config']);
+    Route::put('/facebook/config', [\App\Http\Controllers\Api\StorePanel\FacebookController::class, 'saveConfig']);
+    Route::get('/facebook/test', [\App\Http\Controllers\Api\StorePanel\FacebookController::class, 'test']);
+    Route::post('/facebook/sync', [\App\Http\Controllers\Api\StorePanel\FacebookController::class, 'sync']);
+    Route::post('/facebook/regenerate-feed-key', [\App\Http\Controllers\Api\StorePanel\FacebookController::class, 'regenerateFeedKey']);
 
     // Categories
     Route::get('/categories', [\App\Http\Controllers\Api\StorePanel\StoreCategoryController::class, 'index']);

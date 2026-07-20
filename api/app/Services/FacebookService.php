@@ -4,31 +4,43 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Models\Setting;
+use App\Models\Store;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Facebook / Instagram Commerce Catalog sync.
+ * Facebook / Instagram Commerce catalog sync.
+ *
+ * Works per-store (pass a Store — uses that store's credentials and only its
+ * products) or globally (no store — marketplace-wide, credentials from Settings).
  *
  * Two mechanisms:
- *  - Product feed (CSV) that Facebook pulls on a schedule (no token needed).
+ *  - CSV product feed that Facebook pulls on a schedule (no token needed).
  *  - Graph API items_batch push ("sync now"), needs access token + catalog id.
- *
- * Credentials live in the DB (Settings), managed in the admin panel.
  */
 class FacebookService
 {
     private const GRAPH = 'https://graph.facebook.com/v21.0';
 
+    private ?Store $store;
     private ?string $token;
     private ?string $catalogId;
     private string $currency;
 
-    public function __construct()
+    public function __construct(?Store $store = null)
     {
-        $this->token = self::setting('facebook_access_token');
-        $this->catalogId = self::setting('facebook_catalog_id');
-        $this->currency = self::setting('facebook_currency', 'AOA') ?: 'AOA';
+        $this->store = $store;
+
+        if ($store) {
+            $this->token = $store->fb_access_token ?: null;
+            $this->catalogId = $store->fb_catalog_id ?: null;
+            $this->currency = $store->fb_currency ?: 'AOA';
+        } else {
+            $this->token = self::setting('facebook_access_token');
+            $this->catalogId = self::setting('facebook_catalog_id');
+            $this->currency = self::setting('facebook_currency', 'AOA') ?: 'AOA';
+        }
     }
 
     private static function setting(string $key, $default = null)
@@ -46,12 +58,21 @@ class FacebookService
         return !empty($this->token) && !empty($this->catalogId);
     }
 
+    /** Product query scoped to the store (or all products, globally). */
+    private function productQuery(): Builder
+    {
+        $q = Product::with('store:id,name,slug')->where('is_active', true);
+        if ($this->store) {
+            $q->where('store_id', $this->store->id);
+        }
+        return $q;
+    }
+
     private function baseUrl(): string
     {
         return rtrim(config('app.url', 'https://superloja.vip'), '/');
     }
 
-    /** Absolute URL for a stored image path. */
     private function imageUrl(?string $path): ?string
     {
         if (!$path) return null;
@@ -59,15 +80,12 @@ class FacebookService
         return $this->baseUrl() . '/' . ltrim($path, '/');
     }
 
-    /** Retailer id used to identify the product in the FB catalog. */
     public function retailerId(Product $p): string
     {
         return 'SL-' . $p->id;
     }
 
-    /**
-     * Map a product to the Facebook catalog item shape.
-     */
+    /** Map a product to the Facebook catalog item shape. */
     public function mapProduct(Product $p): array
     {
         $img = $this->imageUrl(is_array($p->images) ? ($p->images[0] ?? null) : null);
@@ -100,16 +118,13 @@ class FacebookService
             if (isset($json['error'])) {
                 return ['ok' => false, 'message' => $json['error']['message'] ?? 'Erro do Facebook.'];
             }
-            return ['ok' => true, 'message' => 'Catálogo "' . ($json['name'] ?? '?') . '" — ' . ($json['product_count'] ?? 0) . ' produtos.', 'catalog' => $json];
+            return ['ok' => true, 'message' => 'Catálogo "' . ($json['name'] ?? '?') . '" — ' . ($json['product_count'] ?? 0) . ' produtos.'];
         } catch (\Throwable $e) {
             return ['ok' => false, 'message' => $e->getMessage()];
         }
     }
 
-    /**
-     * Push a batch of products to the catalog via items_batch.
-     * @param 'UPDATE'|'DELETE' $method
-     */
+    /** Push a batch of products via items_batch. */
     public function syncBatch(array $products, string $method = 'UPDATE'): array
     {
         if (!$this->isConfigured()) {
@@ -136,10 +151,7 @@ class FacebookService
         return is_array($json) ? $json : [];
     }
 
-    /**
-     * Sync all active products to the catalog (chunked).
-     * @return array{ok:bool, synced:int, batches:int, error?:string}
-     */
+    /** Sync all in-scope active products to the catalog (chunked). */
     public function syncAll(): array
     {
         if (!$this->isConfigured()) {
@@ -148,14 +160,17 @@ class FacebookService
         $synced = 0;
         $batches = 0;
         try {
-            Product::with('store:id,name,slug')
-                ->where('is_active', true)
-                ->chunk(200, function ($chunk) use (&$synced, &$batches) {
-                    $this->syncBatch($chunk->all(), 'UPDATE');
-                    $synced += $chunk->count();
-                    $batches++;
-                });
-            Setting::set('facebook_last_sync', now()->toIso8601String());
+            $this->productQuery()->chunk(200, function ($chunk) use (&$synced, &$batches) {
+                $this->syncBatch($chunk->all(), 'UPDATE');
+                $synced += $chunk->count();
+                $batches++;
+            });
+
+            if ($this->store) {
+                $this->store->forceFill(['fb_last_synced_at' => now()])->save();
+            } else {
+                Setting::set('facebook_last_sync', now()->toIso8601String());
+            }
             return ['ok' => true, 'synced' => $synced, 'batches' => $batches];
         } catch (\Throwable $e) {
             Log::warning('Facebook syncAll failed: ' . $e->getMessage());
@@ -163,24 +178,19 @@ class FacebookService
         }
     }
 
-    /**
-     * Build the CSV product feed (Facebook catalog spec) for all active products.
-     * Facebook pulls this URL on a schedule — no token required on our side.
-     */
+    /** Build the CSV product feed (Facebook catalog spec) for in-scope products. */
     public function buildCsvFeed(): string
     {
         $headers = ['id', 'title', 'description', 'availability', 'condition', 'price', 'link', 'image_link', 'brand'];
         $out = fopen('php://temp', 'r+');
         fputcsv($out, $headers);
 
-        Product::with('store:id,name,slug')
-            ->where('is_active', true)
-            ->chunk(500, function ($chunk) use ($out, $headers) {
-                foreach ($chunk as $p) {
-                    $item = $this->mapProduct($p);
-                    fputcsv($out, array_map(fn ($h) => $item[$h] ?? '', $headers));
-                }
-            });
+        $this->productQuery()->chunk(500, function ($chunk) use ($out, $headers) {
+            foreach ($chunk as $p) {
+                $item = $this->mapProduct($p);
+                fputcsv($out, array_map(fn ($h) => $item[$h] ?? '', $headers));
+            }
+        });
 
         rewind($out);
         $csv = stream_get_contents($out);

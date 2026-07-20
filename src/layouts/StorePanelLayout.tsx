@@ -2,13 +2,14 @@ import { Link, NavLink, Outlet, Navigate, useLocation, useParams, useNavigate } 
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminThemeProvider, useAdminTheme } from "@/contexts/AdminThemeContext";
 import NotificationDropdown from "@/components/NotificationDropdown";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { logoSrc, onImgError } from "@/lib/imageHelpers";
 import {
   LayoutDashboard, Package, Image, Settings, CreditCard,
   LogOut, Menu, X, Bell, Search, Store, Tag,
   ChevronLeft, Globe, Sun, Moon, ArrowLeft,
-  Clock, ShieldX, ShieldCheck, RefreshCw, Key, Crown, Monitor, ShoppingBag, BarChart3
+  Clock, ShieldX, ShieldCheck, RefreshCw, Key, Crown, Monitor, ShoppingBag, BarChart3,
+  ChevronDown, Plus, ArrowRightLeft, Facebook
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
@@ -24,6 +25,7 @@ const sidebarNav = [
   { label: "Analytics", path: "/analytics", icon: BarChart3, color: "text-purple-500" },
   { label: "POS", path: "/pos", icon: Monitor, color: "text-teal-500" },
   { label: "API", path: "/api", icon: Key, color: "text-indigo-500" },
+  { label: "Facebook", path: "/facebook", icon: Facebook, color: "text-blue-600" },
   { label: "Configuracoes", path: "/configuracoes", icon: Settings, color: "text-gray-500" },
 ];
 
@@ -42,8 +44,27 @@ function StorePanelInner() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null);
+  const [showStoreSwitcher, setShowStoreSwitcher] = useState(false);
+  const switcherRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Close store switcher on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) {
+        setShowStoreSwitcher(false);
+      }
+    };
+    if (showStoreSwitcher) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showStoreSwitcher]);
+
+  const userStores = user?.stores && user.stores.length > 0
+    ? user.stores
+    : user?.store ? [user.store] : [];
+  const otherStores = userStores.filter(s => s.slug !== slug);
+  const hasMultiStore = userStores.length > 0;
 
   useEffect(() => {
     if (!token || !slug) return;
@@ -94,17 +115,65 @@ function StorePanelInner() {
     <div className={`flex h-screen ${bg} overflow-hidden`}>
       {/* Sidebar Desktop */}
       <aside className={`hidden lg:flex flex-col ${sidebarOpen ? "w-64" : "w-[70px]"} ${sidebarBg} border-r transition-all duration-300 shrink-0`}>
-        {/* Store logo */}
-        <div className={`flex items-center ${sidebarOpen ? "px-5" : "px-3 justify-center"} h-16 border-b ${borderColor}`}>
-          <Link to={base} className="flex items-center gap-2.5">
+        {/* Store logo + switcher */}
+        <div ref={switcherRef} className={`relative ${sidebarOpen ? "px-5" : "px-3 justify-center"} h-16 border-b ${borderColor} flex items-center`}>
+          <button
+            onClick={() => hasMultiStore && sidebarOpen && setShowStoreSwitcher(!showStoreSwitcher)}
+            className={`flex items-center gap-2.5 w-full ${hasMultiStore && sidebarOpen ? "cursor-pointer" : ""}`}
+          >
             <img src={logoSrc(storeInfo?.logo, storeInfo?.name || slug)} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0" onError={onImgError("logo", storeInfo?.name || slug)} />
             {sidebarOpen && (
-              <div className="flex flex-col leading-none min-w-0">
-                <span className={`text-[10px] font-medium ${textMuted} uppercase tracking-widest`}>Loja</span>
-                <span className={`text-sm font-bold ${textPrimary} truncate`}>{storeInfo?.name || slug}</span>
-              </div>
+              <>
+                <div className="flex flex-col leading-none min-w-0 flex-1 text-left">
+                  <span className={`text-[10px] font-medium ${textMuted} uppercase tracking-widest`}>Loja</span>
+                  <span className={`text-sm font-bold ${textPrimary} truncate`}>{storeInfo?.name || slug}</span>
+                </div>
+                {hasMultiStore && <ChevronDown className={`h-3.5 w-3.5 ${textMuted} shrink-0 transition-transform ${showStoreSwitcher ? "rotate-180" : ""}`} />}
+              </>
             )}
-          </Link>
+          </button>
+
+          {/* Store Switcher Dropdown */}
+          {showStoreSwitcher && sidebarOpen && (
+            <div className={`absolute left-3 right-3 top-[calc(100%+4px)] z-50 rounded-xl border shadow-lg ${isDark ? "bg-[#1a1d24] border-white/10" : "bg-white border-gray-200"} py-2`}>
+              <p className={`px-3 py-1 text-[10px] font-semibold ${textMuted} uppercase tracking-widest`}>Trocar de Loja</p>
+              {otherStores.map((s) => (
+                <Link
+                  key={s.slug}
+                  to={`/loja/${s.slug}/painel`}
+                  onClick={() => setShowStoreSwitcher(false)}
+                  className={`flex items-center gap-2.5 px-3 py-2 text-xs ${isDark ? "hover:bg-white/5" : "hover:bg-gray-50"} transition-colors`}
+                >
+                  {s.logo ? (
+                    <img src={s.logo} alt="" className="h-7 w-7 rounded-lg object-cover shrink-0" />
+                  ) : (
+                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                      {s.name.charAt(0)}
+                    </div>
+                  )}
+                  <span className={`${textPrimary} font-medium truncate`}>{s.name}</span>
+                  {s.status !== "approved" && (
+                    <span className="ml-auto text-[9px] font-bold bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded-full">
+                      {s.status === "pending" ? "Pendente" : s.status}
+                    </span>
+                  )}
+                </Link>
+              ))}
+              {otherStores.length === 0 && (
+                <p className={`px-3 py-2 text-[11px] ${textMuted}`}>Nenhuma outra loja</p>
+              )}
+              <div className={`border-t ${borderColor} mt-1 pt-1 mx-2`}>
+                <Link
+                  to="/cadastro-loja"
+                  onClick={() => setShowStoreSwitcher(false)}
+                  className={`flex items-center gap-2 px-2 py-2 rounded-lg text-xs font-medium ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-emerald-600 hover:bg-emerald-50"} transition-colors`}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Criar Nova Loja
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 py-4 overflow-y-auto">
@@ -113,11 +182,21 @@ function StorePanelInner() {
           </div>
         </nav>
 
-        {/* Back to admin / theme toggle */}
+        {/* Back to admin / store actions / theme toggle */}
         <div className={`px-3 py-2 border-t ${borderColor} space-y-1`}>
           {user.role === "super_admin" && sidebarOpen && (
             <Link to="/admin/lojas" className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-blue-500 ${hoverBg} transition-colors`}>
               <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao Admin
+            </Link>
+          )}
+          {sidebarOpen && otherStores.length > 0 && (
+            <Link to="/minha-loja" className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-orange-500 ${hoverBg} transition-colors`}>
+              <ArrowRightLeft className="h-3.5 w-3.5" /> Trocar de Loja
+            </Link>
+          )}
+          {sidebarOpen && (
+            <Link to="/cadastro-loja" className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-emerald-500 ${hoverBg} transition-colors`}>
+              <Plus className="h-3.5 w-3.5" /> Criar Nova Loja
             </Link>
           )}
           <div className={`flex ${sidebarOpen ? "justify-between" : "flex-col items-center gap-2"}`}>
@@ -166,6 +245,39 @@ function StorePanelInner() {
             <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
               {sidebarNav.map((item) => <NavItem key={item.path} item={item} onClick={() => setMobileSidebar(false)} />)}
             </nav>
+            {/* Mobile: store actions */}
+            <div className={`px-4 py-3 border-t ${borderColor} space-y-1`}>
+              {otherStores.length > 0 && (
+                <>
+                  <p className={`px-1 py-1 text-[10px] font-semibold ${textMuted} uppercase tracking-widest`}>Trocar de Loja</p>
+                  {otherStores.map((s) => (
+                    <Link
+                      key={s.slug}
+                      to={`/loja/${s.slug}/painel`}
+                      onClick={() => setMobileSidebar(false)}
+                      className={`flex items-center gap-2.5 px-2 py-2 rounded-lg text-xs ${isDark ? "hover:bg-white/5" : "hover:bg-gray-50"} transition-colors`}
+                    >
+                      {s.logo ? (
+                        <img src={s.logo} alt="" className="h-6 w-6 rounded-lg object-cover" />
+                      ) : (
+                        <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-[9px] font-bold">
+                          {s.name.charAt(0)}
+                        </div>
+                      )}
+                      <span className={`${textPrimary} font-medium truncate`}>{s.name}</span>
+                    </Link>
+                  ))}
+                </>
+              )}
+              <Link
+                to="/cadastro-loja"
+                onClick={() => setMobileSidebar(false)}
+                className={`flex items-center gap-2 px-2 py-2 rounded-lg text-xs font-medium ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-emerald-600 hover:bg-emerald-50"} transition-colors`}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Criar Nova Loja
+              </Link>
+            </div>
           </aside>
         </div>
       )}
