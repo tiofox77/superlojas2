@@ -28,6 +28,32 @@ export default function StorePanelFacebook() {
   const [syncing, setSyncing] = useState(false);
   const [showHelper, setShowHelper] = useState(false);
 
+  type Biz = { id: string; name: string; catalogs: { id: string; name: string; product_count?: number | null }[] };
+  const [businesses, setBusinesses] = useState<Biz[]>([]);
+  const [loadingCatalogs, setLoadingCatalogs] = useState(false);
+
+  const fetchCatalogs = async () => {
+    if (!cfg.fb_access_token && !meta.token_set) { toast.error("Falta o token", "Cole o Access Token primeiro."); return; }
+    setLoadingCatalogs(true);
+    try {
+      const res = await fetch(`${API}/store-panel/${slug}/facebook/catalogs`, {
+        method: "POST", headers: hdrs, body: JSON.stringify({ access_token: cfg.fb_access_token || undefined }),
+      });
+      const d = await res.json();
+      if (!d.ok) { toast.error("Falhou", d.error || "Não foi possível obter catálogos."); return; }
+      setBusinesses(d.businesses || []);
+      const total = (d.businesses || []).reduce((n: number, b: Biz) => n + b.catalogs.length, 0);
+      if (total === 0) toast.error("Sem catálogos", "Nenhum catálogo encontrado nesta conta.");
+      else toast.success("Catálogos carregados", `${total} catálogo(s) encontrado(s). Escolha um.`);
+    } catch { toast.error("Erro", "Falha de rede."); }
+    finally { setLoadingCatalogs(false); }
+  };
+
+  const pickCatalog = (catalogId: string) => {
+    const biz = businesses.find((b) => b.catalogs.some((c) => c.id === catalogId));
+    setCfg((c) => ({ ...c, fb_catalog_id: catalogId, fb_business_id: biz?.id || c.fb_business_id }));
+  };
+
   const loadConfig = useCallback(async () => {
     if (!slug || !token) return;
     try {
@@ -146,20 +172,42 @@ export default function StorePanelFacebook() {
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <Field label="Access Token (system user)" s={s}>
+        <Field label="Access Token (system user)" s={s}>
+          <div className="flex gap-2">
             <input type="password" value={cfg.fb_access_token} onChange={(e) => setCfg({ ...cfg, fb_access_token: e.target.value })}
-              placeholder={meta.token_preview || "Access Token"} className={`w-full px-3 py-2 rounded-xl border text-sm ${s.input}`} />
+              placeholder={meta.token_preview || "Access Token"} className={`flex-1 px-3 py-2 rounded-xl border text-sm ${s.input}`} />
+            <button onClick={fetchCatalogs} disabled={loadingCatalogs} type="button"
+              className={`px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 whitespace-nowrap ${s.btnSecondary} disabled:opacity-50`}>
+              {loadingCatalogs ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              Buscar catálogos
+            </button>
+          </div>
+        </Field>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <Field label="Catálogo" s={s}>
+            {businesses.length > 0 ? (
+              <select value={cfg.fb_catalog_id} onChange={(e) => pickCatalog(e.target.value)}
+                className={`w-full px-3 py-2 rounded-xl border text-sm ${s.input}`}>
+                <option value="">Escolher catálogo...</option>
+                {businesses.map((b) => (
+                  <optgroup key={b.id} label={b.name}>
+                    {b.catalogs.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}{c.product_count != null ? ` (${c.product_count})` : ""}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            ) : (
+              <input value={cfg.fb_catalog_id} onChange={(e) => setCfg({ ...cfg, fb_catalog_id: e.target.value })}
+                placeholder="Catalog ID (ou clique em Buscar catálogos)" className={`w-full px-3 py-2 rounded-xl border text-sm ${s.input}`} />
+            )}
           </Field>
-          <Field label="Catalog ID" s={s}>
-            <input value={cfg.fb_catalog_id} onChange={(e) => setCfg({ ...cfg, fb_catalog_id: e.target.value })}
-              placeholder="ex: 1234567890" className={`w-full px-3 py-2 rounded-xl border text-sm ${s.input}`} />
-          </Field>
-          <Field label="Business ID (opcional)" s={s}>
+          <Field label="Business ID (automático)" s={s}>
             <input value={cfg.fb_business_id} onChange={(e) => setCfg({ ...cfg, fb_business_id: e.target.value })}
-              className={`w-full px-3 py-2 rounded-xl border text-sm ${s.input}`} />
+              placeholder="preenchido ao escolher o catálogo" className={`w-full px-3 py-2 rounded-xl border text-sm ${s.input}`} />
           </Field>
-          <Field label="Moeda" s={s}>
+          <Field label="Moeda (da loja)" s={s}>
             <input value={cfg.fb_currency} onChange={(e) => setCfg({ ...cfg, fb_currency: e.target.value })}
               className={`w-full px-3 py-2 rounded-xl border text-sm ${s.input}`} />
           </Field>

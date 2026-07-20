@@ -124,6 +124,50 @@ class FacebookService
         }
     }
 
+    /**
+     * List the Facebook Businesses + their product catalogs available to the
+     * given token, so the user can pick one from a dropdown instead of typing
+     * the Catalog ID by hand.
+     *
+     * @return array{ok:bool, businesses?:array, error?:string}
+     */
+    public function listCatalogs(?string $tokenOverride = null): array
+    {
+        $token = $tokenOverride ?: $this->token;
+        if (!$token) {
+            return ['ok' => false, 'error' => 'Cole o Access Token primeiro.'];
+        }
+        try {
+            $res = Http::timeout(20)->get(self::GRAPH . '/me/businesses', [
+                'fields' => 'id,name,owned_product_catalogs{id,name,product_count}',
+                'access_token' => $token,
+            ]);
+            $json = $res->json();
+            if (isset($json['error'])) {
+                return ['ok' => false, 'error' => $json['error']['message'] ?? 'Erro do Facebook.'];
+            }
+            $businesses = [];
+            foreach (($json['data'] ?? []) as $b) {
+                $cats = [];
+                foreach (data_get($b, 'owned_product_catalogs.data', []) as $c) {
+                    $cats[] = [
+                        'id' => $c['id'],
+                        'name' => $c['name'] ?? $c['id'],
+                        'product_count' => $c['product_count'] ?? null,
+                    ];
+                }
+                $businesses[] = [
+                    'id' => $b['id'],
+                    'name' => $b['name'] ?? $b['id'],
+                    'catalogs' => $cats,
+                ];
+            }
+            return ['ok' => true, 'businesses' => $businesses];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => $e->getMessage()];
+        }
+    }
+
     /** Push a batch of products via items_batch. */
     public function syncBatch(array $products, string $method = 'UPDATE'): array
     {

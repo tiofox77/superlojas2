@@ -85,6 +85,19 @@ class FacebookController extends Controller
         return response()->json((new FacebookService($store))->testConnection());
     }
 
+    /**
+     * List the businesses + catalogs for the token, so the store owner can
+     * pick a catalog from a dropdown. Accepts a token in the body so it works
+     * before saving; falls back to the saved token.
+     */
+    public function catalogs(Request $request, string $slug)
+    {
+        $store = $this->getStore($request, $slug);
+        $data = $request->validate(['access_token' => 'sometimes|nullable|string|max:1000']);
+        $token = !empty($data['access_token']) ? $data['access_token'] : $store->fb_access_token;
+        return response()->json((new FacebookService($store))->listCatalogs($token));
+    }
+
     public function sync(Request $request, string $slug)
     {
         $store = $this->getStore($request, $slug);

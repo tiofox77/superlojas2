@@ -255,6 +255,7 @@ Route::middleware(['auth:sanctum', 'store_approved'])->prefix('store-panel/{slug
     Route::get('/facebook/config', [\App\Http\Controllers\Api\StorePanel\FacebookController::class, 'config']);
     Route::put('/facebook/config', [\App\Http\Controllers\Api\StorePanel\FacebookController::class, 'saveConfig']);
     Route::get('/facebook/test', [\App\Http\Controllers\Api\StorePanel\FacebookController::class, 'test']);
+    Route::post('/facebook/catalogs', [\App\Http\Controllers\Api\StorePanel\FacebookController::class, 'catalogs']);
     Route::post('/facebook/sync', [\App\Http\Controllers\Api\StorePanel\FacebookController::class, 'sync']);
     Route::post('/facebook/regenerate-feed-key', [\App\Http\Controllers\Api\StorePanel\FacebookController::class, 'regenerateFeedKey']);
 
