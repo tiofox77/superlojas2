@@ -21,6 +21,11 @@ class CheckoutController extends Controller
      */
     public function process(Request $request)
     {
+        if ($request->has('customer.phone')) {
+            $customerInput = $request->input('customer', []);
+            $customerInput['phone'] = preg_replace('/[\s()-]/', '', $customerInput['phone']);
+            $request->merge(['customer' => $customerInput]);
+        }
         $data = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|integer|exists:products,id',
@@ -28,17 +33,18 @@ class CheckoutController extends Controller
             'customer' => 'required|array',
             'customer.name' => 'required|string|max:255',
             'customer.email' => 'required|email|max:255',
-            'customer.phone' => 'required|string|max:30',
+            'customer.phone' => ['required', 'string', 'regex:/^(?:\+?244)?9[0-9]{8}$/'],
             'customer.address' => 'required|string|max:500',
             'customer.province' => 'required|string|max:100',
+            'customer.city' => 'nullable|string|max:100',
             'customer.notes' => 'nullable|string|max:1000',
             'payment_method' => 'nullable|string|max:50',
             'payment_methods' => 'nullable|array',
             'payment_methods.*' => 'string|max:50',
-        ]);
+        ], ['required' => 'O campo :attribute é obrigatório.', 'email' => 'Informe um email válido.', 'regex' => 'Informe um telefone angolano válido.', 'exists' => 'O produto seleccionado já não está disponível.', 'integer' => 'A quantidade deve ser um número inteiro.', 'min' => 'O campo :attribute não cumpre o mínimo permitido.']);
 
         $errors = [];
-        $items = $data['items'];
+        $items = collect($data['items'])->groupBy('product_id')->map(fn($rows, $id) => ['product_id' => $id, 'quantity' => $rows->sum('quantity')])->values()->all();
         $customer = $data['customer'];
         $perStorePayments = $data['payment_methods'] ?? [];
 
@@ -121,6 +127,7 @@ class CheckoutController extends Controller
                     $receiptPath = SeoFileName::storePublic($receipts[$storeId], 'orders/receipts', $storeName, 'comprovativo');
                 }
 
+                $deliveryPerStore = ($perStorePayments[$storeId] ?? $data['payment_method'] ?? '') === 'cash_pickup' ? 0 : 2500;
                 $order = Order::create([
                     'order_number' => Order::generateOrderNumber(),
                     'store_id' => $storeId,
@@ -128,7 +135,7 @@ class CheckoutController extends Controller
                     'customer_name' => $customer['name'],
                     'customer_email' => $customer['email'],
                     'customer_phone' => $customer['phone'],
-                    'customer_address' => $customer['address'],
+                    'customer_address' => $customer['address'] . (!empty($customer['city']) ? ', ' . $customer['city'] : ''),
                     'customer_province' => $customer['province'],
                     'customer_notes' => $customer['notes'] ?? null,
                     'payment_method' => $perStorePayments[$storeId] ?? $data['payment_method'] ?? 'multicaixa',
@@ -219,6 +226,11 @@ class CheckoutController extends Controller
      */
     public function validateStock(Request $request)
     {
+        if ($request->has('customer.phone')) {
+            $customerInput = $request->input('customer', []);
+            $customerInput['phone'] = preg_replace('/[\s()-]/', '', $customerInput['phone']);
+            $request->merge(['customer' => $customerInput]);
+        }
         $data = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|integer|exists:products,id',
@@ -226,7 +238,7 @@ class CheckoutController extends Controller
         ]);
 
         $issues = [];
-        foreach ($data['items'] as $item) {
+        foreach (collect($data['items'])->groupBy('product_id')->map(fn($rows, $id) => ['product_id' => $id, 'quantity' => $rows->sum('quantity')]) as $item) {
             $product = Product::select('id', 'name', 'stock')->find($item['product_id']);
             if (!$product) continue;
             if ($product->stock < $item['quantity']) {

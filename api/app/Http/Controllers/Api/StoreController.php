@@ -14,9 +14,32 @@ use Illuminate\Support\Str;
 
 class StoreController extends Controller
 {
+    /**
+     * Fields to hide from public API responses.
+     */
+    private static $publicHidden = [
+        'user_id', 'api_enabled', 'api_permissions', 'api_rate_limit', 'api_last_used_at',
+        'plan_id', 'plan_expires_at', 'categories_changed_at',
+    ];
+
+    private function formatStoreForPublic($store): array
+    {
+        $arr = $store->toArray();
+        $arr['has_subdomain'] = $store->plan && $store->plan->custom_domain;
+        $arr['product_count'] = $store->products_count ?? 0;
+        $arr['follower_count'] = $store->followers_count ?? 0;
+        foreach (self::$publicHidden as $field) {
+            unset($arr[$field]);
+        }
+        unset($arr['plan'], $arr['products_count'], $arr['followers_count']);
+        return $arr;
+    }
+
     public function index(Request $request)
     {
-        $query = Store::where('status', 'approved');
+        $query = Store::with('plan')
+            ->withCount(['products', 'followers'])
+            ->where('status', 'approved');
 
         if ($request->has('province') && $request->province !== 'all') {
             $query->where('province', $request->province);
@@ -30,29 +53,54 @@ class StoreController extends Controller
             });
         }
 
-        return response()->json($query->get());
+        if ($request->has('category')) {
+            $category = $request->category;
+            $query->whereHas('storeCategories', function ($q) use ($category) {
+                $q->where('slug', $category)->orWhere('name', $category);
+            });
+        }
+
+        $sortBy = $request->get('sort', 'newest');
+        switch ($sortBy) {
+            case 'rating': $query->orderByDesc('rating'); break;
+            case 'name': $query->orderBy('name'); break;
+            case 'products': $query->orderByDesc('products_count'); break;
+            default: $query->latest(); break;
+        }
+
+        $stores = $query->get()->map(fn ($store) => $this->formatStoreForPublic($store));
+
+        return response()->json($stores);
     }
 
     public function show(string $slug)
     {
         $store = Store::where('slug', $slug)
-            ->with(['products.subcategory', 'products.categoryRelation', 'heroSlides' => function ($q) {
+            ->with(['plan', 'products' => function ($q) {
+                $q->where('is_active', true)->with(['subcategory', 'categoryRelation']);
+            }, 'heroSlides' => function ($q) {
                 $q->orderBy('sort_order');
             }])
+            ->withCount(['products' => function ($q) { $q->where('is_active', true); }, 'followers'])
             ->firstOrFail();
 
-        return response()->json($store);
+        $data = $this->formatStoreForPublic($store);
+        // Re-attach products and hero_slides (they were already in $arr but not removed)
+        return response()->json($data);
     }
 
     public function featured()
     {
-        return response()->json(
-            Store::where('status', 'approved')
-                ->where('is_featured', true)
-                ->latest()
-                ->take(8)
-                ->get()
-        );
+        $stores = Store::with('plan')
+            ->withCount(['products', 'followers'])
+            ->where('status', 'approved')
+            ->where('is_featured', true)
+            ->latest()
+            ->take(8)
+            ->get()
+            ->map(fn ($store) => $this->formatStoreForPublic($store));
+
+        return response()->json($stores);
     }
 
     public function register(Request $request)
@@ -61,8 +109,8 @@ class StoreController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'logo' => 'required|file|image|max:6144',
-            'banner' => 'nullable|file|image|max:6144',
+            'logo' => 'required|file|image|max:10240',
+            'banner' => 'nullable|file|image|max:10240',
             'province' => 'required|string',
             'city' => 'required|string',
             'municipality' => 'nullable|string',
@@ -81,6 +129,28 @@ class StoreController extends Controller
         }
 
         $request->validate($rules);
+
+        // Verificar limite de lojas pelo plano do utilizador
+        if ($user) {
+            $userStoreCount = Store::where('user_id', $user->id)->count();
+            $maxStores = 1; // default
+
+            // Verificar se o utilizador tem um plano com max_stores
+            $mainStore = Store::where('user_id', $user->id)->whereNotNull('plan_id')->first();
+            if ($mainStore && $mainStore->plan_id) {
+                $userPlan = \App\Models\Plan::find($mainStore->plan_id);
+                if ($userPlan) {
+                    $maxStores = $userPlan->max_stores ?: 1;
+                }
+            }
+
+            if ($userStoreCount >= $maxStores) {
+                $planName = $userPlan->name ?? 'actual';
+                return response()->json([
+                    'error' => "O seu plano {$planName} permite no maximo {$maxStores} loja(s). Faca upgrade para o plano Empresarial para ter ate 3 lojas.",
+                ], 422);
+            }
+        }
 
         // Criar conta nova ou usar a existente
         $token = null;
@@ -147,11 +217,49 @@ class StoreController extends Controller
             $store->storeCategories()->sync([$category->id]);
         }
 
-        // Actualizar utilizador como store_owner
+        // Actualizar utilizador como store_owner (keep store_id as default/first store)
         if ($user->role !== 'super_admin') {
-            $user->update(['role' => 'store_owner', 'store_id' => $store->id]);
+            $updateData = ['role' => 'store_owner'];
+            if (!$user->store_id) {
+                $updateData['store_id'] = $store->id;
+            }
+            $user->update($updateData);
         } else {
             $user->save();
+        }
+
+        // Herdar plano/subscricao da loja principal do utilizador
+        $mainStore = Store::where('user_id', $user->id)
+            ->whereNotNull('plan_id')
+            ->where('id', '!=', $store->id)
+            ->first();
+
+        if ($mainStore && $mainStore->plan_id) {
+            $store->update([
+                'plan_id' => $mainStore->plan_id,
+                'plan_expires_at' => $mainStore->plan_expires_at,
+            ]);
+
+            $activeSub = \App\Models\Subscription::where('store_id', $mainStore->id)
+                ->where('status', 'active')
+                ->latest()
+                ->first();
+
+            if ($activeSub) {
+                \App\Models\Subscription::create([
+                    'store_id' => $store->id,
+                    'plan_id' => $activeSub->plan_id,
+                    'status' => 'active',
+                    'starts_at' => $activeSub->starts_at,
+                    'expires_at' => $activeSub->expires_at,
+                    'auto_renew' => $activeSub->auto_renew,
+                    'payment_method' => $activeSub->payment_method,
+                    'amount_paid' => 0,
+                    'currency' => 'AOA',
+                    'paid_at' => now(),
+                    'notes' => 'Herdado da loja: ' . $mainStore->name,
+                ]);
+            }
         }
 
         $message = $autoApprove
@@ -171,16 +279,26 @@ class StoreController extends Controller
             \App\Models\Notification::notifyAdmin($notifType, $notifTitle, $notifBody, 'store', 'orange', '/admin/lojas');
         } catch (\Throwable $e) {}
 
+        // Email alert to admin about new store (non-blocking)
+        try {
+            (new MailService())->sendAdminNewStore(
+                $store->name, $user->name, $user->email,
+                $store->province ?? '', $request->category ?? '',
+                $store->whatsapp ?? '', $autoApprove
+            );
+        } catch (\Throwable $e) {}
+
         $response = [
             'message' => $message,
             'store' => $store,
             'auto_approved' => $autoApprove,
+            'user' => $user->fresh()->load(['store', 'stores:id,user_id,name,slug,logo,status']),
         ];
 
         // Se criou conta nova, devolver token + user para auto-login
         if ($token) {
             $response['token'] = $token;
-            $response['user'] = $user->load('store');
+            $response['user'] = $user->load(['store', 'stores:id,user_id,name,slug,logo,status']);
         }
 
         return response()->json($response, 201);

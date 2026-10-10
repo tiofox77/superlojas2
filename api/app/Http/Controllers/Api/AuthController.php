@@ -38,7 +38,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token', [$user->role])->plainTextToken;
 
         return response()->json([
-            'user' => $user->load('store'),
+            'user' => $user->load(['store', 'stores:id,user_id,name,slug,logo,status']),
             'token' => $token,
         ]);
     }
@@ -50,7 +50,7 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users',
             'password' => 'required|string|min:6|confirmed',
             'phone' => 'nullable|string|max:20',
-        ]);
+        ], ['email.unique' => 'Este email já está registado. Entre na conta ou recupere a palavra-passe.', 'email.email' => 'Informe um email válido.', 'password.confirmed' => 'As palavras-passe não coincidem.', 'password.min' => 'A palavra-passe deve ter pelo menos 6 caracteres.', 'required' => 'O campo :attribute é obrigatório.']);
 
         $user = User::create([
             'name' => $request->name,
@@ -70,6 +70,9 @@ class AuthController extends Controller
             Notification::notifyAdmin('new_user', 'Novo utilizador registado', "{$user->name} ({$user->email}) criou uma conta.", 'user-plus', 'violet', '/admin/utilizadores');
         } catch (\Throwable $e) {}
 
+        // Email alert to admin (non-blocking)
+        try { (new MailService())->sendAdminNewUser($user->name, $user->email, $user->phone); } catch (\Throwable $e) {}
+
         return response()->json([
             'user' => $user,
             'token' => $token,
@@ -78,7 +81,8 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return response()->json($request->user()->load('store'));
+        $user = $request->user()->load(['store', 'stores:id,user_id,name,slug,logo,status']);
+        return response()->json($user);
     }
 
     public function logout(Request $request)
@@ -100,7 +104,7 @@ class AuthController extends Controller
 
         $user->update($request->only(['name', 'phone', 'avatar']));
 
-        return response()->json($user->fresh()->load('store'));
+        return response()->json($user->fresh()->load(['store', 'stores:id,user_id,name,slug,logo,status']));
     }
 
     public function changePassword(Request $request)
@@ -174,7 +178,7 @@ class AuthController extends Controller
         }
 
         // Check if token expired (60 min)
-        if (now()->diffInMinutes($record->created_at) > 60) {
+        if (strtotime((string) $record->created_at) < time() - 3600) {
             DB::table('password_reset_tokens')->where('email', $request->email)->delete();
             return response()->json(['message' => 'Token expirado. Solicite um novo link.'], 422);
         }
