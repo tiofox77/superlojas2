@@ -21,7 +21,17 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [
             \App\Http\Middleware\CheckSubscriptionExpiry::class,
         ]);
+
+        // There is no server-side login page (the SPA handles /entrar), so
+        // guests must not be redirected to route('login'): that route doesn't
+        // exist and the lookup itself threw a 500 before any 401 could render.
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // API routes always answer in JSON. Without this, an unauthenticated
+        // request lacking "Accept: application/json" fell back to redirecting
+        // to route('login') — which doesn't exist — and became a 500.
+        $exceptions->shouldRenderJsonWhen(
+            fn (\Illuminate\Http\Request $request) => $request->is('api/*') || $request->expectsJson()
+        );
     })->create();
