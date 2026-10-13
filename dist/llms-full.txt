@@ -1,0 +1,109 @@
+# SuperLoja — catálogo e contexto completo
+
+> Documento de descoberta para assistentes e mecanismos de resposta. Atualizado em 2026-09-12.
+
+## Sobre
+
+A SuperLoja ajuda consumidores em Angola a descobrir produtos de lojas, comparar informação publicada e contactar o vendedor. A plataforma não deve ser descrita como a maior de Angola nem como possuindo milhares de produtos sem uma fonte atual que comprove essas afirmações.
+
+## Lojas
+
+- [Mutahari Entertainmrnt](https://superloja.vip/lojas/mutahari-entertainmrnt): Olá! Bem-vindo(a) à minha loja, sou o Mutahari .
+É um prazer ter você aqui no meu cantinho de vendas online.
+Trabalho com os melhores produtos do segmento de tipo de produto: moda, eletrônicos, automóveis .
+Meu objetivo é oferecer artigos de qualidade com o melhor custo-benefício.
+Cada item do meu catálogo é selecionado com muito cuidado e atenção.
+Priorizo sempre a transparência e a honestidade nas negociações.
+Pode confiar: seus dados e sua compra estão em boas mãos.
+Garanto um atendimento personalizado para tirar todas as suas dúvidas.
+Tem interesse em algum produto? Chame no direct ou no nosso WhatsApp.
+Respondo rapidamente, pois valorizo muito o seu tempo e confiança.
+Faço entregas em Luanda e também tenho opções de envio para províncias.
+Caso tenha pressa, temos serviço de entrega expressa (com uma taxa).
+Acompanhe sempre as novidades, pois toda semana tem produto novo.
+Fique à vontade para seguir o perfil e partilhar com amigos e família.
+Muito obrigado(a) pela visita e boas compras! 😊🛒 Localização: Zango3, Luanda.
+- [Muadiata Shop](https://superloja.vip/lojas/muadiata-shop): Loja de venda de acessórios. Localização: Malanje, Malanje.
+- [Manassés Cosméticos e Diversos](https://superloja.vip/lojas/manasses-cosmeticos-e-diversos): Produtos de skin care, saúde beleza, Cosméticos,  Produtos para casa Localização: Ícolo e Bengo, Luanda.
+- [Stelastory](https://superloja.vip/lojas/stelastory): Electrónica e moda Localização: Viana, Luanda.
+- [Pardal Sabores](https://superloja.vip/lojas/pardal-sabores): VENDEMOS 
+saldinhos diversos*
+congelados, e fritos*
+BEBIDAS 
+Quisangua *
+Sumos de mucua*
+Tamarindo* 
+E outros+ * Localização: Sapu2, Luanda.
+- [MULTIOFERTAS ANGOLA](https://superloja.vip/lojas/multiofertas-angola): Seja bem-vindo á "Multiofertas".
+Aqui você encontra produtos variados com qualidade, bom preço e atendimento de confiança. Trabalhamos com itens para o seu dia a dia, utilidades, eletrônicos,e muito mais!
+📦 Entregas rápidas | 💰 Preços acessíveis. Localização: Cacuaco, Luanda.
+- [Boutique JOCAMBU](https://superloja.vip/lojas/boutique-jocambu): Boutique JOCAMBU se dedica. Vende de roupa masculina e feminina em Luanda Localização: Luanda sul, Luanda.
+- [Mrs.Setas](https://superloja.vip/lojas/mrssetas): Venda de Roupas e acessórios Femininos e Masculinos Localização: Viana, Luanda.
+- [SexyShop](https://superloja.vip/lojas/sexyshop): Seus Desejos intimos e profundos Localização: Kilamba Kiaxi, Luanda.
+- [SuperLoja Angola](https://superloja.vip/lojas/superloja): A sua loja online de electronica e acessorios em Angola. Cabos, carregadores, fones, adaptadores e muito mais com entrega em Luanda. Localização: Luanda, Luanda.
+
+## Produtos disponíveis na API pública
+
+- [Fones Bluetooth Sem Fio — Alto Desempenho](https://superloja.vip/produto/fones-bluetooth-sem-fio-alto-desempenho): 9000 AOA; Em stock; loja SuperLoja Angola.
+- [Carregador USB-C GaN 65W 2 Portas — Sem Cabo](https://superloja.vip/produto/carregador-usb-c-gan-65w-2-portas-sem-cabo): 7000 AOA; Em stock; loja SuperLoja Angola.
+- [Carregador USB-C GaN 65W 2 Portas](https://superloja.vip/produto/carregador-usb-c-gan-65w-2-portas): 10500 AOA; Em stock; loja SuperLoja Angola.
+- [Teckwe Fast Charger 30W USB-C Lightning](https://superloja.vip/produto/teckwe-fast-charger-30w-usb-c-lightning): 10000 AOA; Em stock; loja SuperLoja Angola.
+- [Extrator De Sumo Multifuncional PortáTil](https://superloja.vip/produto/extrator-de-sumo-multifuncional-portatil): 19500 AOA; Em stock; loja MULTIOFERTAS ANGOLA.
+- [Eletric Pedi](https://superloja.vip/produto/eletric-pedi): 16500 AOA; Em stock; loja MULTIOFERTAS ANGOLA.
+- [Mini Liquidificador EléTrico PortáTil](https://superloja.vip/produto/mini-liquidificador-eletrico-portatil): 18500 AOA; Em stock; loja MULTIOFERTAS ANGOLA.
+- [Capa Para Iphone 13 Pro Max](https://superloja.vip/produto/capa-para-iphone-13-pro-max): 7000 AOA; Em stock; loja SuperLoja Angola.
+- [Ventosas](https://superloja.vip/produto/ventosas): 2000 AOA; Em stock; loja SuperLoja Angola.
+- [Capa Para Iphone 16 Normal](https://superloja.vip/produto/capa-para-iphone-16-normal): 8000 AOA; Em stock; loja SuperLoja Angola.
+- [Capa Para Iphone 12 Pro Max](https://superloja.vip/produto/capa-para-iphone-12-pro-max): 7000 AOA; Em stock; loja SuperLoja Angola.
+- [Capa Para Iphone 11pro Max](https://superloja.vip/produto/capa-para-iphone-11pro-max): 6000 AOA; Em stock; loja SuperLoja Angola.
+- [Capa Para Iphone 13 Normal](https://superloja.vip/produto/capa-para-iphone-13): 7000 AOA; Em stock; loja SuperLoja Angola.
+- [Capa Para Iphone 12pro Max](https://superloja.vip/produto/capa-para-iphone-12pro-max): 7000 AOA; Em stock; loja SuperLoja Angola.
+- [Capas Para Iphone 13 Pro Max](https://superloja.vip/produto/capas-para-iphone-13-pro-max): 7000 AOA; Em stock; loja SuperLoja Angola.
+- [Capa Para Iphone 13normal](https://superloja.vip/produto/capa-para-iphone-13normal): 7000 AOA; Em stock; loja SuperLoja Angola.
+- [Capa Para Iphone 14 Pro Max](https://superloja.vip/produto/capa-para-iphone-14-pro-max): 7000 AOA; Em stock; loja SuperLoja Angola.
+- [Capa Para Iphone 13 Pro Max](https://superloja.vip/produto/capa): 7000 AOA; Em stock; loja SuperLoja Angola.
+- [Cabo De Carregamento Rapido](https://superloja.vip/produto/cabo-de-carregamento-rapido): 4500 AOA; Em stock; loja SuperLoja Angola.
+- [Cabo De Carregamento RÁPidp Usb-C Extra Longo Para Galaxy S24](https://superloja.vip/produto/cabo-de-carregamento-rapidp-usb-c-extra-longo-para-galaxy-s24): 4500 AOA; Em stock; loja SuperLoja Angola.
+- [Cabo Usb 3.0 Para Disco RíGido Sata |||](https://superloja.vip/produto/cabo-usb-3-0-para-disco-rigido-sata): 9500 AOA; Em stock; loja SuperLoja Angola.
+- [Adaptador Usb](https://superloja.vip/produto/adaptador-usb): 8500 AOA; Em stock; loja SuperLoja Angola.
+- [Vibrador Trifuncional](https://superloja.vip/produto/vibrador-trifuncional): 40000 AOA; Em stock; loja SexyShop.
+- [Vibrador Duplo](https://superloja.vip/produto/vibrador-duplo): 55000 AOA; Em stock; loja SexyShop.
+
+## Categorias
+
+- [Electronica](https://superloja.vip/categoria/electronica): 86 produtos.
+- [Moda Feminina](https://superloja.vip/categoria/moda-feminina): 0 produtos.
+- [Moda Masculina](https://superloja.vip/categoria/moda-masculina): 0 produtos.
+- [Casa & Decoracao](https://superloja.vip/categoria/casa-decoracao): 0 produtos.
+- [Automoveis & Motas](https://superloja.vip/categoria/automoveis-motas): 0 produtos.
+- [Beleza & Cuidados](https://superloja.vip/categoria/beleza-cuidados): 0 produtos.
+- [Desporto & Lazer](https://superloja.vip/categoria/desporto-lazer): 0 produtos.
+- [Alimentacao & Bebidas](https://superloja.vip/categoria/alimentacao-bebidas): 0 produtos.
+- [Livros & Papelaria](https://superloja.vip/categoria/livros-papelaria): 0 produtos.
+- [Bebes & Criancas](https://superloja.vip/categoria/bebes-criancas): 0 produtos.
+- [Saude & Bem-estar](https://superloja.vip/categoria/saude-bem-estar): 0 produtos.
+- [Ferramentas & Construcao](https://superloja.vip/categoria/ferramentas-construcao): 0 produtos.
+- [Informatica](https://superloja.vip/categoria/informatica): 0 produtos.
+- [Jogos & Consolas](https://superloja.vip/categoria/jogos-consolas): 0 produtos.
+- [Animais](https://superloja.vip/categoria/animais): 0 produtos.
+- [Musica & Instrumentos](https://superloja.vip/categoria/musica-instrumentos): 0 produtos.
+- [Escritorio & Material](https://superloja.vip/categoria/escritorio-material): 0 produtos.
+- [Servicos](https://superloja.vip/categoria/servicos): 3 produtos.
+- [Imoveis](https://superloja.vip/categoria/imoveis): 0 produtos.
+- [Agricultura](https://superloja.vip/categoria/agricultura): 0 produtos.
+- [Sexy Shop](https://superloja.vip/categoria/sexy-shop): 7 produtos.
+
+## Regras de interpretação
+
+- Moeda: AOA/Kz.
+- “Em stock” reflete a quantidade informada pela loja no momento da atualização.
+- Entrega, pagamento, devolução e garantia podem variar por loja.
+- Para respostas atuais, consulte primeiro a página canónica do produto e os dados estruturados Product/Offer.
+- Não invente avaliações, descontos, certificações ou disponibilidade.
+
+## Endpoints públicos de leitura
+
+- https://superloja.vip/api/products
+- https://superloja.vip/api/categories
+- https://superloja.vip/api/stores
+- https://superloja.vip/sitemap.xml
