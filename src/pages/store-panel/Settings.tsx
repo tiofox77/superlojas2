@@ -5,8 +5,9 @@ import { useOutletContext } from "react-router-dom";
 import {
   Loader2, Upload, Save, Store, MessageCircle, Search as SearchIcon,
   FileText, Clock, Globe, Instagram, Facebook, Megaphone,
-  Truck, MapPin, Phone, Mail, Info, ToggleLeft, ToggleRight, Package
+  Truck, MapPin, Mail, Info, ToggleLeft, ToggleRight, Package
 } from "lucide-react";
+import PhoneInput from "@/components/PhoneInput";
 import { useToastNotification } from "@/contexts/ToastContext";
 import { resolveStorageUrl } from "@/lib/imageHelpers";
 
@@ -192,6 +193,7 @@ export default function StorePanelSettings() {
                 {logoPreview ? <img src={logoPreview} alt="" className="h-full w-full object-cover" /> : <Upload className={`h-6 w-6 ${s.textMuted}`} />}
               </div>
               <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setLogoFile(f); setLogoPreview(URL.createObjectURL(f)); } }} />
+              <p className={`text-[10px] ${s.textMuted} mt-1.5`}>Recomendado: 256 × 256 px (quadrado)</p>
             </div>
             <div>
               <label className={labelCls}>Banner</label>
@@ -200,13 +202,14 @@ export default function StorePanelSettings() {
                 {bannerPreview ? <img src={bannerPreview} alt="" className="h-full w-full object-cover" /> : <Upload className={`h-6 w-6 ${s.textMuted}`} />}
               </div>
               <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setBannerFile(f); setBannerPreview(URL.createObjectURL(f)); } }} />
+              <p className={`text-[10px] ${s.textMuted} mt-1.5`}>Recomendado: 1200 × 400 px (3:1 horizontal)</p>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div><label className={labelCls}>Nome da Loja</label><input value={f("name")} onChange={(e) => set("name", e.target.value)} placeholder="Minha Loja" className={inputCls} /></div>
-            <div><label className={labelCls}>WhatsApp</label><input value={f("whatsapp")} onChange={(e) => set("whatsapp", e.target.value)} placeholder="+244 9XX XXX XXX" className={inputCls} /></div>
+            <div><label className={labelCls}>WhatsApp</label><PhoneInput value={f("whatsapp")} onChange={(v) => set("whatsapp", v)} className={inputCls} /></div>
             <div><label className={labelCls}>Email</label><input type="email" value={f("email")} onChange={(e) => set("email", e.target.value)} placeholder="loja@email.com" className={inputCls} /></div>
-            <div><label className={labelCls}>Telefone</label><input value={f("phone")} onChange={(e) => set("phone", e.target.value)} placeholder="+244 222 XXX XXX" className={inputCls} /></div>
+            <div><label className={labelCls}>Telefone</label><PhoneInput value={f("phone")} onChange={(v) => set("phone", v)} className={inputCls} /></div>
             <div><label className={labelCls}>Provincia</label><input value={f("province")} onChange={(e) => set("province", e.target.value)} placeholder="Luanda" className={inputCls} /></div>
             <div><label className={labelCls}>Cidade</label><input value={f("city")} onChange={(e) => set("city", e.target.value)} placeholder="Luanda" className={inputCls} /></div>
           </div>
@@ -257,7 +260,7 @@ export default function StorePanelSettings() {
           </div>
           <div>
             <label className={labelCls}>Numero WhatsApp para Encomendas</label>
-            <input value={f("whatsapp")} onChange={(e) => set("whatsapp", e.target.value)} placeholder="+244 9XX XXX XXX" className={inputCls} />
+            <PhoneInput value={f("whatsapp")} onChange={(v) => set("whatsapp", v)} className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Mensagem Modelo de Encomenda</label>

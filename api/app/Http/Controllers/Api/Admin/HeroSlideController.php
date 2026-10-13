@@ -37,7 +37,7 @@ class HeroSlideController extends Controller
             'cta' => 'nullable|string|max:100',
             'cta_link' => 'nullable|string|max:255',
             'bg_color' => 'nullable|string|max:255',
-            'image' => 'nullable|file|image|max:6144',
+            'image' => 'nullable|file|image|max:10240',
             'store_slug' => 'nullable|string|exists:stores,slug',
             'sort_order' => 'sometimes|integer|min:0',
         ]);
@@ -77,7 +77,7 @@ class HeroSlideController extends Controller
             'cta' => 'sometimes|string|max:100',
             'cta_link' => 'sometimes|string|max:255',
             'bg_color' => 'sometimes|string|max:255',
-            'image' => 'sometimes|file|image|max:6144',
+            'image' => 'sometimes|file|image|max:10240',
             'store_slug' => 'sometimes|nullable|string|exists:stores,slug',
             'sort_order' => 'sometimes|integer|min:0',
         ]);

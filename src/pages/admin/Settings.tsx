@@ -7,6 +7,7 @@ import {
   Clock, Plus, Trash2, GripVertical, Volume2, AlertTriangle, ShoppingBag, Package, Ban,
   Upload, Image, Search, BarChart3, Code, ExternalLink, FileCode, Smartphone, Palette, Monitor
 } from "lucide-react";
+import PhoneInput from "@/components/PhoneInput";
 import { useRef } from "react";
 import { useToastNotification } from "@/contexts/ToastContext";
 
@@ -737,8 +738,15 @@ export default function AdminSettings() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <InputFieldStable label="Email" value={contactEmail} onChange={setContactEmail} placeholder="info@superlojas.ao" hint="Aparece na pagina de contacto e rodape" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
-            <InputFieldStable label="Telefone" value={contactPhone} onChange={setContactPhone} placeholder="+244 923 456 789" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
-            <InputFieldStable label="WhatsApp" value={contactWhatsapp} onChange={setContactWhatsapp} placeholder="+244 923 456 789" hint="Numero com codigo do pais" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
+            <div>
+              <label className={labelCls}>Telefone</label>
+              <PhoneInput value={contactPhone} onChange={setContactPhone} className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>WhatsApp</label>
+              <PhoneInput value={contactWhatsapp} onChange={setContactWhatsapp} className={inputCls} />
+              <p className={`text-[10px] ${s.textMuted} mt-1`}>Numero com codigo do pais</p>
+            </div>
             <InputFieldStable label="Cidade" value={contactCity} onChange={setContactCity} placeholder="Luanda, Angola" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
             <div className="sm:col-span-2">
               <InputFieldStable label="Endereco Completo" value={contactAddress} onChange={setContactAddress} placeholder="Talatona, Luanda Sul, Angola" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />

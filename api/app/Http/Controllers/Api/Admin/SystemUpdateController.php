@@ -13,162 +13,216 @@ use Illuminate\Support\Facades\Log;
 
 class SystemUpdateController extends Controller
 {
-    /**
-     * Get update configuration (repo URL + current version).
-     */
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    //  CONFIG
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
     public function config()
     {
+        $repo = Setting::get('github_repo', '');
+        $token = Setting::get('github_token', '');
+        $version = Setting::get('current_version', '1.0.0');
+
         return response()->json([
-            'github_repo' => Setting::get('github_repo', ''),
-            'github_token' => Setting::get('github_token') ? '••••••••' : '',
-            'has_token' => (bool) Setting::get('github_token'),
-            'current_version' => Setting::get('current_version', '1.0.0'),
-            'last_check' => Setting::get('last_update_check'),
-            'auto_check' => Setting::get('auto_update_check', 'false') === 'true',
+            'github_repo'     => $repo,
+            'has_token'       => (bool) $token,
+            'token_preview'   => $token ? (substr($token, 0, 4) . '••••••••') : '',
+            'current_version' => $version,
+            'last_check'      => Setting::get('last_update_check'),
+            'last_install'    => Setting::get('last_update_installed'),
         ]);
     }
 
-    /**
-     * Save update configuration.
-     */
     public function saveConfig(Request $request)
     {
         $request->validate([
-            'github_repo' => 'required|string|max:500',
-            'github_token' => 'nullable|string|max:500',
+            'github_repo'     => 'required|string|max:500',
+            'github_token'    => 'nullable|string|max:500',
             'current_version' => 'nullable|string|max:50',
-            'auto_check' => 'nullable|boolean',
         ]);
 
-        // Normalize repo: accept full URL or owner/repo format
+        // Normalize repo: accept full URL, owner/repo, or with .git
         $repo = $request->github_repo;
         $repo = preg_replace('#^https?://github\.com/#', '', $repo);
-        $repo = rtrim($repo, '/');
-        // Remove .git suffix
-        $repo = preg_replace('#\.git$#', '', $repo);
+        $repo = rtrim(preg_replace('#\.git$#', '', $repo), '/');
 
         Setting::set('github_repo', $repo);
+        Log::info('SystemUpdate: config saved', ['repo' => $repo]);
 
-        if ($request->has('github_token') && $request->github_token && $request->github_token !== '••••••••') {
-            Setting::set('github_token', $request->github_token);
+        // Save token (skip if masked placeholder sent back)
+        $rawToken = $request->github_token;
+        if ($rawToken && !str_contains($rawToken, '••••')) {
+            Setting::set('github_token', $rawToken);
+            Log::info('SystemUpdate: token saved');
         }
 
-        if ($request->has('current_version') && $request->current_version) {
+        if ($request->filled('current_version')) {
             Setting::set('current_version', $request->current_version);
         }
 
-        if ($request->has('auto_check')) {
-            Setting::set('auto_update_check', $request->auto_check ? 'true' : 'false');
-        }
-
-        // Clear cache so next check fetches fresh data
+        // Clear cached releases
         Cache::forget('github_releases');
 
-        return response()->json(['message' => 'Configuracao guardada com sucesso.']);
+        // Return fresh config so frontend updates immediately
+        return response()->json([
+            'message'         => 'Configuracao guardada com sucesso.',
+            'github_repo'     => $repo,
+            'has_token'       => (bool) Setting::get('github_token'),
+            'token_preview'   => Setting::get('github_token') ? (substr(Setting::get('github_token'), 0, 4) . '••••••••') : '',
+            'current_version' => Setting::get('current_version', '1.0.0'),
+        ]);
     }
 
-    /**
-     * Remove GitHub token.
-     */
     public function removeToken()
     {
         Setting::where('key', 'github_token')->delete();
+        Cache::forget('github_releases');
         return response()->json(['message' => 'Token removido.']);
     }
 
-    /**
-     * Fetch releases from GitHub API.
-     */
-    public function releases()
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    //  CONNECTION TEST
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    public function testConnection()
     {
         $repo = Setting::get('github_repo');
         if (!$repo) {
-            return response()->json(['error' => 'Repositorio nao configurado.'], 422);
-        }
-
-        // Cache releases for 10 minutes
-        $cacheKey = 'github_releases_' . md5($repo);
-        $cached = Cache::get($cacheKey);
-
-        if ($cached) {
-            return response()->json([
-                'releases' => $cached['releases'],
-                'cached' => true,
-                'current_version' => Setting::get('current_version', '1.0.0'),
-            ]);
+            return response()->json(['ok' => false, 'error' => 'Repositorio nao configurado. Guarde a configuracao primeiro.'], 422);
         }
 
         try {
-            $response = $this->githubHttp(15)
-                ->get("https://api.github.com/repos/{$repo}/releases", ['per_page' => 20]);
+            $response = $this->githubHttp(10)
+                ->get("https://api.github.com/repos/{$repo}");
 
             if ($response->failed()) {
                 $status = $response->status();
-                if ($status === 404) {
-                    return response()->json(['error' => "Repositorio '{$repo}' nao encontrado."], 404);
-                }
-                if ($status === 403) {
-                    return response()->json(['error' => 'Rate limit excedido ou token invalido. Adicione um token GitHub.'], 403);
-                }
-                if ($status === 401) {
-                    return response()->json(['error' => 'Token GitHub invalido.'], 401);
-                }
-                return response()->json(['error' => "Erro GitHub API: HTTP {$status}"], $status);
+                $msgs = [
+                    404 => "Repositorio '{$repo}' nao encontrado. Verifique o nome.",
+                    401 => 'Token invalido ou expirado.',
+                    403 => 'Acesso negado. Token sem permissoes ou rate limit excedido.',
+                ];
+                return response()->json([
+                    'ok'    => false,
+                    'error' => $msgs[$status] ?? "Erro HTTP {$status}",
+                    'status' => $status,
+                ]);
             }
 
-            $releases = collect($response->json())->map(function ($release) {
-                return [
-                    'id' => $release['id'],
-                    'tag_name' => $release['tag_name'],
-                    'name' => $release['name'] ?: $release['tag_name'],
-                    'body' => $release['body'] ?? '',
-                    'prerelease' => $release['prerelease'],
-                    'draft' => $release['draft'],
-                    'published_at' => $release['published_at'],
-                    'html_url' => $release['html_url'],
-                    'tarball_url' => $release['tarball_url'],
-                    'zipball_url' => $release['zipball_url'],
-                    'author' => [
-                        'login' => $release['author']['login'] ?? '',
-                        'avatar_url' => $release['author']['avatar_url'] ?? '',
-                    ],
-                    'assets' => collect($release['assets'] ?? [])->map(function ($asset) {
-                        return [
-                            'id' => $asset['id'],
-                            'name' => $asset['name'],
-                            'size' => $asset['size'],
-                            'download_count' => $asset['download_count'],
-                            'browser_download_url' => $asset['browser_download_url'],
-                            'content_type' => $asset['content_type'],
-                        ];
-                    })->toArray(),
-                ];
-            })->filter(fn($r) => !$r['draft'])->values()->toArray();
+            $data = $response->json();
 
-            // Update last check timestamp
-            Setting::set('last_update_check', now()->toIso8601String());
-
-            // Cache for 10 minutes
-            Cache::put($cacheKey, ['releases' => $releases], now()->addMinutes(10));
+            // Also check rate limit
+            $rateLimit = $this->githubHttp(5)->get('https://api.github.com/rate_limit');
+            $rl = $rateLimit->ok() ? $rateLimit->json()['rate'] ?? null : null;
 
             return response()->json([
-                'releases' => $releases,
-                'cached' => false,
+                'ok' => true,
+                'repo' => [
+                    'full_name'      => $data['full_name'],
+                    'description'    => $data['description'],
+                    'html_url'       => $data['html_url'],
+                    'default_branch' => $data['default_branch'],
+                    'private'        => $data['private'],
+                    'stars'          => $data['stargazers_count'],
+                    'forks'          => $data['forks_count'],
+                    'language'       => $data['language'],
+                    'updated_at'     => $data['updated_at'],
+                    'owner' => [
+                        'login'      => $data['owner']['login'],
+                        'avatar_url' => $data['owner']['avatar_url'],
+                    ],
+                ],
+                'rate_limit' => $rl ? [
+                    'limit'     => $rl['limit'],
+                    'remaining' => $rl['remaining'],
+                    'reset_at'  => date('Y-m-d H:i:s', $rl['reset']),
+                ] : null,
+                'authenticated' => (bool) Setting::get('github_token'),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'ok'    => false,
+                'error' => 'Erro de conexao: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    //  RELEASES
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    public function releases(Request $request)
+    {
+        $repo = Setting::get('github_repo');
+        if (!$repo) {
+            return response()->json(['error' => 'Repositorio nao configurado. Guarde a configuracao primeiro.'], 422);
+        }
+
+        $forceRefresh = $request->boolean('refresh');
+        $cacheKey = 'github_releases';
+
+        if (!$forceRefresh) {
+            $cached = Cache::get($cacheKey);
+            if ($cached) {
+                return response()->json([
+                    'releases'        => $cached,
+                    'cached'          => true,
+                    'current_version' => Setting::get('current_version', '1.0.0'),
+                ]);
+            }
+        }
+
+        try {
+            $response = $this->githubHttp(20)
+                ->get("https://api.github.com/repos/{$repo}/releases", ['per_page' => 15]);
+
+            if ($response->failed()) {
+                $status = $response->status();
+                $msgs = [
+                    404 => "Repositorio '{$repo}' nao encontrado.",
+                    403 => 'Rate limit excedido ou acesso negado. Adicione/verifique o token.',
+                    401 => 'Token invalido ou expirado.',
+                ];
+                return response()->json(['error' => $msgs[$status] ?? "Erro GitHub: HTTP {$status}"], $status >= 400 && $status < 600 ? $status : 500);
+            }
+
+            $releases = collect($response->json())->filter(fn($r) => !($r['draft'] ?? false))->map(fn($r) => [
+                'id'           => $r['id'],
+                'tag_name'     => $r['tag_name'],
+                'name'         => $r['name'] ?: $r['tag_name'],
+                'body'         => $r['body'] ?? '',
+                'prerelease'   => $r['prerelease'],
+                'published_at' => $r['published_at'],
+                'html_url'     => $r['html_url'],
+                'zipball_url'  => $r['zipball_url'],
+                'author'       => ['login' => $r['author']['login'] ?? '', 'avatar_url' => $r['author']['avatar_url'] ?? ''],
+                'assets'       => collect($r['assets'] ?? [])->map(fn($a) => [
+                    'name'     => $a['name'],
+                    'size'     => $a['size'],
+                    'downloads'=> $a['download_count'],
+                    'url'      => $a['browser_download_url'],
+                ])->toArray(),
+            ])->values()->toArray();
+
+            Setting::set('last_update_check', now()->toIso8601String());
+            Cache::put($cacheKey, $releases, now()->addMinutes(5));
+
+            return response()->json([
+                'releases'        => $releases,
+                'cached'          => false,
                 'current_version' => Setting::get('current_version', '1.0.0'),
             ]);
         } catch (\Throwable $e) {
+            Log::error('SystemUpdate: releases fetch failed', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Erro de conexao: ' . $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Check for latest release only (lightweight check).
-     */
     public function checkLatest()
     {
         $repo = Setting::get('github_repo');
         if (!$repo) {
-            return response()->json(['has_update' => false, 'error' => 'Repositorio nao configurado.']);
+            return response()->json(['has_update' => false]);
         }
 
         try {
@@ -176,7 +230,7 @@ class SystemUpdateController extends Controller
                 ->get("https://api.github.com/repos/{$repo}/releases/latest");
 
             if ($response->failed()) {
-                return response()->json(['has_update' => false, 'error' => 'Erro ao verificar.']);
+                return response()->json(['has_update' => false]);
             }
 
             $latest = $response->json();
@@ -184,44 +238,37 @@ class SystemUpdateController extends Controller
             $latestTag = ltrim($latest['tag_name'] ?? '', 'vV');
             $currentClean = ltrim($currentVersion, 'vV');
 
-            Setting::set('last_update_check', now()->toIso8601String());
-
             return response()->json([
-                'has_update' => version_compare($latestTag, $currentClean, '>'),
-                'latest_version' => $latest['tag_name'],
+                'has_update'      => version_compare($latestTag, $currentClean, '>'),
+                'latest_version'  => $latest['tag_name'],
                 'current_version' => $currentVersion,
-                'release_name' => $latest['name'] ?: $latest['tag_name'],
-                'published_at' => $latest['published_at'],
-                'html_url' => $latest['html_url'],
             ]);
         } catch (\Throwable $e) {
-            return response()->json(['has_update' => false, 'error' => $e->getMessage()]);
+            return response()->json(['has_update' => false]);
         }
     }
 
-    /**
-     * Mark a specific version as the current installed version.
-     */
     public function setVersion(Request $request)
     {
         $request->validate(['version' => 'required|string|max:50']);
-        Setting::set('current_version', $request->version);
+        $v = ltrim($request->version, 'vV');
+        Setting::set('current_version', $v);
         Cache::forget('github_releases');
 
         return response()->json([
-            'message' => "Versao actualizada para {$request->version}",
-            'current_version' => $request->version,
+            'message'         => "Versao actualizada para {$v}",
+            'current_version' => $v,
         ]);
     }
 
-    /**
-     * Install a release directly on the server.
-     * Downloads zip from GitHub, extracts, copies files (preserving .env, api/.env, api/storage/), runs migrations.
-     */
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    //  INSTALL
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
     public function install(Request $request)
     {
         $request->validate([
-            'tag' => 'required|string|max:100',
+            'tag'         => 'required|string|max:100',
             'zipball_url' => 'required|string|url',
         ]);
 
@@ -233,7 +280,6 @@ class SystemUpdateController extends Controller
             return response()->json(['error' => 'Repositorio nao configurado.'], 422);
         }
 
-        // Project root (one level up from api/)
         $projectRoot = realpath(base_path('..'));
         if (!$projectRoot || !is_dir($projectRoot)) {
             return response()->json(['error' => 'Nao foi possivel determinar a raiz do projecto.'], 500);
@@ -241,25 +287,20 @@ class SystemUpdateController extends Controller
 
         $steps = [];
         $tempDir = null;
-        $zipPath = null;
+        $envBackups = [];
 
         try {
-            // ─── Step 1: Download zip ───
-            $steps[] = ['step' => 'download', 'status' => 'running', 'message' => 'A descarregar release...'];
+            // ── 1. Download ──
+            $steps[] = $this->step('download', 'running', 'A descarregar release...');
 
-            $response = $this->githubHttp(120)
-                ->get($zipUrl);
-
+            $response = $this->githubHttp(120)->get($zipUrl);
             if ($response->failed()) {
-                return response()->json([
-                    'error' => 'Erro ao descarregar: HTTP ' . $response->status(),
-                    'steps' => $steps,
-                ], 500);
+                return $this->installError("Erro ao descarregar: HTTP {$response->status()}", $steps);
             }
 
             $zipContent = $response->body();
             if (strlen($zipContent) < 1000) {
-                return response()->json(['error' => 'Ficheiro zip invalido ou vazio.', 'steps' => $steps], 500);
+                return $this->installError('Ficheiro zip invalido ou vazio.', $steps);
             }
 
             $tempDir = storage_path('app/update_' . uniqid());
@@ -267,194 +308,104 @@ class SystemUpdateController extends Controller
             $zipPath = $tempDir . '/release.zip';
             File::put($zipPath, $zipContent);
 
-            $steps[] = ['step' => 'download', 'status' => 'done', 'message' => 'Download concluido (' . $this->formatSize(strlen($zipContent)) . ')'];
+            $steps[] = $this->step('download', 'done', 'Download concluido (' . $this->formatSize(strlen($zipContent)) . ')');
 
-            // ─── Step 2: Extract zip ───
-            $steps[] = ['step' => 'extract', 'status' => 'running', 'message' => 'A extrair ficheiros...'];
+            // ── 2. Extract ──
+            $steps[] = $this->step('extract', 'running', 'A extrair ficheiros...');
 
             $extractDir = $tempDir . '/extracted';
             File::ensureDirectoryExists($extractDir);
 
-            $extracted = false;
-
-            // Try ZipArchive first
-            if (class_exists(\ZipArchive::class)) {
-                $zip = new \ZipArchive();
-                if ($zip->open($zipPath) === true) {
-                    $zip->extractTo($extractDir);
-                    $zip->close();
-                    $extracted = true;
-                }
+            if (!$this->extractZip($zipPath, $extractDir)) {
+                return $this->installError('Nao foi possivel extrair o zip. Verifique php-zip ou unzip no servidor.', $steps);
             }
 
-            // Fallback: shell unzip command
-            if (!$extracted) {
-                $unzipCmd = "unzip -o " . escapeshellarg($zipPath) . " -d " . escapeshellarg($extractDir) . " 2>&1";
-                $output = [];
-                $exitCode = 0;
-                exec($unzipCmd, $output, $exitCode);
-
-                if ($exitCode !== 0) {
-                    // Try Python as last resort
-                    $pyCmd = "python3 -c \"import zipfile; zipfile.ZipFile(" . escapeshellarg($zipPath) . ").extractall(" . escapeshellarg($extractDir) . ")\" 2>&1";
-                    exec($pyCmd, $output, $exitCode);
-                }
-
-                $extracted = ($exitCode === 0) || count(File::allFiles($extractDir)) > 0;
-            }
-
-            if (!$extracted || count(File::allFiles($extractDir)) === 0) {
-                return response()->json([
-                    'error' => 'Nao foi possivel extrair o zip. Verifique se a extensao php-zip ou o comando unzip estao disponiveis no servidor.',
-                    'steps' => $steps,
-                ], 500);
-            }
-
-            // GitHub zipball has a root folder like "owner-repo-hash/"
             $innerDirs = File::directories($extractDir);
             $sourceDir = count($innerDirs) === 1 ? $innerDirs[0] : $extractDir;
 
-            if (!is_dir($sourceDir)) {
-                return response()->json(['error' => 'Estrutura do zip invalida.', 'steps' => $steps], 500);
+            $steps[] = $this->step('extract', 'done', 'Extraccao concluida');
+
+            // ── 3. Backup .env ──
+            $steps[] = $this->step('backup', 'running', 'A preservar configuracoes...');
+
+            $envPaths = [$projectRoot . '/.env', $projectRoot . '/api/.env'];
+            foreach ($envPaths as $ef) {
+                if (File::exists($ef)) $envBackups[$ef] = File::get($ef);
             }
 
-            $steps[] = ['step' => 'extract', 'status' => 'done', 'message' => 'Extraccao concluida'];
+            $steps[] = $this->step('backup', 'done', 'Ficheiros .env preservados (' . count($envBackups) . ')');
 
-            // ─── Step 3: Backup .env files ───
-            $steps[] = ['step' => 'backup', 'status' => 'running', 'message' => 'A preservar ficheiros de configuracao...'];
-
-            $preserved = [];
-
-            // Save current .env files
-            $envFiles = [
-                $projectRoot . '/.env',
-                $projectRoot . '/api/.env',
-            ];
-            $envBackups = [];
-            foreach ($envFiles as $envFile) {
-                if (File::exists($envFile)) {
-                    $envBackups[$envFile] = File::get($envFile);
-                    $preserved[] = str_replace($projectRoot . '/', '', $envFile);
-                }
-            }
-
-            $steps[] = ['step' => 'backup', 'status' => 'done', 'message' => 'Ficheiros preservados: ' . implode(', ', $preserved)];
-
-            // ─── Step 4: Copy files ───
-            $steps[] = ['step' => 'copy', 'status' => 'running', 'message' => 'A copiar ficheiros novos...'];
+            // ── 4. Copy files ──
+            $steps[] = $this->step('copy', 'running', 'A copiar ficheiros...');
 
             $copied = 0;
             $skipped = 0;
-
-            // Files/dirs to NEVER overwrite from the release
             $protectedPaths = [
-                '.env',
-                'api/.env',
-                'api/storage/app',
-                'api/storage/logs',
-                'api/storage/framework/sessions',
-                'api/storage/framework/cache',
-                'node_modules',
-                'api/vendor',
+                '.env', 'api/.env',
+                'api/bootstrap/cache',
+                'api/storage/app', 'api/storage/logs',
+                'api/storage/framework/sessions', 'api/storage/framework/cache',
+                'node_modules', 'api/vendor',
             ];
 
             $this->copyDirectory($sourceDir, $projectRoot, $protectedPaths, $copied, $skipped);
 
-            $steps[] = ['step' => 'copy', 'status' => 'done', 'message' => "{$copied} ficheiros copiados, {$skipped} protegidos/ignorados"];
+            $steps[] = $this->step('copy', 'done', "{$copied} copiados, {$skipped} protegidos");
 
-            // ─── Step 5: Restore .env files (safety) ───
-            foreach ($envBackups as $envFile => $content) {
-                File::put($envFile, $content);
+            // ── 5. Restore .env (safety) + clear stale config ──
+            foreach ($envBackups as $ef => $content) {
+                File::put($ef, $content);
             }
+            // Clear any cached config immediately so migrations use the correct DB
+            $this->safeArtisan('config:clear');
 
-            // ─── Step 6: Run migrations ───
-            $steps[] = ['step' => 'migrate', 'status' => 'running', 'message' => 'A executar migracoes...'];
+            // ── 6. Migrations ──
+            $steps[] = $this->step('migrate', 'running', 'A executar migracoes...');
+            $migrateOut = $this->safeArtisan('migrate', ['--force' => true]);
+            $steps[] = $this->step('migrate', 'done', $migrateOut ?: 'Sem migracoes pendentes');
 
-            $migrateOutput = '';
-            try {
-                Artisan::call('migrate', ['--force' => true]);
-                $migrateOutput = trim(Artisan::output());
-            } catch (\Throwable $e) {
-                $migrateOutput = 'Erro: ' . $e->getMessage();
-                Log::error('Update migration error', ['error' => $e->getMessage()]);
+            // ── 7. Seeders ──
+            $steps[] = $this->step('seed', 'running', 'A executar seeders...');
+            $seedOut = $this->safeArtisan('db:seed', ['--class' => 'Database\\Seeders\\UpdateSeeder', '--force' => true]);
+            $steps[] = $this->step('seed', 'done', $seedOut ?: 'Seeders executados');
+
+            // ── 8. Clear caches ──
+            $steps[] = $this->step('cache', 'running', 'A limpar caches...');
+            foreach (['config:clear', 'route:clear', 'view:clear', 'cache:clear'] as $cmd) {
+                $this->safeArtisan($cmd);
             }
+            $this->safeArtisan('storage:link');
+            $steps[] = $this->step('cache', 'done', 'Caches limpos + storage link verificado');
 
-            $steps[] = ['step' => 'migrate', 'status' => 'done', 'message' => $migrateOutput ?: 'Sem migracoes pendentes'];
-
-            // ─── Step 6b: Run seeders (idempotent only) ───
-            $steps[] = ['step' => 'seed', 'status' => 'running', 'message' => 'A executar seeders...'];
-
-            $seedOutput = '';
-            try {
-                Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\UpdateSeeder', '--force' => true]);
-                $seedOutput = trim(Artisan::output());
-            } catch (\Throwable $e) {
-                $seedOutput = 'Erro: ' . $e->getMessage();
-                Log::error('Update seeder error', ['error' => $e->getMessage()]);
-            }
-
-            $steps[] = ['step' => 'seed', 'status' => 'done', 'message' => $seedOutput ?: 'Seeders executados'];
-
-            // ─── Step 7: Clear caches ───
-            $steps[] = ['step' => 'cache', 'status' => 'running', 'message' => 'A limpar caches...'];
-
-            try {
-                Artisan::call('config:clear');
-                Artisan::call('route:clear');
-                Artisan::call('view:clear');
-                Artisan::call('cache:clear');
-                // Ensure storage symlink exists after update
-                Artisan::call('storage:link');
-            } catch (\Throwable $e) {
-                Log::warning('Cache clear error during update', ['error' => $e->getMessage()]);
-            }
-
-            $steps[] = ['step' => 'cache', 'status' => 'done', 'message' => 'Caches limpos + storage link verificado'];
-
-            // ─── Step 7b: Patch dist/ with server .env values ───
-            $steps[] = ['step' => 'patch_env', 'status' => 'running', 'message' => 'A aplicar variaveis de ambiente no frontend...'];
-
+            // ── 9. Patch dist/ env ──
+            $steps[] = $this->step('patch_env', 'running', 'A aplicar variaveis de ambiente...');
             $patched = $this->patchDistEnv($projectRoot);
+            $steps[] = $this->step('patch_env', 'done', $patched > 0 ? "{$patched} JS actualizado(s)" : 'Sem alteracoes');
 
-            $steps[] = ['step' => 'patch_env', 'status' => 'done', 'message' => $patched > 0 ? "{$patched} ficheiro(s) JS actualizados com .env do servidor" : 'Sem alteracoes necessarias'];
-
-            // ─── Step 8: Update version ───
+            // ── 10. Update version ──
             $cleanTag = ltrim($tag, 'vV');
             Setting::set('current_version', $cleanTag);
-            Cache::forget('github_releases');
             Setting::set('last_update_installed', now()->toIso8601String());
+            Cache::forget('github_releases');
 
-            $steps[] = ['step' => 'version', 'status' => 'done', 'message' => "Versao actualizada para {$cleanTag}"];
+            $steps[] = $this->step('version', 'done', "Versao: {$cleanTag}");
 
-            // ─── Cleanup temp ───
+            // Cleanup
             File::deleteDirectory($tempDir);
 
-            Log::info("System updated to {$tag}", [
-                'repo' => $repo,
-                'files_copied' => $copied,
-                'files_skipped' => $skipped,
-            ]);
+            Log::info("System updated to {$tag}", ['repo' => $repo, 'copied' => $copied, 'skipped' => $skipped]);
 
             return response()->json([
-                'message' => "Actualizacao para {$tag} instalada com sucesso!",
-                'version' => $cleanTag,
-                'steps' => $steps,
-                'files_copied' => $copied,
+                'message'       => "Actualizado para {$tag} com sucesso!",
+                'version'       => $cleanTag,
+                'steps'         => $steps,
+                'files_copied'  => $copied,
                 'files_skipped' => $skipped,
             ]);
 
         } catch (\Throwable $e) {
-            // Cleanup on error
-            if ($tempDir && File::isDirectory($tempDir)) {
-                File::deleteDirectory($tempDir);
-            }
-
-            // Restore .env if we backed them up
-            if (!empty($envBackups)) {
-                foreach ($envBackups as $envFile => $content) {
-                    File::put($envFile, $content);
-                }
-            }
+            if ($tempDir && File::isDirectory($tempDir)) File::deleteDirectory($tempDir);
+            foreach ($envBackups as $ef => $content) File::put($ef, $content);
 
             Log::error("System update failed", ['error' => $e->getMessage(), 'tag' => $tag]);
 
@@ -465,68 +416,45 @@ class SystemUpdateController extends Controller
         }
     }
 
-    /**
-     * Recursively copy directory, respecting protected paths.
-     */
-    private function copyDirectory(string $source, string $dest, array $protectedPaths, int &$copied, int &$skipped, string $relativePath = ''): void
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    //  REPO INFO  (kept for backwards compat)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    public function repoInfo()
     {
-        $items = File::files($source);
-        foreach ($items as $file) {
-            $relPath = $relativePath ? $relativePath . '/' . $file->getFilename() : $file->getFilename();
+        $repo = Setting::get('github_repo');
+        if (!$repo) return response()->json(['error' => 'Repositorio nao configurado.'], 422);
 
-            // Check if protected
-            $isProtected = false;
-            foreach ($protectedPaths as $pp) {
-                if ($relPath === $pp || str_starts_with($relPath, $pp . '/')) {
-                    $isProtected = true;
-                    break;
-                }
-            }
+        try {
+            $response = $this->githubHttp(10)->get("https://api.github.com/repos/{$repo}");
+            if ($response->failed()) return response()->json(['error' => 'Repositorio nao encontrado.'], 404);
 
-            if ($isProtected) {
-                $skipped++;
-                continue;
-            }
-
-            $destPath = $dest . '/' . $relPath;
-            File::ensureDirectoryExists(dirname($destPath));
-            File::copy($file->getPathname(), $destPath);
-            $copied++;
-        }
-
-        $dirs = File::directories($source);
-        foreach ($dirs as $dir) {
-            $dirName = basename($dir);
-            $relPath = $relativePath ? $relativePath . '/' . $dirName : $dirName;
-
-            // Skip fully protected directories
-            $isProtected = false;
-            foreach ($protectedPaths as $pp) {
-                if ($relPath === $pp) {
-                    $isProtected = true;
-                    break;
-                }
-            }
-
-            if ($isProtected) {
-                $skipped++;
-                continue;
-            }
-
-            $this->copyDirectory($dir, $dest, $protectedPaths, $copied, $skipped, $relPath);
+            $data = $response->json();
+            return response()->json([
+                'full_name'      => $data['full_name'],
+                'description'    => $data['description'],
+                'html_url'       => $data['html_url'],
+                'default_branch' => $data['default_branch'],
+                'stars'          => $data['stargazers_count'],
+                'forks'          => $data['forks_count'],
+                'open_issues'    => $data['open_issues_count'],
+                'language'       => $data['language'],
+                'updated_at'     => $data['updated_at'],
+                'private'        => $data['private'],
+                'owner'          => [
+                    'login'      => $data['owner']['login'],
+                    'avatar_url' => $data['owner']['avatar_url'],
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    private function formatSize(int $bytes): string
-    {
-        if ($bytes < 1024) return $bytes . ' B';
-        if ($bytes < 1048576) return round($bytes / 1024, 1) . ' KB';
-        return round($bytes / 1048576, 1) . ' MB';
-    }
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    //  PRIVATE HELPERS
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    /**
-     * Build an HTTP client for GitHub API with proper SSL handling.
-     */
     private function githubHttp(int $timeout = 15): \Illuminate\Http\Client\PendingRequest
     {
         $headers = ['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'SuperLojas-Updater'];
@@ -537,8 +465,6 @@ class SystemUpdateController extends Controller
 
         $http = Http::withHeaders($headers)->timeout($timeout);
 
-        // Use system CA bundle if available, otherwise disable verify
-        // This prevents cURL error 77 on misconfigured local/shared hosts
         $caPath = ini_get('curl.cainfo') ?: ini_get('openssl.cafile');
         if ($caPath && file_exists($caPath)) {
             $http = $http->withOptions(['verify' => $caPath]);
@@ -549,75 +475,127 @@ class SystemUpdateController extends Controller
         return $http;
     }
 
-    /**
-     * Patch dist/ JS files with VITE_ env vars from the server's .env file.
-     * This ensures that after a GitHub release update, the frontend uses
-     * the correct API URL and domain instead of the dev machine's values.
-     */
+    private function step(string $step, string $status, string $message): array
+    {
+        return compact('step', 'status', 'message');
+    }
+
+    private function installError(string $message, array $steps): \Illuminate\Http\JsonResponse
+    {
+        return response()->json(['error' => $message, 'steps' => $steps], 500);
+    }
+
+    private function safeArtisan(string $command, array $params = []): string
+    {
+        try {
+            Artisan::call($command, $params);
+            return trim(Artisan::output());
+        } catch (\Throwable $e) {
+            Log::warning("Artisan {$command} failed during update", ['error' => $e->getMessage()]);
+            return 'Erro: ' . $e->getMessage();
+        }
+    }
+
+    private function extractZip(string $zipPath, string $extractDir): bool
+    {
+        if (class_exists(\ZipArchive::class)) {
+            $zip = new \ZipArchive();
+            if ($zip->open($zipPath) === true) {
+                $zip->extractTo($extractDir);
+                $zip->close();
+                return count(File::allFiles($extractDir)) > 0;
+            }
+        }
+
+        $exitCode = 0;
+        exec("unzip -o " . escapeshellarg($zipPath) . " -d " . escapeshellarg($extractDir) . " 2>&1", $output, $exitCode);
+        if ($exitCode !== 0) {
+            exec("python3 -c \"import zipfile; zipfile.ZipFile(" . escapeshellarg($zipPath) . ").extractall(" . escapeshellarg($extractDir) . ")\" 2>&1", $output, $exitCode);
+        }
+
+        return count(File::allFiles($extractDir)) > 0;
+    }
+
+    private function copyDirectory(string $source, string $dest, array $protectedPaths, int &$copied, int &$skipped, string $relativePath = ''): void
+    {
+        foreach (File::files($source) as $file) {
+            $relPath = $relativePath ? $relativePath . '/' . $file->getFilename() : $file->getFilename();
+
+            if ($this->isProtected($relPath, $protectedPaths)) {
+                $skipped++;
+                continue;
+            }
+
+            $destPath = $dest . '/' . $relPath;
+            File::ensureDirectoryExists(dirname($destPath));
+            File::copy($file->getPathname(), $destPath);
+            $copied++;
+        }
+
+        foreach (File::directories($source) as $dir) {
+            $dirName = basename($dir);
+            $relPath = $relativePath ? $relativePath . '/' . $dirName : $dirName;
+
+            if ($this->isProtected($relPath, $protectedPaths)) {
+                $skipped++;
+                continue;
+            }
+
+            $this->copyDirectory($dir, $dest, $protectedPaths, $copied, $skipped, $relPath);
+        }
+    }
+
+    private function isProtected(string $path, array $protectedPaths): bool
+    {
+        foreach ($protectedPaths as $pp) {
+            if ($path === $pp || str_starts_with($path, $pp . '/')) return true;
+        }
+        return false;
+    }
+
+    private function formatSize(int $bytes): string
+    {
+        if ($bytes < 1024) return $bytes . ' B';
+        if ($bytes < 1048576) return round($bytes / 1024, 1) . ' KB';
+        return round($bytes / 1048576, 1) . ' MB';
+    }
+
     private function patchDistEnv(string $projectRoot): int
     {
         $envFile = $projectRoot . '/.env';
         if (!File::exists($envFile)) return 0;
 
-        // Parse VITE_ variables from the server's .env
-        $envContent = File::get($envFile);
         $serverVars = [];
-        foreach (explode("\n", $envContent) as $line) {
+        foreach (explode("\n", File::get($envFile)) as $line) {
             $line = trim($line);
-            if (!$line || str_starts_with($line, '#')) continue;
-            if (str_starts_with($line, 'VITE_')) {
-                [$key, $value] = array_pad(explode('=', $line, 2), 2, '');
-                $serverVars[trim($key)] = trim($value, " \t\n\r\0\x0B\"'");
-            }
+            if (!$line || str_starts_with($line, '#') || !str_starts_with($line, 'VITE_')) continue;
+            [$key, $value] = array_pad(explode('=', $line, 2), 2, '');
+            $serverVars[trim($key)] = trim($value, " \t\n\r\0\x0B\"'");
         }
 
         if (empty($serverVars)) return 0;
 
-        // Find all JS files in dist/assets/
         $distDir = $projectRoot . '/dist/assets';
         if (!is_dir($distDir)) return 0;
 
         $patched = 0;
-        $jsFiles = glob($distDir . '/*.js');
-
-        foreach ($jsFiles as $jsFile) {
+        foreach (glob($distDir . '/*.js') as $jsFile) {
             $content = File::get($jsFile);
             $original = $content;
 
-            foreach ($serverVars as $key => $value) {
-                // Vite bakes env vars as string literals in the JS bundle
-                // Match patterns like: "http://127.0.0.1:8000/api" or "localhost"
-                // We search for the env key reference pattern and replace known dev values
-                // The safest approach: replace any URL that looks like a VITE_API_URL value
-                if ($key === 'VITE_API_URL') {
-                    // Replace common dev API URLs with the server's value
-                    $devPatterns = [
-                        'http://127.0.0.1:8000/api',
-                        'http://localhost:8000/api',
-                        'https://127.0.0.1:8000/api',
-                        'https://localhost:8000/api',
-                        'http://lojas.test/api',
-                        'https://lojas.test/api',
-                    ];
-                    foreach ($devPatterns as $devUrl) {
-                        if ($devUrl !== $value) {
-                            $content = str_replace($devUrl, $value, $content);
-                        }
-                    }
+            if (!empty($serverVars['VITE_API_URL'])) {
+                $value = $serverVars['VITE_API_URL'];
+                foreach (['http://127.0.0.1:8000/api','http://localhost:8000/api','https://127.0.0.1:8000/api','https://localhost:8000/api','http://lojas.test/api','https://lojas.test/api'] as $dev) {
+                    if ($dev !== $value) $content = str_replace($dev, $value, $content);
                 }
-                if ($key === 'VITE_BASE_DOMAIN') {
-                    $devDomains = [
-                        'lojas.test',
-                        'localhost',
-                        '127.0.0.1',
-                    ];
-                    foreach ($devDomains as $devDomain) {
-                        // Only replace in specific VITE context, not all occurrences
-                        // Look for the pattern: "lojas.test" (quoted string in JS)
-                        if ($devDomain !== $value) {
-                            $content = str_replace('"' . $devDomain . '"', '"' . $value . '"', $content);
-                            $content = str_replace("'" . $devDomain . "'", "'" . $value . "'", $content);
-                        }
+            }
+
+            if (!empty($serverVars['VITE_BASE_DOMAIN'])) {
+                $value = $serverVars['VITE_BASE_DOMAIN'];
+                foreach (['lojas.test','localhost','127.0.0.1'] as $dev) {
+                    if ($dev !== $value) {
+                        $content = str_replace('"' . $dev . '"', '"' . $value . '"', $content);
+                        $content = str_replace("'" . $dev . "'", "'" . $value . "'", $content);
                     }
                 }
             }
@@ -629,46 +607,5 @@ class SystemUpdateController extends Controller
         }
 
         return $patched;
-    }
-
-    /**
-     * Get repository info (stars, forks, etc.)
-     */
-    public function repoInfo()
-    {
-        $repo = Setting::get('github_repo');
-        if (!$repo) {
-            return response()->json(['error' => 'Repositorio nao configurado.'], 422);
-        }
-
-        try {
-            $response = $this->githubHttp(10)
-                ->get("https://api.github.com/repos/{$repo}");
-
-            if ($response->failed()) {
-                return response()->json(['error' => 'Repositorio nao encontrado.'], 404);
-            }
-
-            $data = $response->json();
-
-            return response()->json([
-                'full_name' => $data['full_name'],
-                'description' => $data['description'],
-                'html_url' => $data['html_url'],
-                'default_branch' => $data['default_branch'],
-                'stars' => $data['stargazers_count'],
-                'forks' => $data['forks_count'],
-                'open_issues' => $data['open_issues_count'],
-                'language' => $data['language'],
-                'updated_at' => $data['updated_at'],
-                'private' => $data['private'],
-                'owner' => [
-                    'login' => $data['owner']['login'],
-                    'avatar_url' => $data['owner']['avatar_url'],
-                ],
-            ]);
-        } catch (\Throwable $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
     }
 }

@@ -11,6 +11,7 @@ export interface Category {
   slug: string;
   icon: string;
   productCount: number;
+  isAdult: boolean;
   subcategories: Subcategory[];
 }
 
@@ -42,6 +43,9 @@ export interface Store {
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
+  hasSubdomain?: boolean;
+  productCount?: number;
+  followerCount?: number;
 }
 
 export interface ProductVariant {
@@ -70,6 +74,8 @@ export interface Product {
   subcategory?: string;
   categoryId?: string;
   subcategoryId?: string;
+  isFeatured?: boolean;
+  featuredStatus?: string | null;
 }
 
 export interface HeroSlide {

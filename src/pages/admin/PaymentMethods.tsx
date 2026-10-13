@@ -1,11 +1,13 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import Modal from "@/components/admin/Modal";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useEffect, useState } from "react";
 import {
   CreditCard, Loader2, Plus, Pencil, Trash2, ToggleLeft, ToggleRight,
   Building2, Phone, FileText, GripVertical, Banknote
 } from "lucide-react";
+import PhoneInput from "@/components/PhoneInput";
 import { useToastNotification } from "@/contexts/ToastContext";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
@@ -109,10 +111,12 @@ export default function AdminPaymentMethods() {
     fetchMethods();
   };
 
+  const [confirmDelete, setConfirmDelete] = useState<PayMethod | null>(null);
+
   const remove = async (m: PayMethod) => {
-    if (!confirm(`Eliminar "${m.name}"?`)) return;
     await fetch(`${API}/admin/subscription-payment-methods/${m.id}`, { method: "DELETE", headers });
     toast.success("Eliminado"); fetchMethods();
+    setConfirmDelete(null);
   };
 
   const inputCls = `w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`;
@@ -184,7 +188,7 @@ export default function AdminPaymentMethods() {
                     className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium ${s.isDark ? "bg-white/[0.04] text-white/60 hover:text-white" : "bg-gray-50 text-gray-500 hover:text-gray-700"} transition-colors`}>
                     <Pencil className="h-3 w-3" /> Editar
                   </button>
-                  <button onClick={() => remove(m)}
+                  <button onClick={() => setConfirmDelete(m)}
                     className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium text-red-500 hover:bg-red-50 transition-colors">
                     <Trash2 className="h-3 w-3" /> Eliminar
                   </button>
@@ -253,8 +257,7 @@ export default function AdminPaymentMethods() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>Telefone</label>
-                  <input value={form.phone_number} onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
-                    placeholder="Ex: 923 456 789" className={inputCls} />
+                  <PhoneInput value={form.phone_number} onChange={(v) => setForm({ ...form, phone_number: v })} compact className={inputCls} />
                 </div>
                 <div>
                   <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>Titular</label>
@@ -289,6 +292,14 @@ export default function AdminPaymentMethods() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Eliminar metodo de pagamento"
+        message={`Tem a certeza que deseja eliminar "${confirmDelete?.name}"?`}
+        onConfirm={() => confirmDelete && remove(confirmDelete)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

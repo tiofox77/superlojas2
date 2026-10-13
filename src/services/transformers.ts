@@ -14,6 +14,7 @@ interface ApiCategory {
   slug: string;
   icon: string;
   product_count: number;
+  is_adult?: boolean;
   subcategories?: ApiSubcategory[];
 }
 
@@ -45,6 +46,9 @@ interface ApiStore {
   meta_title?: string;
   meta_description?: string;
   meta_keywords?: string;
+  has_subdomain?: boolean;
+  product_count?: number;
+  follower_count?: number;
   products?: ApiProduct[];
   hero_slides?: ApiHeroSlide[];
 }
@@ -72,6 +76,8 @@ interface ApiProduct {
   subcategory_id: number | null;
   subcategory?: { id: number; name: string; slug: string } | null;
   category_relation?: { id: number; name: string; slug: string } | null;
+  is_featured?: boolean;
+  featured_status?: string | null;
 }
 
 interface ApiHeroSlide {
@@ -93,6 +99,7 @@ export function transformCategory(api: ApiCategory): Category {
     slug: api.slug,
     icon: api.icon,
     productCount: api.product_count,
+    isAdult: api.is_adult ?? false,
     subcategories: (api.subcategories ?? []).map((sub) => ({
       id: String(sub.id),
       name: sub.name,
@@ -124,6 +131,9 @@ export function transformStore(api: ApiStore): Store {
     metaTitle: api.meta_title || undefined,
     metaDescription: api.meta_description || undefined,
     metaKeywords: api.meta_keywords || undefined,
+    hasSubdomain: api.has_subdomain ?? false,
+    productCount: api.product_count ?? 0,
+    followerCount: api.follower_count ?? 0,
   };
 }
 
@@ -149,6 +159,8 @@ export function transformProduct(api: ApiProduct): Product {
     subcategory: api.subcategory?.name ?? undefined,
     categoryId: api.category_id ? String(api.category_id) : undefined,
     subcategoryId: api.subcategory_id ? String(api.subcategory_id) : undefined,
+    isFeatured: api.is_featured ?? false,
+    featuredStatus: api.featured_status ?? null,
   };
 }
 

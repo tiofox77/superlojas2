@@ -23,7 +23,7 @@ export function ProductCard({ product }: { product: Product }) {
         <img
           src={productImgSrc(product.images[0])}
           alt={product.name}
-          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="h-full w-full object-contain group-hover:scale-105 transition-transform duration-500 p-2"
           loading="lazy"
           onError={onImgError("product")}
         />

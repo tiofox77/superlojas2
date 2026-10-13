@@ -78,8 +78,9 @@ export function useProducts(params?: Record<string, string>) {
   return useQuery<Product[]>({
     queryKey: ["products", params],
     queryFn: async () => {
-      const data = await fetchApi<ApiProduct[]>("/products", params);
-      return data.map(transformProduct);
+      const raw = await fetchApi<{ data: ApiProduct[] } | ApiProduct[]>("/products", params);
+      const arr = Array.isArray(raw) ? raw : (raw.data ?? []);
+      return arr.map(transformProduct);
     },
     enabled: params !== undefined,
     staleTime: 2 * 60 * 1000,
@@ -91,6 +92,28 @@ export function useTrendingProducts() {
     queryKey: ["products", "trending"],
     queryFn: async () => {
       const data = await fetchApi<ApiProduct[]>("/products/trending");
+      return data.map(transformProduct);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useLatestProducts() {
+  return useQuery<Product[]>({
+    queryKey: ["products", "latest"],
+    queryFn: async () => {
+      const data = await fetchApi<ApiProduct[]>("/products/latest");
+      return data.map(transformProduct);
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useFeaturedProducts() {
+  return useQuery<Product[]>({
+    queryKey: ["products", "featured"],
+    queryFn: async () => {
+      const data = await fetchApi<ApiProduct[]>("/products/featured");
       return data.map(transformProduct);
     },
     staleTime: 5 * 60 * 1000,

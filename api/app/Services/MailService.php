@@ -236,6 +236,20 @@ class MailService
                 'sampleData' => ['contactName' => 'Pedro Almeida', 'contactEmail' => 'pedro@email.com', 'contactSubject' => 'Duvida sobre entregas', 'contactMessage' => 'Ola, gostaria de saber se fazem entregas para Benguela. Obrigado.'],
                 'sampleSubject' => 'Nova mensagem de contacto',
             ],
+            [
+                'key' => 'admin-new-user',
+                'label' => 'Admin: Novo Utilizador',
+                'description' => 'Enviado ao admin quando um novo utilizador se regista',
+                'sampleData' => ['userName' => 'Joao Silva', 'userEmail' => 'joao@email.com', 'userPhone' => '+244 923 456 789', 'registeredAt' => '12/03/2026 18:30', 'totalUsers' => 150, 'adminUrl' => 'https://superloja.vip/admin/utilizadores'],
+                'sampleSubject' => 'Novo utilizador: Joao Silva',
+            ],
+            [
+                'key' => 'admin-new-store',
+                'label' => 'Admin: Nova Loja',
+                'description' => 'Enviado ao admin quando uma nova loja e registada',
+                'sampleData' => ['storeName' => 'Loja da Maria', 'ownerName' => 'Maria Santos', 'ownerEmail' => 'maria@email.com', 'province' => 'Luanda', 'category' => 'Moda', 'whatsapp' => '+244 923 456 789', 'status' => 'Pendente', 'registeredAt' => '12/03/2026 18:30', 'totalStores' => 50, 'adminUrl' => 'https://superloja.vip/admin/lojas'],
+                'sampleSubject' => 'Nova loja: Loja da Maria',
+            ],
         ];
     }
 
@@ -249,6 +263,18 @@ class MailService
             if ($this->send($to, $subject, $template, $data)) $sent++;
         }
         return $sent;
+    }
+
+    /**
+     * Get admin email from settings (fallback to super_admin user).
+     */
+    public function getAdminEmail(): string
+    {
+        $email = Setting::get('contact_email');
+        if ($email) return $email;
+
+        $admin = \App\Models\User::where('role', 'super_admin')->first();
+        return $admin?->email ?? 'carlos@softecangola.net';
     }
 
     // ─── Convenience methods ────────────────────────────────────
@@ -370,6 +396,48 @@ class MailService
             'customerAddress'  => $order->customer_address,
             'customerProvince' => $order->customer_province,
             'customerNotes'    => $order->customer_notes,
+        ]);
+    }
+
+    /**
+     * Notify admin about new user registration.
+     */
+    public function sendAdminNewUser(string $userName, string $userEmail, ?string $userPhone = null): bool
+    {
+        $adminEmail = $this->getAdminEmail();
+        $totalUsers = \App\Models\User::count();
+        $appUrl = rtrim(config('app.url', 'https://superloja.vip'), '/');
+
+        return $this->send($adminEmail, "Novo utilizador: {$userName}", 'admin-new-user', [
+            'userName'     => $userName,
+            'userEmail'    => $userEmail,
+            'userPhone'    => $userPhone ?? '',
+            'registeredAt' => now()->format('d/m/Y H:i'),
+            'totalUsers'   => $totalUsers,
+            'adminUrl'     => $appUrl . '/admin/utilizadores',
+        ]);
+    }
+
+    /**
+     * Notify admin about new store registration.
+     */
+    public function sendAdminNewStore(string $storeName, string $ownerName, string $ownerEmail, string $province, string $category, string $whatsapp, bool $autoApproved): bool
+    {
+        $adminEmail = $this->getAdminEmail();
+        $totalStores = \App\Models\Store::count();
+        $appUrl = rtrim(config('app.url', 'https://superloja.vip'), '/');
+
+        return $this->send($adminEmail, "Nova loja: {$storeName}", 'admin-new-store', [
+            'storeName'    => $storeName,
+            'ownerName'    => $ownerName,
+            'ownerEmail'   => $ownerEmail,
+            'province'     => $province,
+            'category'     => $category,
+            'whatsapp'     => $whatsapp,
+            'status'       => $autoApproved ? 'Aprovada automaticamente' : 'Pendente de aprovacao',
+            'registeredAt' => now()->format('d/m/Y H:i'),
+            'totalStores'  => $totalStores,
+            'adminUrl'     => $appUrl . '/admin/lojas',
         ]);
     }
 

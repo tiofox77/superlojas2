@@ -50,8 +50,8 @@ class StoreController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'required|string|unique:stores',
             'description' => 'required|string',
-            'logo' => 'required|file|image|max:6144',
-            'banner' => 'nullable|file|image|max:6144',
+            'logo' => 'required|file|image|max:10240',
+            'banner' => 'nullable|file|image|max:10240',
             'province' => 'required|string',
             'city' => 'required|string',
             'whatsapp' => 'required|string',
@@ -88,7 +88,11 @@ class StoreController extends Controller
 
         $user = User::find($data['user_id']);
         if ($user && $user->role !== 'super_admin') {
-            $user->update(['role' => 'store_owner', 'store_id' => $store->id]);
+            $updateData = ['role' => 'store_owner'];
+            if (!$user->store_id) {
+                $updateData['store_id'] = $store->id;
+            }
+            $user->update($updateData);
         }
 
         return response()->json($store->load('user'), 201);
@@ -100,8 +104,8 @@ class StoreController extends Controller
             'name' => 'sometimes|string|max:255',
             'slug' => 'sometimes|string|unique:stores,slug,' . $store->id,
             'description' => 'sometimes|string',
-            'logo' => 'sometimes|file|image|max:6144',
-            'banner' => 'sometimes|file|image|max:6144',
+            'logo' => 'sometimes|file|image|max:10240',
+            'banner' => 'sometimes|file|image|max:10240',
             'province' => 'sometimes|string',
             'city' => 'sometimes|string',
             'whatsapp' => 'sometimes|string',

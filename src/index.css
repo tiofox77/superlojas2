@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
+:root { --build-version: "2026-04-26-2005"; }
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -129,4 +129,9 @@
 
 .animate-marquee {
   animation: marquee 30s linear infinite;
+}
+
+/* PWA safe area for bottom nav on notched devices */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }

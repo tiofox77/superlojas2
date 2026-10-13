@@ -6,7 +6,7 @@ import {
   BarChart3, Eye, Users, Store, Globe, Monitor, Smartphone, Tablet,
   TrendingUp, TrendingDown, Clock, Activity, ArrowRight, Loader2,
   MousePointerClick, ArrowUpRight, Minus, RefreshCw, Zap, FileText,
-  Chrome, ExternalLink, MapPin
+  Chrome, ExternalLink, MapPin, Search
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
@@ -26,6 +26,8 @@ interface GeoItem { country?: string; province?: string; views: number; visitors
 interface TechItem { device?: string; browser?: string; os?: string; views: number; }
 interface RealtimeData { active_visitors: number; active_pages: { path: string; active: number }[]; recent_views: any[]; }
 interface OnlineUser { user_id: number; name: string; email: string; role: string; store_name: string | null; last_seen: string; last_page: string; }
+interface SearchTerm { term: string; views: number; }
+interface SearchEngine { engine: string; views: number; }
 
 export default function AdminAnalytics() {
   const { token } = useAuth();
@@ -40,10 +42,13 @@ export default function AdminAnalytics() {
   const [referrers, setReferrers] = useState<Referrer[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
   const [countries, setCountries] = useState<GeoItem[]>([]);
+  const [provinces, setProvinces] = useState<GeoItem[]>([]);
   const [devices, setDevices] = useState<TechItem[]>([]);
   const [browsers, setBrowsers] = useState<TechItem[]>([]);
   const [realtime, setRealtime] = useState<RealtimeData | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+  const [searchTerms, setSearchTerms] = useState<SearchTerm[]>([]);
+  const [searchEngines, setSearchEngines] = useState<SearchEngine[]>([]);
 
   const safeFetch = async (url: string, headers: Record<string, string>) => {
     try {
@@ -59,7 +64,7 @@ export default function AdminAnalytics() {
     const h = { Authorization: `Bearer ${token}`, Accept: "application/json" };
     const q = `?days=${days}`;
 
-    const [dash, pages, stores, ref, geo, tech, rt, users] = await Promise.all([
+    const [dash, pages, stores, ref, geo, tech, rt, users, srch] = await Promise.all([
       safeFetch(`${API}/admin/analytics/dashboard${q}`, h),
       safeFetch(`${API}/admin/analytics/top-pages${q}&limit=10`, h),
       safeFetch(`${API}/admin/analytics/top-stores${q}&limit=10`, h),
@@ -68,6 +73,7 @@ export default function AdminAnalytics() {
       safeFetch(`${API}/admin/analytics/technology${q}`, h),
       safeFetch(`${API}/admin/analytics/realtime`, h),
       safeFetch(`${API}/admin/analytics/online-users`, h),
+      safeFetch(`${API}/admin/analytics/search${q}`, h),
     ]);
 
     if (dash) {
@@ -81,13 +87,20 @@ export default function AdminAnalytics() {
       setReferrers(ref.top_referrers || []);
       setSources(ref.sources || []);
     }
-    if (geo) setCountries(geo.countries || []);
+    if (geo) {
+      setCountries(geo.countries || []);
+      setProvinces(geo.provinces || []);
+    }
     if (tech) {
       setDevices(tech.devices || []);
       setBrowsers(tech.browsers || []);
     }
     if (rt) setRealtime(rt);
     if (users) setOnlineUsers(users);
+    if (srch) {
+      setSearchTerms(srch.search_terms || []);
+      setSearchEngines(srch.search_engines || []);
+    }
 
     setLoading(false);
   }, [token, days]);
@@ -156,10 +169,10 @@ export default function AdminAnalytics() {
           <p className={`text-xs ${s.textMuted}`}>Analise de acessos e comportamento dos visitantes</p>
         </div>
         <div className="flex items-center gap-2">
-          {[7, 14, 30, 90].map(d => (
+          {[1, 7, 14, 30, 90].map(d => (
             <button key={d} onClick={() => setDays(d)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${days === d ? s.btnPrimary : s.btnSecondary}`}>
-              {d}d
+              {d === 1 ? '24h' : `${d}d`}
             </button>
           ))}
           <button onClick={fetchAll} className={`p-2 rounded-lg ${s.btnSecondary}`} title="Actualizar">
@@ -229,14 +242,22 @@ export default function AdminAnalytics() {
         <div className={`${cardCls} lg:col-span-2`}>
           <div className="flex items-center justify-between mb-4">
             <h3 className={`text-sm font-bold ${s.textPrimary}`}>Visualizacoes Diarias</h3>
-            <div className="flex items-center gap-3 text-[10px]">
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> Views</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-violet-500" /> Unicos</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 mr-2">
+                {[1, 7, 14, 30, 90].map(d => (
+                  <button key={d} onClick={() => setDays(d)}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-all ${days === d ? "bg-blue-500 text-white" : `${s.isDark ? "bg-white/[0.06] text-white/50 hover:bg-white/[0.1]" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}`}>
+                    {d === 1 ? '24h' : `${d}d`}
+                  </button>
+                ))}
+              </div>
+              <span className="flex items-center gap-1 text-[10px]"><span className="h-2 w-2 rounded-full bg-blue-500" /> Views</span>
+              <span className="flex items-center gap-1 text-[10px]"><span className="h-2 w-2 rounded-full bg-violet-500" /> Unicos</span>
             </div>
           </div>
-          <div className="flex items-end gap-[2px] h-40">
+          <div className="flex gap-[2px] h-40">
             {dailyChart.map((d, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-[1px] group relative" title={`${d.date}: ${d.views} views, ${d.visitors} unicos`}>
+              <div key={i} className="flex-1 h-full flex flex-col items-center justify-end gap-[1px] group relative" title={`${d.date}: ${d.views} views, ${d.visitors} unicos`}>
                 <div className="w-full rounded-t-sm bg-blue-500/80 transition-all hover:bg-blue-500"
                   style={{ height: `${Math.max((d.views / maxDaily) * 100, 2)}%` }} />
                 <div className="w-full rounded-t-sm bg-violet-500/60 transition-all hover:bg-violet-500"
@@ -261,9 +282,9 @@ export default function AdminAnalytics() {
         {/* Hourly Today */}
         <div className={cardCls}>
           <h3 className={`text-sm font-bold ${s.textPrimary} mb-4`}>Acessos Hoje (por hora)</h3>
-          <div className="flex items-end gap-[2px] h-40">
+          <div className="flex gap-[2px] h-40">
             {hourlyChart.map((h, i) => (
-              <div key={i} className="flex-1 group relative" title={`${h.hour}: ${h.views}`}>
+              <div key={i} className="flex-1 h-full flex flex-col justify-end group relative" title={`${h.hour}: ${h.views}`}>
                 <div className="w-full rounded-t-sm bg-amber-500/70 hover:bg-amber-500 transition-all"
                   style={{ height: `${Math.max((h.views / maxHourly) * 100, 2)}%` }} />
                 <div className={`absolute bottom-full mb-1 hidden group-hover:block z-10 ${s.isDark ? "bg-gray-800" : "bg-white shadow-lg"} border ${s.border} rounded-lg px-2 py-1 text-[9px] whitespace-nowrap`}>
@@ -361,16 +382,72 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
-      {/* Bottom Row: Geography + Technology + Online Users */}
+      {/* Search Row: Search Terms + Search Engines */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Countries */}
+        {/* Search Terms */}
+        <div className={`${cardCls} lg:col-span-2`}>
+          <h3 className={`text-sm font-bold ${s.textPrimary} mb-3 flex items-center gap-2`}>
+            <Search className="h-4 w-4 text-purple-500" /> Termos de Pesquisa
+          </h3>
+          <div className="space-y-2 max-h-72 overflow-y-auto">
+            {searchTerms.length === 0 && <p className={`text-xs ${s.textMuted}`}>Sem dados de pesquisa ainda. Os termos serao capturados a partir de agora.</p>}
+            {searchTerms.map((t, i) => {
+              const maxV = searchTerms[0]?.views || 1;
+              return (
+                <div key={i} className={`flex items-center gap-2 p-2 rounded-lg ${s.hoverRow} transition-colors`}>
+                  <span className={`text-[10px] font-bold ${s.textMuted} w-4`}>{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className={`text-xs font-medium ${s.textPrimary} truncate`}>{t.term}</p>
+                    </div>
+                    <div className={`mt-1 h-1.5 rounded-full ${s.isDark ? "bg-white/[0.06]" : "bg-gray-100"} overflow-hidden`}>
+                      <div className="h-full rounded-full bg-purple-500/70 transition-all" style={{ width: `${(t.views / maxV) * 100}%` }} />
+                    </div>
+                  </div>
+                  <span className={`text-xs font-bold ${s.textPrimary} shrink-0`}>{fmt(t.views)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Search Engines */}
         <div className={cardCls}>
           <h3 className={`text-sm font-bold ${s.textPrimary} mb-3 flex items-center gap-2`}>
-            <Globe className="h-4 w-4 text-cyan-500" /> Paises
+            <Globe className="h-4 w-4 text-blue-500" /> Motores de Busca
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
+            {searchEngines.length === 0 && <p className={`text-xs ${s.textMuted}`}>Sem dados ainda</p>}
+            {searchEngines.map((e, i) => {
+              const total = searchEngines.reduce((s, x) => s + x.views, 0) || 1;
+              const pct = Math.round((e.views / total) * 100);
+              const colors = ["bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-pink-500", "bg-violet-500", "bg-cyan-500", "bg-orange-500", "bg-red-500"];
+              return (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs font-medium ${s.textPrimary}`}>{e.engine}</span>
+                    <span className={`text-[10px] ${s.textMuted}`}>{pct}% ({fmt(e.views)})</span>
+                  </div>
+                  <div className={`h-2 rounded-full ${s.isDark ? "bg-white/[0.06]" : "bg-gray-100"} overflow-hidden`}>
+                    <div className={`h-full rounded-full ${colors[i % colors.length]} transition-all`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Row: Geography + Technology + Online Users */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Countries + Provinces */}
+        <div className={cardCls}>
+          <h3 className={`text-sm font-bold ${s.textPrimary} mb-3 flex items-center gap-2`}>
+            <Globe className="h-4 w-4 text-cyan-500" /> Paises & Provincias
+          </h3>
+          <div className="space-y-2 mb-4">
             {countries.length === 0 && <p className={`text-xs ${s.textMuted}`}>Sem dados</p>}
-            {countries.slice(0, 10).map((c, i) => {
+            {countries.slice(0, 8).map((c, i) => {
               const maxViews = countries[0]?.views || 1;
               return (
                 <div key={i} className="flex items-center gap-2">
@@ -383,6 +460,27 @@ export default function AdminAnalytics() {
               );
             })}
           </div>
+          {provinces.length > 0 && (
+            <div className={`border-t ${s.borderLight} pt-3`}>
+              <p className={`text-[10px] font-semibold ${s.textMuted} uppercase tracking-wider mb-2 flex items-center gap-1`}>
+                <MapPin className="h-3 w-3" /> Provincias
+              </p>
+              <div className="space-y-1.5">
+                {provinces.slice(0, 10).map((p, i) => {
+                  const maxProv = provinces[0]?.views || 1;
+                  return (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className={`text-xs font-medium ${s.textPrimary} w-24 truncate`}>{p.province}</span>
+                      <div className={`flex-1 h-1.5 rounded-full ${s.isDark ? "bg-white/[0.06]" : "bg-gray-100"} overflow-hidden`}>
+                        <div className="h-full rounded-full bg-teal-500/70 transition-all" style={{ width: `${(p.views / maxProv) * 100}%` }} />
+                      </div>
+                      <span className={`text-[10px] font-bold ${s.textSecondary} w-10 text-right`}>{fmt(p.views)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Devices + Browsers */}

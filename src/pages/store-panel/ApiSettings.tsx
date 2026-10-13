@@ -1,5 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
@@ -60,8 +61,9 @@ export default function StoreApiSettings() {
 
   useEffect(() => { fetchSettings(); }, [token, slug]);
 
+  const [confirmAction, setConfirmAction] = useState<"generate" | "revoke" | null>(null);
+
   const generateKeys = async () => {
-    if (!confirm("Gerar novas credenciais de API? As credenciais anteriores serao substituidas.")) return;
     setGenerating(true);
     try {
       const res = await fetch(`${API}/store-panel/${slug}/api-settings/generate`, {
@@ -76,7 +78,7 @@ export default function StoreApiSettings() {
       } else {
         toast.error("Erro", d.error || "Nao foi possivel gerar credenciais.");
       }
-    } finally { setGenerating(false); }
+    } finally { setGenerating(false); setConfirmAction(null); }
   };
 
   const saveSettings = async () => {
@@ -98,7 +100,6 @@ export default function StoreApiSettings() {
   };
 
   const revokeKeys = async () => {
-    if (!confirm("Revogar todas as credenciais? A API da loja sera desactivada.")) return;
     setRevoking(true);
     try {
       const res = await fetch(`${API}/store-panel/${slug}/api-settings/revoke`, {
@@ -229,7 +230,7 @@ export default function StoreApiSettings() {
           <p className={`text-sm ${s.textMuted} mb-6`}>
             Gere as suas credenciais para comecar a usar a API da loja.
           </p>
-          <button onClick={generateKeys} disabled={generating}
+          <button onClick={() => setConfirmAction("generate")} disabled={generating}
             className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold ${s.btnPrimary} disabled:opacity-50 shadow-md`}>
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
             Gerar Credenciais de API
@@ -247,11 +248,11 @@ export default function StoreApiSettings() {
                   <Shield className="h-4 w-4 text-orange-500" /> Credenciais
                 </h3>
                 <div className="flex gap-2">
-                  <button onClick={generateKeys} disabled={generating}
+                  <button onClick={() => setConfirmAction("generate")} disabled={generating}
                     className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-medium ${s.isDark ? "bg-white/[0.05] text-amber-400" : "bg-amber-50 text-amber-600"} hover:opacity-80`}>
                     {generating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />} Regenerar
                   </button>
-                  <button onClick={revokeKeys} disabled={revoking}
+                  <button onClick={() => setConfirmAction("revoke")} disabled={revoking}
                     className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-medium ${s.isDark ? "bg-red-500/10 text-red-400" : "bg-red-50 text-red-600"} hover:opacity-80`}>
                     {revoking ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />} Revogar
                   </button>
@@ -437,10 +438,27 @@ Content-Type: application/json
                   </p>
                 </div>
               </div>
+
+              <a href="/api-docs" target="_blank" rel="noopener noreferrer"
+                className={`flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-xs font-semibold ${s.btnPrimary} shadow-sm`}>
+                <Globe className="h-4 w-4" /> Ver Documentacao Completa da API <ArrowUpRight className="h-3.5 w-3.5" />
+              </a>
             </div>
           </div>
         </div>
       )}
+      <ConfirmModal
+        open={confirmAction !== null}
+        title={confirmAction === "generate" ? "Gerar novas credenciais" : "Revogar credenciais"}
+        message={confirmAction === "generate"
+          ? "Gerar novas credenciais de API? As credenciais anteriores serao substituidas."
+          : "Revogar todas as credenciais? A API da loja sera desactivada."
+        }
+        variant="warning"
+        confirmLabel={confirmAction === "generate" ? "Gerar" : "Revogar"}
+        onConfirm={() => { if (confirmAction === "generate") generateKeys(); else revokeKeys(); }}
+        onCancel={() => setConfirmAction(null)}
+      />
     </div>
   );
 }

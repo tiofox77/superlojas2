@@ -16,7 +16,7 @@ class SubscriptionController extends Controller
     {
         $store = Store::where('slug', $slug)->firstOrFail();
         $user = $request->user();
-        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && $user->store_id === $store->id)) {
+        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && (int)$store->user_id === (int)$user->id)) {
             abort(403, 'Sem permissao.');
         }
         return $store;
@@ -218,6 +218,12 @@ class SubscriptionController extends Controller
             'plan_id' => $freePlan->id,
             'plan_expires_at' => null,
         ]);
+
+        // Propagar downgrade para todas as lojas do utilizador
+        $freeSub = Subscription::where('store_id', $store->id)->where('status', 'active')->latest()->first();
+        if ($freeSub) {
+            Subscription::syncPlanToUserStores($store, $freePlan, $freeSub);
+        }
 
         return response()->json(['message' => 'Plano alterado para Gratuito.']);
     }

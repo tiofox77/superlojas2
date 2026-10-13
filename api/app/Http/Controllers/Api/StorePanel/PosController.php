@@ -13,7 +13,7 @@ class PosController extends Controller
     {
         $store = Store::where('slug', $slug)->firstOrFail();
         $user = $request->user();
-        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && $user->store_id === $store->id)) {
+        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && (int)$store->user_id === (int)$user->id)) {
             abort(403, 'Sem permissao.');
         }
 
@@ -33,7 +33,7 @@ class PosController extends Controller
     {
         $store = Store::where('slug', $slug)->firstOrFail();
         $user = $request->user();
-        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && $user->store_id === $store->id)) {
+        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && (int)$store->user_id === (int)$user->id)) {
             abort(403);
         }
         $store->load('plan');
@@ -240,7 +240,7 @@ class PosController extends Controller
     {
         $store = $this->getStore($request, $slug);
 
-        if ($sale->store_id !== $store->id) {
+        if ((int) $sale->store_id !== (int) $store->id) {
             abort(404);
         }
         if ($sale->status === 'voided') {

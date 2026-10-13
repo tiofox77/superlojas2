@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import Modal from "@/components/admin/Modal";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Tag, Plus, Trash2, Edit3, Loader2, Search, ChevronDown, ChevronRight, FolderTree } from "lucide-react";
@@ -87,13 +88,15 @@ export default function AdminCategories() {
     } finally { setSaving(false); }
   };
 
+  const [confirmDelete, setConfirmDelete] = useState<{ type: "cat" | "sub"; id: number; name: string; catId?: number } | null>(null);
+
   const deleteCat = async (id: number, name: string) => {
-    if (!confirm(`Eliminar "${name}" e todas as subcategorias?`)) return;
     setActionLoading({ id, action: "delete" });
     const res = await fetch(`${API}/admin/categories/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null); fetchCategories();
     if (res.ok) toast.success("Categoria eliminada", `"${name}" foi removida.`);
     else toast.error("Erro", "Nao foi possivel eliminar a categoria.");
+    setConfirmDelete(null);
   };
 
   // ── Subcategory CRUD ──
@@ -114,12 +117,12 @@ export default function AdminCategories() {
   };
 
   const deleteSub = async (sub: SubcategoryItem) => {
-    if (!confirm(`Eliminar subcategoria "${sub.name}"?`)) return;
     setActionLoading({ id: sub.id, action: "deleteSub" });
     const res = await fetch(`${API}/admin/subcategories/${sub.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null); fetchCategories();
     if (res.ok) toast.success("Subcategoria eliminada");
     else toast.error("Erro", "Nao foi possivel eliminar.");
+    setConfirmDelete(null);
   };
 
   return (
@@ -162,7 +165,7 @@ export default function AdminCategories() {
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => openEdit(cat)} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-orange-500 transition-colors`}><Edit3 className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => deleteCat(cat.id, cat.name)} disabled={actionLoading?.id === cat.id && actionLoading?.action === "delete"} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`}>
+                      <button onClick={() => setConfirmDelete({ type: "cat", id: cat.id, name: cat.name })} disabled={actionLoading?.id === cat.id && actionLoading?.action === "delete"} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`}>
                         {actionLoading?.id === cat.id && actionLoading?.action === "delete" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                       </button>
                     </div>
@@ -186,7 +189,7 @@ export default function AdminCategories() {
                         </div>
                         <div className="flex gap-1 opacity-0 group-hover/sub:opacity-100 transition-opacity">
                           <button onClick={() => openEditSub(sub)} className={`p-1 rounded-lg ${s.textMuted} hover:text-orange-500 transition-colors`}><Edit3 className="h-3 w-3" /></button>
-                          <button onClick={() => deleteSub(sub)} disabled={actionLoading?.id === sub.id && actionLoading?.action === "deleteSub"} className={`p-1 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`}>
+                          <button onClick={() => setConfirmDelete({ type: "sub", id: sub.id, name: sub.name })} disabled={actionLoading?.id === sub.id && actionLoading?.action === "deleteSub"} className={`p-1 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`}>
                             {actionLoading?.id === sub.id && actionLoading?.action === "deleteSub" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
                           </button>
                         </div>
@@ -292,6 +295,21 @@ export default function AdminCategories() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        title={confirmDelete?.type === "cat" ? "Eliminar categoria" : "Eliminar subcategoria"}
+        message={confirmDelete?.type === "cat"
+          ? `Tem a certeza que deseja eliminar "${confirmDelete?.name}" e todas as subcategorias?`
+          : `Tem a certeza que deseja eliminar a subcategoria "${confirmDelete?.name}"?`
+        }
+        onConfirm={() => {
+          if (!confirmDelete) return;
+          if (confirmDelete.type === "cat") deleteCat(confirmDelete.id, confirmDelete.name);
+          else deleteSub({ id: confirmDelete.id, name: confirmDelete.name, slug: "", category_id: 0, product_count: 0 } as SubcategoryItem);
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

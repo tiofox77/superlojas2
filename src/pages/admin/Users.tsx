@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import Modal from "@/components/admin/Modal";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -107,14 +108,16 @@ export default function AdminUsers() {
     else toast.error("Erro", "Nao foi possivel actualizar o estado.");
   };
 
+  const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
+
   const deleteUser = async (id: number, name: string) => {
-    if (!confirm(`Eliminar "${name}"? Esta accao e irreversivel.`)) return;
     setActionLoading(id);
     const res = await fetch(`${API}/admin/users/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null);
     fetchUsers();
     if (res.ok) toast.success("Utilizador eliminado", `"${name}" foi removido.`);
     else toast.error("Erro", "Nao foi possivel eliminar o utilizador.");
+    setConfirmDelete(null);
   };
 
   const timeAgo = (date: string) => {
@@ -126,18 +129,7 @@ export default function AdminUsers() {
     return `${Math.floor(hours / 24)}d`;
   };
 
-  const InputField = ({ label, value, onChange, type = "text", placeholder = "", required = false, children }: {
-    label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; required?: boolean; children?: React.ReactNode;
-  }) => (
-    <div>
-      <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>{label} {required && <span className="text-red-500">*</span>}</label>
-      <div className="relative">
-        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-          className={`w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all`} />
-        {children}
-      </div>
-    </div>
-  );
+  const inputCls = `w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all`;
 
   return (
     <div className="space-y-4">
@@ -233,7 +225,7 @@ export default function AdminUsers() {
                           title={u.is_active ? "Desactivar" : "Activar"}>
                           {actionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : u.is_active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
                         </button>
-                        <button onClick={() => deleteUser(u.id, u.name)} disabled={actionLoading === u.id || u.id === currentUser?.id}
+                        <button onClick={() => setConfirmDelete({ id: u.id, name: u.name })} disabled={actionLoading === u.id || u.id === currentUser?.id}
                           className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 ${s.isDark ? "hover:bg-red-500/10" : "hover:bg-red-50"} transition-colors disabled:opacity-30`} title="Eliminar">
                           {actionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                         </button>
@@ -261,8 +253,14 @@ export default function AdminUsers() {
         <div className="space-y-4">
           {formError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600">{formError}</div>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <InputField label="Nome" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="Nome completo" required />
-            <InputField label="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} placeholder="email@exemplo.com" type="email" required />
+            <div>
+              <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Nome <span className="text-red-500">*</span></label>
+              <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nome completo" className={inputCls} />
+            </div>
+            <div>
+              <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Email <span className="text-red-500">*</span></label>
+              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@exemplo.com" className={inputCls} />
+            </div>
             <div>
               <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Password {!editUser && <span className="text-red-500">*</span>}</label>
               <div className="relative">
@@ -273,7 +271,10 @@ export default function AdminUsers() {
                 </button>
               </div>
             </div>
-            <InputField label="Telefone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+244 9XX XXX XXX" />
+            <div>
+              <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Telefone</label>
+              <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+244 9XX XXX XXX" className={inputCls} />
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -305,6 +306,14 @@ export default function AdminUsers() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Eliminar utilizador"
+        message={`Tem a certeza que deseja eliminar "${confirmDelete?.name}"? Esta accao e irreversivel.`}
+        onConfirm={() => confirmDelete && deleteUser(confirmDelete.id, confirmDelete.name)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

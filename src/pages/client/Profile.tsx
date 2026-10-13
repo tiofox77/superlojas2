@@ -1,7 +1,9 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import { useState } from "react";
-import { User, Phone, Mail, Loader2, Upload, Camera } from "lucide-react";
+import { User, Mail, Loader2, Upload, Camera, Store, LayoutDashboard, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import PhoneInput from "@/components/PhoneInput";
 import { useToastNotification } from "@/contexts/ToastContext";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
@@ -59,6 +61,42 @@ export default function ClientProfile() {
         <p className={`text-xs ${s.textMuted}`}>Actualizar informacoes pessoais</p>
       </div>
 
+      {/* Panel Quick Access - store owners & admins */}
+      {(user?.role === "store_owner" || user?.role === "super_admin") && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          {user.role === "store_owner" && (user.stores?.length || user.store) && (
+            <Link to="/minha-loja" className={`flex items-center justify-between gap-3 flex-1 rounded-2xl border p-4 transition-all ${s.isDark ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40" : "bg-emerald-50 border-emerald-200 hover:border-emerald-400 shadow-sm"}`}>
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${s.isDark ? "bg-emerald-500/20" : "bg-emerald-100"}`}>
+                  <Store className="h-5 w-5 text-emerald-500" />
+                </div>
+                <div>
+                  <p className={`text-sm font-bold ${s.isDark ? "text-emerald-400" : "text-emerald-700"}`}>
+                    {(user.stores?.length || 0) > 1 ? "Minhas Lojas" : "Painel da Loja"}
+                  </p>
+                  <p className={`text-[11px] ${s.isDark ? "text-emerald-400/60" : "text-emerald-600/70"}`}>Gerir produtos, pedidos e mais</p>
+                </div>
+              </div>
+              <ChevronRight className={`h-5 w-5 ${s.isDark ? "text-emerald-400/40" : "text-emerald-400"}`} />
+            </Link>
+          )}
+          {user.role === "super_admin" && (
+            <Link to="/admin" className={`flex items-center justify-between gap-3 flex-1 rounded-2xl border p-4 transition-all ${s.isDark ? "bg-blue-500/10 border-blue-500/20 hover:border-blue-500/40" : "bg-blue-50 border-blue-200 hover:border-blue-400 shadow-sm"}`}>
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${s.isDark ? "bg-blue-500/20" : "bg-blue-100"}`}>
+                  <LayoutDashboard className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className={`text-sm font-bold ${s.isDark ? "text-blue-400" : "text-blue-700"}`}>Painel Admin</p>
+                  <p className={`text-[11px] ${s.isDark ? "text-blue-400/60" : "text-blue-600/70"}`}>Gerir plataforma e utilizadores</p>
+                </div>
+              </div>
+              <ChevronRight className={`h-5 w-5 ${s.isDark ? "text-blue-400/40" : "text-blue-400"}`} />
+            </Link>
+          )}
+        </div>
+      )}
+
       <div className={cardCls}>
         {/* Avatar */}
         <div className="flex items-center gap-5 mb-6">
@@ -103,10 +141,7 @@ export default function ClientProfile() {
 
           <div>
             <label className={labelCls}>Telefone</label>
-            <div className="relative">
-              <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${s.textMuted}`} />
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inputCls} pl-10`} placeholder="+244 9XX XXX XXX" />
-            </div>
+            <PhoneInput value={phone} onChange={setPhone} className={inputCls} />
           </div>
 
           <div className="flex justify-end pt-2">

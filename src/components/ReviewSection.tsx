@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Star, Send, User, Loader2, Trash2, LogIn, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 
@@ -105,8 +106,10 @@ export function ReviewSection({ type, targetId, targetName, averageRating, total
     setSubmitting(false);
   };
 
+  const [confirmDeleteReview, setConfirmDeleteReview] = useState<number | null>(null);
+
   const handleDelete = async (id: number) => {
-    if (!token || !confirm("Eliminar a sua avaliacao?")) return;
+    if (!token) return;
     try {
       const res = await fetch(`${API}/reviews/${id}`, {
         method: "DELETE",
@@ -119,6 +122,7 @@ export function ReviewSection({ type, targetId, targetName, averageRating, total
         fetchReviews();
       }
     } catch {}
+    setConfirmDeleteReview(null);
   };
 
   const ratingDistribution = [5, 4, 3, 2, 1].map((star) => {
@@ -225,7 +229,7 @@ export function ReviewSection({ type, targetId, targetName, averageRating, total
                   <span className="text-sm font-semibold">{review.author_name}</span>
                   <span className="text-[10px] text-muted-foreground">{new Date(review.created_at).toLocaleDateString("pt-AO")}</span>
                   {user && (review.user_id === user.id || user.role === "super_admin") && (
-                    <button onClick={() => handleDelete(review.id)} className="text-muted-foreground hover:text-destructive transition-colors ml-auto" title="Eliminar">
+                    <button onClick={() => setConfirmDeleteReview(review.id)} className="text-muted-foreground hover:text-destructive transition-colors ml-auto" title="Eliminar">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   )}
@@ -250,6 +254,13 @@ export function ReviewSection({ type, targetId, targetName, averageRating, total
           )}
         </div>
       )}
+      <ConfirmModal
+        open={confirmDeleteReview !== null}
+        title="Eliminar avaliacao"
+        message="Tem a certeza que deseja eliminar a sua avaliacao?"
+        onConfirm={() => confirmDeleteReview !== null && handleDelete(confirmDeleteReview)}
+        onCancel={() => setConfirmDeleteReview(null)}
+      />
     </div>
   );
 }

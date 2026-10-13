@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import Modal from "@/components/admin/Modal";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
@@ -156,13 +157,15 @@ export default function AdminStores() {
     } finally { setActionLoading(null); }
   };
 
+  const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
+
   const deleteStore = async (id: number, name: string) => {
-    if (!confirm(`Eliminar "${name}"?`)) return;
     setActionLoading(id);
     const res = await fetch(`${API}/admin/stores/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null); fetchStores();
     if (res.ok) toast.success("Loja eliminada", `"${name}" foi removida.`);
     else toast.error("Erro", "Nao foi possivel eliminar a loja.");
+    setConfirmDelete(null);
   };
 
   return (
@@ -236,7 +239,7 @@ export default function AdminStores() {
                       {st.status !== "approved" && <button onClick={() => updateStatus(st.id, "approved")} disabled={actionLoading === st.id} className="p-1.5 rounded-lg text-green-500 hover:bg-green-50 transition-colors disabled:opacity-50" title="Aprovar">{actionLoading === st.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}</button>}
                       {st.status !== "rejected" && st.status !== "banned" && <button onClick={() => updateStatus(st.id, "rejected")} disabled={actionLoading === st.id} className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors disabled:opacity-50" title="Rejeitar">{actionLoading === st.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}</button>}
                       {st.status !== "banned" && <button onClick={() => { setBanReason(""); setBanModal(st); }} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Banir Loja"><Ban className="h-4 w-4" /></button>}
-                      <button onClick={() => deleteStore(st.id, st.name)} disabled={actionLoading === st.id} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`} title="Eliminar">{actionLoading === st.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</button>
+                      <button onClick={() => setConfirmDelete({ id: st.id, name: st.name })} disabled={actionLoading === st.id} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`} title="Eliminar">{actionLoading === st.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</button>
                     </div>
                   </td>
                 </motion.tr>
@@ -487,6 +490,14 @@ export default function AdminStores() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Eliminar loja"
+        message={`Tem a certeza que deseja eliminar "${confirmDelete?.name}"? Esta accao e irreversivel.`}
+        onConfirm={() => confirmDelete && deleteStore(confirmDelete.id, confirmDelete.name)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

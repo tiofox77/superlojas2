@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
+use App\Models\PushSubscription;
 use App\Models\User;
 use App\Services\MailService;
+use App\Services\WebPushService;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
@@ -149,6 +151,48 @@ class NotificationController extends Controller
             'sent' => $sent,
             'failed' => $failed,
             'total_recipients' => count($recipients),
+        ]);
+    }
+
+    /**
+     * Get push subscriber count.
+     */
+    public function pushSubscribers()
+    {
+        return response()->json([
+            'total' => PushSubscription::count(),
+            'with_user' => PushSubscription::whereNotNull('user_id')->count(),
+            'anonymous' => PushSubscription::whereNull('user_id')->count(),
+        ]);
+    }
+
+    /**
+     * Send push notification from admin panel.
+     */
+    public function sendPush(Request $request)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'body' => 'required|string|max:1000',
+            'url' => 'nullable|string|max:500',
+            'icon' => 'nullable|string|max:500',
+            'image' => 'nullable|string|max:500',
+            'tag' => 'nullable|string|max:100',
+        ]);
+
+        $result = WebPushService::broadcast(
+            $data['title'],
+            $data['body'],
+            $data['icon'] ?? null,
+            $data['url'] ?? '/',
+            null,
+            $data['image'] ?? null,
+            $data['tag'] ?? 'admin-broadcast'
+        );
+
+        return response()->json([
+            'message' => "Push enviado! {$result['sent']} entregues, {$result['failed']} falharam, {$result['removed']} removidos.",
+            ...$result,
         ]);
     }
 }

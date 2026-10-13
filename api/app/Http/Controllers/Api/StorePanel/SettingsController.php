@@ -15,7 +15,7 @@ class SettingsController extends Controller
     {
         $store = Store::where('slug', $slug)->with('user')->firstOrFail();
         $user = $request->user();
-        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && $user->store_id === $store->id)) {
+        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && (int)$store->user_id === (int)$user->id)) {
             abort(403, 'Sem permissao.');
         }
         return $store;
@@ -58,8 +58,8 @@ class SettingsController extends Controller
         $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
-            'logo' => 'sometimes|file|image|max:6144',
-            'banner' => 'sometimes|file|image|max:6144',
+            'logo' => 'sometimes|file|image|max:10240',
+            'banner' => 'sometimes|file|image|max:10240',
             'province' => 'sometimes|string',
             'city' => 'sometimes|string',
             'whatsapp' => 'sometimes|string',
@@ -160,7 +160,8 @@ class SettingsController extends Controller
                     Log::info("Deleted old logo: {$oldPath}");
                 }
             }
-            $data['logo'] = SeoFileName::storePublic($request->file('logo'), $logoFolder, $store->slug, 'logo');
+            // Use timestamp suffix to force unique filename → cache-busting on browsers/CDN
+            $data['logo'] = SeoFileName::storePublic($request->file('logo'), $logoFolder, $store->slug, 'logo-' . time());
             Log::info("Uploaded new logo", [
                 'path' => $data['logo'],
                 'full_disk_path' => $disk->path(str_replace('/storage/', '', $data['logo'])),
@@ -184,7 +185,8 @@ class SettingsController extends Controller
                     Log::info("Deleted old banner: {$oldPath}");
                 }
             }
-            $data['banner'] = SeoFileName::storePublic($request->file('banner'), $bannerFolder, $store->slug, 'banner');
+            // Timestamp suffix → unique filename → cache-busting
+            $data['banner'] = SeoFileName::storePublic($request->file('banner'), $bannerFolder, $store->slug, 'banner-' . time());
             Log::info("Uploaded new banner", [
                 'path' => $data['banner'],
                 'full_disk_path' => $disk->path(str_replace('/storage/', '', $data['banner'])),
@@ -200,15 +202,44 @@ class SettingsController extends Controller
             }
         }
 
-        $store->update($data);
-
-        $fresh = $store->fresh();
-        Log::info('=== STORE SETTINGS SAVED ===', [
-            'store_id' => $fresh->id,
-            'logo_saved' => $fresh->getRawOriginal('logo'),
-            'banner_saved' => $fresh->getRawOriginal('banner'),
+        // ─── Snapshot BEFORE update for diff ───
+        $beforeSnap = $store->only([
+            'name', 'description', 'province', 'city', 'whatsapp', 'email', 'phone',
+            'whatsapp_message', 'whatsapp_orders_enabled', 'show_stock',
+            'meta_title', 'meta_description', 'meta_keywords',
+            'announcement', 'announcement_active', 'min_order_value',
         ]);
 
-        return response()->json($fresh->load('user'));
+        // Log the actual payload being applied (excluding heavy strings)
+        $logData = collect($data)->map(function ($v) {
+            if (is_string($v) && strlen($v) > 120) return substr($v, 0, 120) . '…(' . strlen($v) . ' chars)';
+            return $v;
+        })->toArray();
+        Log::info('=== STORE SETTINGS PAYLOAD ===', [
+            'store_id' => $store->id,
+            'fillable_keys' => array_intersect_key($logData, array_flip($store->getFillable())),
+            'rejected_keys' => array_diff_key($logData, array_flip($store->getFillable())),
+        ]);
+
+        $updated = $store->update($data);
+        $store->refresh();
+
+        $afterSnap = $store->only(array_keys($beforeSnap));
+        $changedFields = [];
+        foreach ($beforeSnap as $k => $bv) {
+            $av = $afterSnap[$k] ?? null;
+            if ($bv !== $av) $changedFields[$k] = ['from' => $bv, 'to' => $av];
+        }
+
+        Log::info('=== STORE SETTINGS SAVED ===', [
+            'store_id' => $store->id,
+            'update_result' => $updated,
+            'logo_saved' => $store->getRawOriginal('logo'),
+            'banner_saved' => $store->getRawOriginal('banner'),
+            'fields_changed' => $changedFields,
+            'changed_count' => count($changedFields),
+        ]);
+
+        return response()->json($store->load('user'));
     }
 }

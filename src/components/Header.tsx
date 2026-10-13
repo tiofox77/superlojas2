@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, ShoppingCart, User, Menu, X, Store, Heart, ChevronDown, ChevronRight, Zap, BookOpen, Phone, Tag, Users, LogOut, ShieldCheck, Settings, Package, LayoutDashboard } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
@@ -20,11 +20,21 @@ const navLinks = [
 export function Header() {
   const { totalItems, setIsOpen } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
-  const { data: globalCategories = [] } = useCategories();
+  const { data: allCategories = [] } = useCategories();
+  const globalCategories = allCategories.filter((c) => !c.isAdult);
   const { user, isAuthenticated, logout } = useAuth();
   const { data: settings } = useSiteSettings();
+  const navigate = useNavigate();
   const [mobileMenu, setMobileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    navigate(`/pesquisa?q=${encodeURIComponent(q)}`);
+    setMobileMenu(false);
+  };
   const [showCategories, setShowCategories] = useState(false);
   const [hoveredCat, setHoveredCat] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -72,7 +82,7 @@ export function Header() {
           </Link>
 
           {/* Search */}
-          <div className="flex-1 max-w-2xl hidden md:flex">
+          <form onSubmit={handleSearch} className="flex-1 max-w-2xl hidden md:flex">
             <div className="relative w-full">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
@@ -82,11 +92,11 @@ export function Header() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-xl border border-border bg-secondary/50 pl-11 pr-28 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary placeholder:text-muted-foreground"
               />
-              <button className="absolute right-1.5 top-1/2 -translate-y-1/2 px-5 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors">
+              <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 px-5 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors">
                 Buscar
               </button>
             </div>
-          </div>
+          </form>
 
           {/* Right actions */}
           <div className="flex items-center gap-1 ml-auto">
@@ -165,21 +175,27 @@ export function Header() {
                       </div>
                     )}
 
-                    {/* Store Owner Links */}
-                    {user.role === "store_owner" && user.store?.slug && (
+                    {/* Store Owner Links — multi-store support */}
+                    {user.role === "store_owner" && (user.stores?.length || user.store?.slug) && (
                       <div className="py-1 border-b border-border">
-                        <p className="px-4 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Minha Loja</p>
-                        <Link to={`/loja/${user.store.slug}/painel`} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors">
-                          <LayoutDashboard className="h-4 w-4 text-emerald-500" />
-                          <span>Painel da Loja</span>
-                        </Link>
-                        <Link to={`/loja/${user.store.slug}/painel/produtos`} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors">
-                          <Package className="h-4 w-4 text-emerald-500" />
-                          <span>Meus Produtos</span>
-                        </Link>
-                        <Link to={`/loja/${user.store.slug}/painel/configuracoes`} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors">
-                          <Settings className="h-4 w-4 text-gray-500" />
-                          <span>Configuracoes</span>
+                        <p className="px-4 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                          {(user.stores?.length || 0) > 1 ? "Minhas Lojas" : "Minha Loja"}
+                        </p>
+                        {(user.stores && user.stores.length > 0 ? user.stores : user.store ? [user.store] : []).map((s) => (
+                          <Link key={s.slug} to={`/loja/${s.slug}/painel`} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors">
+                            <LayoutDashboard className="h-4 w-4 text-emerald-500" />
+                            <span className="truncate">{s.name}</span>
+                            {s.status !== "approved" && (
+                              <span className="ml-auto text-[9px] font-bold bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full">
+                                {s.status === "pending" ? "Pendente" : s.status}
+                              </span>
+                            )}
+                          </Link>
+                        ))}
+                        <Link to="/cadastro-loja" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors text-muted-foreground">
+                          <Store className="h-4 w-4 text-emerald-500" />
+                          <span>Abrir Nova Loja</span>
+                          <span className="ml-auto text-[9px] font-bold bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded-full">+</span>
                         </Link>
                       </div>
                     )}
@@ -357,14 +373,19 @@ export function Header() {
         {/* Mobile menu */}
         {mobileMenu && (
           <div className="lg:hidden border-t border-border p-4 bg-card animate-fade-up max-h-[70vh] overflow-y-auto">
-            <div className="relative mb-4">
+            <form onSubmit={handleSearch} className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Estou à procura de..."
-                className="w-full rounded-xl border border-border bg-secondary pl-10 pr-4 py-2.5 text-sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-xl border border-border bg-secondary pl-10 pr-20 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
-            </div>
+              <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">
+                Buscar
+              </button>
+            </form>
 
             <div className="flex flex-col">
               {navLinks.map((link) => (

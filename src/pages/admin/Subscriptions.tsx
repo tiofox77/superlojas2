@@ -70,6 +70,7 @@ export default function AdminSubscriptions() {
   const [cAmount, setCAmount] = useState("");
   const [cNotes, setCNotes] = useState("");
   const [cStatus, setCStatus] = useState("active");
+  const [cDuration, setCDuration] = useState<"" | "1" | "3" | "6" | "12">("");
   const [creating, setCreating] = useState(false);
 
   // Action modal
@@ -79,6 +80,7 @@ export default function AdminSubscriptions() {
   const [actionPayRef, setActionPayRef] = useState("");
   const [actionAmount, setActionAmount] = useState("");
   const [actionNotes, setActionNotes] = useState("");
+  const [actionDuration, setActionDuration] = useState<"" | "1" | "3" | "6" | "12">("");
   const [actioning, setActioning] = useState(false);
 
   // Expiry check
@@ -150,6 +152,7 @@ export default function AdminSubscriptions() {
           store_id: parseInt(cStore), plan_id: parseInt(cPlan),
           payment_method: cPayMethod || null, payment_reference: cPayRef || null,
           amount_paid: cAmount ? parseFloat(cAmount) : null, notes: cNotes || null, status: cStatus,
+          duration_months: cDuration ? parseInt(cDuration) : undefined,
         }),
       });
       const d = await res.json();
@@ -168,6 +171,7 @@ export default function AdminSubscriptions() {
     if (actionPayRef) body.payment_reference = actionPayRef;
     if (actionAmount) body.amount_paid = parseFloat(actionAmount);
     if (actionNotes) body.notes = actionNotes;
+    if (actionDuration) body.duration_months = parseInt(actionDuration);
 
     try {
       const res = await fetch(`${API}/admin/subscriptions/${actionSub.id}/${actionType}`, {
@@ -189,6 +193,7 @@ export default function AdminSubscriptions() {
     setActionPayRef(sub.payment_reference || "");
     setActionAmount(sub.amount_paid || (sub.plan ? sub.plan.price : ""));
     setActionNotes(sub.notes || "");
+    setActionDuration("");
   };
 
   const inputCls = `w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`;
@@ -200,7 +205,7 @@ export default function AdminSubscriptions() {
           <h2 className={`text-lg font-bold ${s.textPrimary}`}>Subscricoes</h2>
           <p className={`text-xs ${s.textMuted}`}>{total} subscricoes no total</p>
         </div>
-        <button onClick={() => { setCreateOpen(true); setCStore(""); setCPlan(""); setCPayMethod(""); setCPayRef(""); setCAmount(""); setCNotes(""); setCStatus("active"); }}
+        <button onClick={() => { setCreateOpen(true); setCStore(""); setCPlan(""); setCPayMethod(""); setCPayRef(""); setCAmount(""); setCNotes(""); setCStatus("active"); setCDuration(""); }}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl ${s.btnPrimary} text-xs font-semibold shadow-sm`}>
           <CreditCard className="h-4 w-4" /> Nova Subscricao
         </button>
@@ -389,6 +394,16 @@ export default function AdminSubscriptions() {
               </select>
             </div>
             <div>
+              <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>Duracao</label>
+              <select value={cDuration} onChange={(e) => setCDuration(e.target.value as any)} className={inputCls}>
+                <option value="">Conforme plano</option>
+                <option value="1">1 mes</option>
+                <option value="3">3 meses</option>
+                <option value="6">6 meses</option>
+                <option value="12">1 ano</option>
+              </select>
+            </div>
+            <div>
               <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>Valor (Kz)</label>
               <input type="number" value={cAmount} onChange={(e) => setCAmount(e.target.value)} className={inputCls} />
             </div>
@@ -482,9 +497,19 @@ export default function AdminSubscriptions() {
                   <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>Referencia</label>
                   <input value={actionPayRef} onChange={(e) => setActionPayRef(e.target.value)} className={inputCls} />
                 </div>
-                <div className="col-span-2">
+                <div>
                   <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>Valor Pago (Kz)</label>
                   <input type="number" value={actionAmount} onChange={(e) => setActionAmount(e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>Duracao</label>
+                  <select value={actionDuration} onChange={(e) => setActionDuration(e.target.value as any)} className={inputCls}>
+                    <option value="">Conforme plano</option>
+                    <option value="1">1 mes</option>
+                    <option value="3">3 meses</option>
+                    <option value="6">6 meses</option>
+                    <option value="12">1 ano</option>
+                  </select>
                 </div>
               </div>
             )}

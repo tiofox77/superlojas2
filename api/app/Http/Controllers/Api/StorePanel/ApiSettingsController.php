@@ -13,7 +13,7 @@ class ApiSettingsController extends Controller
     {
         $store = Store::where('slug', $slug)->firstOrFail();
         $user = $request->user();
-        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && $user->store_id === $store->id)) {
+        if ($user->role !== 'super_admin' && !($user->role === 'store_owner' && (int)$store->user_id === (int)$user->id)) {
             abort(403, 'Sem permissao.');
         }
         return $store;

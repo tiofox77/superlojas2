@@ -1,10 +1,11 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import Modal from "@/components/admin/Modal";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Package, Search, Trash2, Edit3, Plus, Loader2, Upload, X, Image as ImageIcon, Tag, Star as StarIcon, CheckCircle2, AlertCircle, Clock, Layers } from "lucide-react";
+import { Package, Search, Trash2, Edit3, Plus, Loader2, Upload, X, Image as ImageIcon, Tag, Star as StarIcon, CheckCircle2, AlertCircle, Clock, Layers, Award, Filter, Power, RotateCcw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckSquare, Square, Minus } from "lucide-react";
 import { useToastNotification } from "@/contexts/ToastContext";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
@@ -20,6 +21,8 @@ interface ProductItem {
   stock: number; description: string; created_at: string;
   variants: { type: string; options: string[] }[] | null;
   flash_sale_start: string | null; flash_sale_end: string | null;
+  is_featured?: boolean; featured_status?: string | null;
+  is_active?: boolean;
 }
 
 const emptyForm = { name: "", slug: "", price: "", original_price: "", stock: "", category: "", category_id: "", subcategory_id: "", badge: "", description: "" };
@@ -56,6 +59,19 @@ export default function StorePanelProducts() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const imgRef = useRef<HTMLInputElement>(null);
+
+  // Filters
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterSubcategory, setFilterSubcategory] = useState("");
+  const [filterStock, setFilterStock] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterMinPrice, setFilterMinPrice] = useState("");
+  const [filterMaxPrice, setFilterMaxPrice] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
   const [slugManual, setSlugManual] = useState(false);
   const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
   const [slugSuggestion, setSlugSuggestion] = useState<string | null>(null);
@@ -93,18 +109,24 @@ export default function StorePanelProducts() {
 
   const currentSubcategories = allCategories.find(c => String(c.id) === form.category_id)?.subcategories || [];
 
-  const fetchProducts = () => {
+  const fetchProducts = (silent = false) => {
     if (!token || !slug) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     const params = new URLSearchParams({ per_page: "12", page: String(page) });
     if (search) params.set("search", search);
+    if (filterCategory) params.set("category_id", filterCategory);
+    if (filterSubcategory) params.set("subcategory_id", filterSubcategory);
+    if (filterStock) params.set("stock", filterStock);
+    if (filterStatus) params.set("is_active", filterStatus);
+    if (filterMinPrice) params.set("min_price", filterMinPrice);
+    if (filterMaxPrice) params.set("max_price", filterMaxPrice);
     fetch(`${API}/store-panel/${slug}/products?${params}`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
       .then((r) => r.json())
       .then((data) => { setProducts(data.data || []); setTotalPages(data.last_page || 1); setTotalProducts(data.total || 0); })
-      .finally(() => setLoading(false));
+      .finally(() => { if (!silent) setLoading(false); });
   };
 
-  useEffect(() => { fetchProducts(); }, [token, slug, page]);
+  useEffect(() => { fetchProducts(); setSelectedIds(new Set()); }, [token, slug, page, filterCategory, filterSubcategory, filterStock, filterStatus, filterMinPrice, filterMaxPrice]);
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setPage(1); fetchProducts(); };
 
   const plan = storeInfo?.plan;
@@ -230,6 +252,7 @@ export default function StorePanelProducts() {
 
     if (editProd) {
       fd.append("_method", "PUT");
+      fd.append("_images_updated", "1");
       existingImages.forEach((img) => fd.append("existing_images[]", img));
       imageFiles.forEach((file) => fd.append("new_images[]", file));
     } else {
@@ -248,17 +271,121 @@ export default function StorePanelProducts() {
         } else { setFormError(data.message || "Erro ao guardar."); }
         toast.error("Erro", "Nao foi possivel guardar o produto.");
       }
-      else { setModalOpen(false); fetchProducts(); toast.success(editProd ? "Produto actualizado" : "Produto criado", `"${form.name}" guardado com sucesso.`); }
+      else {
+        setModalOpen(false);
+        if (editProd) {
+          setProducts(prev => prev.map(p => p.id === editProd.id ? { ...p, ...data, images: data.images || p.images } : p));
+        } else {
+          setProducts(prev => [data, ...prev].slice(0, 12));
+          setTotalProducts(prev => prev + 1);
+        }
+        fetchProducts(true);
+        toast.success(editProd ? "Produto actualizado" : "Produto criado", `"${form.name}" guardado com sucesso.`);
+      }
     } finally { setSaving(false); }
   };
 
+  const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
+
   const deleteProduct = async (id: number, name: string) => {
-    if (!confirm(`Eliminar "${name}"?`)) return;
     setActionLoading(id);
     const res = await fetch(`${API}/store-panel/${slug}/products/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
-    setActionLoading(null); fetchProducts();
-    if (res.ok) toast.success("Produto eliminado", `"${name}" foi removido.`);
-    else toast.error("Erro", "Nao foi possivel eliminar o produto.");
+    setActionLoading(null);
+    if (res.ok) {
+      setProducts(prev => prev.filter(p => p.id !== id));
+      setTotalProducts(prev => prev - 1);
+      fetchProducts(true);
+      toast.success("Produto eliminado", `"${name}" foi removido.`);
+    } else toast.error("Erro", "Nao foi possivel eliminar o produto.");
+    setConfirmDelete(null);
+  };
+
+  const toggleFeatured = async (p: ProductItem) => {
+    setActionLoading(p.id);
+    try {
+      const res = await fetch(`${API}/store-panel/${slug}/products/${p.id}/toggle-featured`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, is_featured: data.is_featured, featured_status: data.featured_status } : pr));
+        toast.success(data.is_featured ? "Destaque solicitado" : "Destaque removido", data.message);
+      } else {
+        toast.error("Erro", data.message || "Nao foi possivel alterar destaque.");
+      }
+    } catch { toast.error("Erro", "Erro de conexao."); }
+    finally { setActionLoading(null); }
+  };
+
+  const toggleActive = async (p: ProductItem) => {
+    setActionLoading(p.id);
+    try {
+      const res = await fetch(`${API}/store-panel/${slug}/products/${p.id}/toggle-active`, { method: "PATCH", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+      const data = await res.json();
+      if (res.ok) {
+        setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, is_active: data.is_active } : pr));
+        toast.success(data.is_active ? "Produto Activado" : "Produto Desactivado", data.message);
+      } else toast.error("Erro", "Nao foi possivel alterar estado.");
+    } finally { setActionLoading(null); }
+  };
+
+  const clearFilters = () => {
+    setFilterCategory(""); setFilterSubcategory(""); setFilterStock(""); setFilterStatus(""); setFilterMinPrice(""); setFilterMaxPrice("");
+    setSearch(""); setPage(1);
+  };
+
+  const hasActiveFilters = filterCategory || filterSubcategory || filterStock || filterStatus || filterMinPrice || filterMaxPrice;
+
+  // Selection helpers
+  const allOnPageSelected = products.length > 0 && products.every(p => selectedIds.has(p.id));
+  const someOnPageSelected = products.some(p => selectedIds.has(p.id));
+  const toggleSelectAll = () => {
+    if (allOnPageSelected) {
+      setSelectedIds(prev => { const n = new Set(prev); products.forEach(p => n.delete(p.id)); return n; });
+    } else {
+      setSelectedIds(prev => { const n = new Set(prev); products.forEach(p => n.add(p.id)); return n; });
+    }
+  };
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  };
+
+  const bulkAction = async (action: "delete" | "activate" | "deactivate") => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const res = await fetch(`${API}/store-panel/${slug}/products/bulk-action`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [...selectedIds], action }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Accao em massa", data.message);
+        setSelectedIds(new Set());
+        fetchProducts();
+      } else toast.error("Erro", data.message || "Erro na accao em massa.");
+    } catch { toast.error("Erro", "Erro de conexao."); }
+    finally { setBulkLoading(false); }
+  };
+
+  // Filter subcategories for the category filter dropdown
+  const filterSubcategories = filterCategory ? (allCategories.find(c => String(c.id) === filterCategory)?.subcategories || []) : [];
+
+  // Pagination helpers
+  const getPageNumbers = () => {
+    const pages: (number | "...")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (page > 3) pages.push("...");
+      for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+      if (page < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
   };
 
   const fmt = (val: number) => new Intl.NumberFormat("pt-AO").format(val);
@@ -277,35 +404,114 @@ export default function StorePanelProducts() {
         </button>
       </div>
 
-      <form onSubmit={handleSearch}>
-        <div className="relative max-w-md">
-          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${s.textMuted}`} />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Pesquisar produtos..."
-            className={`w-full ${s.input} border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20`} />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <form onSubmit={handleSearch} className="flex-1 max-w-md">
+          <div className="relative">
+            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${s.textMuted}`} />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Pesquisar produtos..."
+              className={`w-full ${s.input} border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20`} />
+          </div>
+        </form>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${showFilters || hasActiveFilters ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/30" : s.btnSecondary}`}>
+            <Filter className="h-3.5 w-3.5" /> Filtros {hasActiveFilters && <span className="h-4 w-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold flex items-center justify-center">!</span>}
+          </button>
+          {hasActiveFilters && (
+            <button onClick={clearFilters} className={`flex items-center gap-1 px-3 py-2.5 rounded-xl text-xs font-medium ${s.textMuted} hover:text-red-500 transition-colors`}>
+              <RotateCcw className="h-3 w-3" /> Limpar
+            </button>
+          )}
         </div>
-      </form>
+      </div>
+
+      {showFilters && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+          className={`rounded-2xl border ${s.card} p-4`}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Categoria</label>
+              <select value={filterCategory} onChange={(e) => { setFilterCategory(e.target.value); setFilterSubcategory(""); setPage(1); }}
+                className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20`}>
+                <option value="">Todas</option>
+                {storeCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Subcategoria</label>
+              <select value={filterSubcategory} onChange={(e) => { setFilterSubcategory(e.target.value); setPage(1); }}
+                disabled={!filterCategory || filterSubcategories.length === 0}
+                className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50`}>
+                <option value="">{!filterCategory ? "Seleccione categoria" : filterSubcategories.length === 0 ? "Sem subcategorias" : "Todas"}</option>
+                {filterSubcategories.map(sc => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Stock</label>
+              <select value={filterStock} onChange={(e) => { setFilterStock(e.target.value); setPage(1); }}
+                className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20`}>
+                <option value="">Todos</option>
+                <option value="in_stock">Em stock</option>
+                <option value="out_of_stock">Esgotado</option>
+              </select>
+            </div>
+            <div>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Estado</label>
+              <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+                className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20`}>
+                <option value="">Todos</option>
+                <option value="true">Activos</option>
+                <option value="false">Desactivados</option>
+              </select>
+            </div>
+            <div>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Preco Min</label>
+              <input type="number" value={filterMinPrice} onChange={(e) => { setFilterMinPrice(e.target.value); setPage(1); }} placeholder="0"
+                className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20`} />
+            </div>
+            <div>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Preco Max</label>
+              <input type="number" value={filterMaxPrice} onChange={(e) => { setFilterMaxPrice(e.target.value); setPage(1); }} placeholder="999999"
+                className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20`} />
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <div className={`rounded-2xl border ${s.card} overflow-hidden`}>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className={`border-b ${s.borderLight}`}>
+                <th className="px-3 py-3 w-10">
+                  <button onClick={toggleSelectAll} className={`flex items-center justify-center ${s.textMuted} hover:text-emerald-500 transition-colors`}>
+                    {allOnPageSelected ? <CheckSquare className="h-4 w-4 text-emerald-500" /> : someOnPageSelected ? <Minus className="h-4 w-4 text-emerald-400" /> : <Square className="h-4 w-4" />}
+                  </button>
+                </th>
                 {["Produto", "Preco", "Categoria", "Stock", "Accoes"].map((h, i) => (
                   <th key={h} className={`text-left text-[10px] font-semibold ${s.thText} uppercase tracking-wider px-5 py-3 ${i >= 2 && i <= 3 ? "hidden lg:table-cell" : ""} ${i === 4 ? "text-right" : ""}`}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className={`divide-y ${s.borderLight}`}>
-              {loading ? [...Array(5)].map((_, i) => <tr key={i}><td colSpan={5} className="px-5 py-4"><div className={`h-4 ${s.skeleton} rounded animate-pulse`} /></td></tr>)
-              : products.length === 0 ? <tr><td colSpan={5} className="text-center py-12"><Package className={`h-10 w-10 ${s.empty} mx-auto mb-2`} /><p className={`text-xs ${s.textMuted}`}>Nenhum produto</p></td></tr>
+              {loading ? [...Array(5)].map((_, i) => <tr key={i}><td colSpan={6} className="px-5 py-4"><div className={`h-4 ${s.skeleton} rounded animate-pulse`} /></td></tr>)
+              : products.length === 0 ? <tr><td colSpan={6} className="text-center py-12"><Package className={`h-10 w-10 ${s.empty} mx-auto mb-2`} /><p className={`text-xs ${s.textMuted}`}>Nenhum produto</p></td></tr>
               : products.map((p) => (
-                <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${s.hoverRow} transition-colors`}>
+                <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${s.hoverRow} transition-colors ${p.is_active === false ? "opacity-50" : ""}`}>
+                  <td className="px-3 py-3 w-10">
+                    <button onClick={() => toggleSelect(p.id)} className={`flex items-center justify-center ${s.textMuted} hover:text-emerald-500 transition-colors`}>
+                      {selectedIds.has(p.id) ? <CheckSquare className="h-4 w-4 text-emerald-500" /> : <Square className="h-4 w-4" />}
+                    </button>
+                  </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
-                      {p.images?.[0] ? <img src={imgUrl(p.images[0])} alt="" className="h-10 w-10 rounded-xl object-cover" />
+                      {p.images?.[0] ? <img src={imgUrl(p.images[0])} alt="" className={`h-10 w-10 rounded-xl object-cover ${p.is_active === false ? "grayscale" : ""}`} />
                         : <div className={`h-10 w-10 rounded-xl ${s.isDark ? "bg-white/5" : "bg-gray-100"} flex items-center justify-center`}><ImageIcon className={`h-4 w-4 ${s.textMuted}`} /></div>}
                       <div className="min-w-0">
-                        <p className={`text-xs font-semibold ${s.textPrimary} truncate max-w-[180px]`}>{p.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className={`text-xs font-semibold ${s.textPrimary} truncate max-w-[180px]`}>{p.name}</p>
+                          {p.is_active === false && <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-500">INACTIVO</span>}
+                        </div>
                         {p.badge && <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${p.badge === "Promo" ? s.badge("red") : s.badge("blue")}`}>{p.badge}</span>}
                       </div>
                     </div>
@@ -322,8 +528,18 @@ export default function StorePanelProducts() {
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex justify-end gap-1">
+                      <button onClick={() => toggleActive(p)} disabled={actionLoading === p.id}
+                        title={p.is_active === false ? "Activar produto" : "Desactivar produto"}
+                        className={`p-1.5 rounded-lg transition-colors ${p.is_active === false ? "text-red-400 hover:text-green-500" : "text-green-500 hover:text-red-400"}`}>
+                        <Power className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => toggleFeatured(p)} disabled={actionLoading === p.id}
+                        title={p.is_featured ? (p.featured_status === 'approved' ? 'Destaque aprovado' : p.featured_status === 'pending' ? 'Aguardando aprovacao' : 'Marcar destaque') : 'Marcar como destaque'}
+                        className={`p-1.5 rounded-lg transition-colors ${p.is_featured ? (p.featured_status === 'approved' ? 'text-amber-500' : 'text-amber-400 animate-pulse') : `${s.textMuted} hover:text-amber-500`}`}>
+                        <Award className="h-4 w-4" />
+                      </button>
                       <button onClick={() => openEdit(p)} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-emerald-500 transition-colors`}><Edit3 className="h-4 w-4" /></button>
-                      <button onClick={() => deleteProduct(p.id, p.name)} disabled={actionLoading === p.id} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`}>
+                      <button onClick={() => setConfirmDelete({ id: p.id, name: p.name })} disabled={actionLoading === p.id} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`}>
                         {actionLoading === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                       </button>
                     </div>
@@ -333,12 +549,47 @@ export default function StorePanelProducts() {
             </tbody>
           </table>
         </div>
+        {/* Bulk actions bar */}
+        {selectedIds.size > 0 && (
+          <div className={`flex items-center justify-between px-5 py-2.5 border-t ${s.borderLight} bg-emerald-500/5`}>
+            <p className={`text-xs font-medium ${s.textPrimary}`}>
+              <span className="text-emerald-500 font-bold">{selectedIds.size}</span> produto(s) seleccionado(s)
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => bulkAction("activate")} disabled={bulkLoading}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-500/10 text-green-600 hover:bg-green-500/20 transition-colors disabled:opacity-50">
+                <Power className="h-3 w-3" /> Activar
+              </button>
+              <button onClick={() => bulkAction("deactivate")} disabled={bulkLoading}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 transition-colors disabled:opacity-50">
+                <Power className="h-3 w-3" /> Desactivar
+              </button>
+              <button onClick={() => { if (confirm(`Eliminar ${selectedIds.size} produto(s)?`)) bulkAction("delete"); }} disabled={bulkLoading}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors disabled:opacity-50">
+                {bulkLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />} Eliminar
+              </button>
+              <button onClick={() => setSelectedIds(new Set())} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${s.textMuted} hover:text-foreground transition-colors`}>
+                Limpar seleccao
+              </button>
+            </div>
+          </div>
+        )}
+        {/* Numbered pagination */}
         {totalPages > 1 && (
           <div className={`flex items-center justify-between px-5 py-3 border-t ${s.borderLight}`}>
-            <p className={`text-[11px] ${s.textMuted}`}>Pagina {page} de {totalPages}</p>
-            <div className="flex gap-1">
-              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1} className={`px-3 py-1.5 rounded-lg text-xs ${s.btnSecondary} disabled:opacity-30`}>Anterior</button>
-              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className={`px-3 py-1.5 rounded-lg text-xs ${s.btnSecondary} disabled:opacity-30`}>Proximo</button>
+            <p className={`text-[11px] ${s.textMuted}`}>{totalProducts} produto(s) · Pagina {page} de {totalPages}</p>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage(1)} disabled={page <= 1} className={`p-1.5 rounded-lg ${s.btnSecondary} disabled:opacity-30`} title="Primeira"><ChevronsLeft className="h-3.5 w-3.5" /></button>
+              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1} className={`p-1.5 rounded-lg ${s.btnSecondary} disabled:opacity-30`} title="Anterior"><ChevronLeft className="h-3.5 w-3.5" /></button>
+              {getPageNumbers().map((pg, i) => (
+                pg === "..." ? <span key={`dots-${i}`} className={`px-1.5 text-xs ${s.textMuted}`}>...</span>
+                : <button key={pg} onClick={() => setPage(pg as number)}
+                    className={`min-w-[28px] h-7 rounded-lg text-xs font-medium transition-colors ${
+                      page === pg ? "bg-emerald-500 text-white shadow-sm" : `${s.btnSecondary} hover:bg-emerald-500/10`
+                    }`}>{pg}</button>
+              ))}
+              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className={`p-1.5 rounded-lg ${s.btnSecondary} disabled:opacity-30`} title="Proximo"><ChevronRight className="h-3.5 w-3.5" /></button>
+              <button onClick={() => setPage(totalPages)} disabled={page >= totalPages} className={`p-1.5 rounded-lg ${s.btnSecondary} disabled:opacity-30`} title="Ultima"><ChevronsRight className="h-3.5 w-3.5" /></button>
             </div>
           </div>
         )}
@@ -554,6 +805,14 @@ export default function StorePanelProducts() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Eliminar produto"
+        message={`Tem a certeza que deseja eliminar "${confirmDelete?.name}"?`}
+        onConfirm={() => confirmDelete && deleteProduct(confirmDelete.id, confirmDelete.name)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Store, Mail, Lock, User, Eye, EyeOff, ArrowRight, Phone, Loader2, CheckCircle2, AlertCircle, Sparkles, ShieldCheck } from "lucide-react";
+import { Store, Mail, Lock, User, Eye, EyeOff, ArrowRight, Loader2, CheckCircle2, AlertCircle, Sparkles, ShieldCheck, LayoutDashboard, ShoppingBag, LogOut, Package, ExternalLink } from "lucide-react";
+import PhoneInput from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { isSubdomainMode, getMainSiteUrl } from "@/hooks/useSubdomain";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { login, register, isAuthenticated, user } = useAuth();
+  const { login, register, isAuthenticated, user, logout } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,35 +18,154 @@ const Auth = () => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
 
-  // If already logged in, show welcome
+  // If already logged in, show welcome with role-aware quick links
   if (isAuthenticated && user) {
+    const onSubdomain = isSubdomainMode();
+    const mainSite = onSubdomain ? getMainSiteUrl() : "";
+    // Navigate: absolute redirect when on subdomain (panels live on main domain)
+    const goPanel = (path: string) => {
+      if (onSubdomain) window.location.href = `${mainSite}${path}`;
+      else navigate(path);
+    };
+
+    const stores = (user.stores && user.stores.length > 0)
+      ? user.stores
+      : user.store ? [user.store] : [];
+
+    const roleBadge = user.role === "super_admin" ? (
+      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+        <ShieldCheck className="h-3 w-3" /> Super Administrador
+      </span>
+    ) : user.role === "store_owner" ? (
+      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-orange-600 bg-orange-500/10 px-2 py-0.5 rounded-full">
+        <Store className="h-3 w-3" /> Dono de Loja
+      </span>
+    ) : (
+      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+        <User className="h-3 w-3" /> Cliente
+      </span>
+    );
+
     return (
       <main className="min-h-screen bg-secondary/30 flex items-center justify-center py-10 px-4">
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={{ scale: 0.92, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          className="text-center"
+          transition={{ type: "spring", stiffness: 200, damping: 22 }}
+          className="w-full max-w-md bg-card rounded-3xl border border-border shadow-xl p-6 sm:p-8"
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 15 }}
-            className="h-20 w-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4"
-          >
-            <CheckCircle2 className="h-10 w-10 text-success" />
-          </motion.div>
-          <h2 className="text-xl font-bold mb-1">Bem-vindo, {user.name}!</h2>
-          <p className="text-sm text-muted-foreground mb-6">Sessão iniciada como {user.email}</p>
-          <div className="flex flex-col gap-2">
-            <Button onClick={() => navigate("/")} className="bg-hero-gradient text-primary-foreground rounded-xl gap-2">
-              Ir às Compras <ArrowRight className="h-4 w-4" />
-            </Button>
-            {user.role === "super_admin" && (
-              <p className="text-xs text-primary font-medium flex items-center justify-center gap-1 mt-2">
-                <ShieldCheck className="h-3.5 w-3.5" /> Super Administrador
+          {/* Avatar + greeting */}
+          <div className="flex flex-col items-center text-center mb-6">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.15, type: "spring", stiffness: 300, damping: 15 }}
+              className="h-16 w-16 rounded-2xl bg-hero-gradient flex items-center justify-center text-white text-2xl font-bold shadow-lg mb-3"
+            >
+              {user.name.charAt(0).toUpperCase()}
+            </motion.div>
+            <h2 className="text-xl font-bold mb-0.5">Olá, {user.name.split(" ")[0]}! 👋</h2>
+            <p className="text-xs text-muted-foreground mb-2">{user.email}</p>
+            {roleBadge}
+            {onSubdomain && (
+              <p className="text-[10px] text-muted-foreground mt-2 italic">
+                Está numa loja parceira. Os painéis abrem no SuperLojas.
               </p>
             )}
+          </div>
+
+          {/* Role-specific primary actions */}
+          <div className="space-y-2">
+            {user.role === "super_admin" && (
+              <Button
+                onClick={() => goPanel("/admin")}
+                className="w-full bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl gap-2 h-11 font-semibold"
+              >
+                <ShieldCheck className="h-4 w-4" /> Painel de Administração
+                {onSubdomain ? <ExternalLink className="h-3.5 w-3.5 ml-auto" /> : <ArrowRight className="h-4 w-4 ml-auto" />}
+              </Button>
+            )}
+
+            {user.role === "store_owner" && stores.length > 0 && (
+              <>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1 mb-1">
+                  {stores.length > 1 ? "As tuas lojas" : "A tua loja"}
+                </p>
+                {stores.map((s) => (
+                  <button
+                    key={s.slug}
+                    onClick={() => goPanel(`/loja/${s.slug}/painel`)}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-secondary/50 hover:bg-secondary hover:border-primary/30 transition-all text-left group"
+                  >
+                    <div className="h-9 w-9 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                      <LayoutDashboard className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{s.name}</p>
+                      <p className="text-[10px] text-muted-foreground">Abrir painel da loja</p>
+                    </div>
+                    {(s as { status?: string }).status && (s as { status?: string }).status !== "approved" && (
+                      <span className="text-[9px] font-bold bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full">
+                        {(s as { status?: string }).status === "pending" ? "Pendente" : (s as { status?: string }).status}
+                      </span>
+                    )}
+                    {onSubdomain
+                      ? <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary" />
+                      : <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />}
+                  </button>
+                ))}
+                <Button
+                  variant="outline"
+                  onClick={() => goPanel("/cadastro-loja")}
+                  className="w-full rounded-xl gap-2 h-10 text-xs border-dashed"
+                >
+                  <Store className="h-3.5 w-3.5" /> Abrir Nova Loja
+                </Button>
+              </>
+            )}
+
+            {user.role === "customer" && (
+              <>
+                <Button
+                  onClick={() => goPanel("/minha-conta")}
+                  className="w-full bg-hero-gradient text-primary-foreground rounded-xl gap-2 h-11 font-semibold"
+                >
+                  <LayoutDashboard className="h-4 w-4" /> Minha Conta
+                  {onSubdomain ? <ExternalLink className="h-3.5 w-3.5 ml-auto" /> : <ArrowRight className="h-4 w-4 ml-auto" />}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => goPanel("/minha-conta/pedidos")}
+                  className="w-full rounded-xl gap-2 h-10 text-xs"
+                >
+                  <Package className="h-3.5 w-3.5" /> Meus Pedidos
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => goPanel("/cadastro-loja")}
+                  className="w-full rounded-xl gap-2 h-10 text-xs border-dashed"
+                >
+                  <Store className="h-3.5 w-3.5" /> Abrir Minha Loja Grátis
+                </Button>
+              </>
+            )}
+
+            {/* Secondary: keep shopping */}
+            <div className="pt-2 mt-2 border-t border-border" />
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/")}
+              className="w-full rounded-xl gap-2 h-10 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <ShoppingBag className="h-3.5 w-3.5" /> Continuar a comprar
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={async () => { await logout(); }}
+              className="w-full rounded-xl gap-2 h-10 text-xs text-destructive hover:bg-destructive/5 hover:text-destructive"
+            >
+              <LogOut className="h-3.5 w-3.5" /> Terminar Sessão
+            </Button>
           </div>
         </motion.div>
       </main>
@@ -267,18 +388,11 @@ const Auth = () => {
                     transition={{ duration: 0.3 }}
                   >
                     <label className="text-xs font-medium mb-1.5 block">Telemovel</label>
-                    <div className="relative">
-                      <Phone className={inputIconClass("phone")} />
-                      <input
-                        type="tel"
-                        value={form.phone}
-                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                        onFocus={() => setFocusedField("phone")}
-                        onBlur={() => setFocusedField(null)}
-                        placeholder="+244 9XX XXX XXX"
-                        className={inputClass("phone")}
-                      />
-                    </div>
+                    <PhoneInput
+                      value={form.phone}
+                      onChange={(v) => setForm({ ...form, phone: v })}
+                      className={inputClass("phone")}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>

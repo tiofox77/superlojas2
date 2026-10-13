@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import Modal from "@/components/admin/Modal";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Image as ImageIcon, Plus, Trash2, Edit3, Loader2, Upload, Globe, Store } from "lucide-react";
@@ -92,13 +93,15 @@ export default function AdminHeroSlides() {
     } finally { setSaving(false); }
   };
 
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+
   const deleteSlide = async (id: number) => {
-    if (!confirm("Eliminar este slide?")) return;
     setActionLoading(id);
     const res = await fetch(`${API}/admin/hero-slides/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null); fetchSlides();
     if (res.ok) toast.success("Slide eliminado");
     else toast.error("Erro", "Nao foi possivel eliminar o slide.");
+    setConfirmDelete(null);
   };
 
   const globalSlides = slides.filter((sl) => !sl.store_slug);
@@ -128,7 +131,7 @@ export default function AdminHeroSlides() {
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button onClick={() => openEdit(slide)} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-orange-500 transition-colors`}><Edit3 className="h-3.5 w-3.5" /></button>
-          <button onClick={() => deleteSlide(slide.id)} disabled={actionLoading === slide.id} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`}>
+          <button onClick={() => setConfirmDelete(slide.id)} disabled={actionLoading === slide.id} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`}>
             {actionLoading === slide.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
           </button>
         </div>
@@ -259,6 +262,14 @@ export default function AdminHeroSlides() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={confirmDelete !== null}
+        title="Eliminar slide"
+        message="Tem a certeza que deseja eliminar este slide?"
+        onConfirm={() => confirmDelete !== null && deleteSlide(confirmDelete)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

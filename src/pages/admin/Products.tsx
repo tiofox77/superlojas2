@@ -1,9 +1,10 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import Modal from "@/components/admin/Modal";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Package, Search, Trash2, Star, Image as ImageIcon, Store, Tag, Edit3, Plus, Loader2, Upload, X, Eye, Calendar, Hash, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { Package, Search, Trash2, Star, Image as ImageIcon, Store, Tag, Edit3, Plus, Loader2, Upload, X, Eye, Calendar, Hash, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, Award, XCircle, Crown, Filter, Power, RotateCcw, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToastNotification } from "@/contexts/ToastContext";
 
@@ -18,6 +19,8 @@ interface ProductItem {
   id: number; name: string; slug: string; price: number; original_price: number | null;
   images: string[]; category: string; category_id: number | null; subcategory_id: number | null; badge: string | null; rating: string;
   review_count: number; stock: number; description?: string; store?: { id: number; name: string; slug?: string }; created_at: string;
+  is_featured?: boolean; featured_status?: string | null;
+  is_active?: boolean;
 }
 
 const emptyForm = { name: "", slug: "", price: "", original_price: "", stock: "", category: "", category_id: "", subcategory_id: "", badge: "", store_id: "", description: "" };
@@ -42,7 +45,17 @@ export default function AdminProducts() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+  // Filters
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterStore, setFilterStore] = useState("");
+  const [filterStock, setFilterStock] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterMinPrice, setFilterMinPrice] = useState("");
+  const [filterMaxPrice, setFilterMaxPrice] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editProd, setEditProd] = useState<ProductItem | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -62,18 +75,56 @@ export default function AdminProducts() {
   const [slugSuggestion, setSlugSuggestion] = useState<string | null>(null);
   const slugTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Pending featured requests
+  const [pendingFeatured, setPendingFeatured] = useState<ProductItem[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState<number | null>(null);
+
   const fetchProducts = () => {
     if (!token) return;
     setLoading(true);
     const params = new URLSearchParams({ per_page: "12", page: String(page) });
     if (search) params.set("search", search);
+    if (filterCategory) params.set("category_id", filterCategory);
+    if (filterStore) params.set("store_id", filterStore);
+    if (filterStock) params.set("stock", filterStock);
+    if (filterStatus) params.set("is_active", filterStatus);
+    if (filterMinPrice) params.set("min_price", filterMinPrice);
+    if (filterMaxPrice) params.set("max_price", filterMaxPrice);
     fetch(`${API}/admin/products?${params}`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
       .then((r) => r.json())
-      .then((data) => { setProducts(data.data || []); setTotalPages(data.last_page || 1); })
+      .then((data) => { setProducts(data.data || []); setTotalPages(data.last_page || 1); setTotalProducts(data.total || 0); })
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchProducts(); }, [token, page]);
+  const fetchPendingFeatured = () => {
+    if (!token) return;
+    fetch(`${API}/admin/products/pending-featured`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
+      .then(r => r.json()).then(d => setPendingFeatured(Array.isArray(d) ? d : [])).catch(() => {});
+  };
+
+  const approveFeatured = async (p: ProductItem) => {
+    setFeaturedLoading(p.id);
+    try {
+      const res = await fetch(`${API}/admin/products/${p.id}/approve-featured`, { method: "PATCH", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+      if (res.ok) {
+        setPendingFeatured(prev => prev.filter(x => x.id !== p.id));
+        toast.success("Destaque Aprovado", `"${p.name}" agora e produto em destaque.`);
+      } else toast.error("Erro", "Nao foi possivel aprovar.");
+    } finally { setFeaturedLoading(null); }
+  };
+
+  const rejectFeatured = async (p: ProductItem) => {
+    setFeaturedLoading(p.id);
+    try {
+      const res = await fetch(`${API}/admin/products/${p.id}/reject-featured`, { method: "PATCH", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+      if (res.ok) {
+        setPendingFeatured(prev => prev.filter(x => x.id !== p.id));
+        toast.success("Destaque Rejeitado", `Pedido de destaque de "${p.name}" foi rejeitado.`);
+      } else toast.error("Erro", "Nao foi possivel rejeitar.");
+    } finally { setFeaturedLoading(null); }
+  };
+
+  useEffect(() => { fetchProducts(); fetchPendingFeatured(); }, [token, page, filterCategory, filterStore, filterStock, filterStatus, filterMinPrice, filterMaxPrice]);
   useEffect(() => {
     if (!token) return;
     fetch(`${API}/admin/stores`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
@@ -86,6 +137,25 @@ export default function AdminProducts() {
 
   const currentSubcategories = categories.find(c => String(c.id) === form.category_id)?.subcategories || [];
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setPage(1); fetchProducts(); };
+
+  const toggleActive = async (p: ProductItem) => {
+    setActionLoading(p.id);
+    try {
+      const res = await fetch(`${API}/admin/products/${p.id}/toggle-active`, { method: "PATCH", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+      const data = await res.json();
+      if (res.ok) {
+        setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, is_active: data.is_active } : pr));
+        toast.success(data.is_active ? "Produto Activado" : "Produto Desactivado", data.message);
+      } else toast.error("Erro", "Nao foi possivel alterar estado.");
+    } finally { setActionLoading(null); }
+  };
+
+  const clearFilters = () => {
+    setFilterCategory(""); setFilterStore(""); setFilterStock(""); setFilterStatus(""); setFilterMinPrice(""); setFilterMaxPrice("");
+    setSearch(""); setPage(1);
+  };
+
+  const hasActiveFilters = filterCategory || filterStore || filterStock || filterStatus || filterMinPrice || filterMaxPrice;
 
   const openCreate = () => { setEditProd(null); setForm(emptyForm); setImageFiles([]); setImagePreviews([]); setExistingImages([]); setFormError(""); setFieldErrors({}); setSlugManual(false); setSlugStatus("idle"); setSlugSuggestion(null); setModalOpen(true); };
   const openEdit = (p: ProductItem) => {
@@ -193,6 +263,7 @@ export default function AdminProducts() {
 
     if (editProd) {
       fd.append("_method", "PUT");
+      fd.append("_images_updated", "1");
       existingImages.forEach((img) => fd.append("existing_images[]", img));
       imageFiles.forEach((file) => fd.append("new_images[]", file));
     } else {
@@ -215,13 +286,15 @@ export default function AdminProducts() {
     } finally { setSaving(false); }
   };
 
+  const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
+
   const deleteProduct = async (id: number, name: string) => {
-    if (!confirm(`Eliminar "${name}"?`)) return;
     setActionLoading(id);
     const res = await fetch(`${API}/admin/products/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null); fetchProducts();
     if (res.ok) toast.success("Produto eliminado", `"${name}" foi removido.`);
     else toast.error("Erro", "Nao foi possivel eliminar o produto.");
+    setConfirmDelete(null);
   };
 
   const fmt = (val: number) => new Intl.NumberFormat("pt-AO").format(val);
@@ -238,13 +311,116 @@ export default function AdminProducts() {
         </button>
       </div>
 
-      <form onSubmit={handleSearch}>
-        <div className="relative max-w-md">
-          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${s.textMuted}`} />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Pesquisar produtos..."
-            className={`w-full ${s.input} border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`} />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <form onSubmit={handleSearch} className="flex-1 max-w-md">
+          <div className="relative">
+            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${s.textMuted}`} />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Pesquisar produtos..."
+              className={`w-full ${s.input} border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`} />
+          </div>
+        </form>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${showFilters || hasActiveFilters ? "bg-orange-500/10 text-orange-500 border border-orange-500/30" : s.btnSecondary}`}>
+            <Filter className="h-3.5 w-3.5" /> Filtros {hasActiveFilters && <span className="h-4 w-4 rounded-full bg-orange-500 text-white text-[9px] font-bold flex items-center justify-center">!</span>}
+          </button>
+          {hasActiveFilters && (
+            <button onClick={clearFilters} className={`flex items-center gap-1 px-3 py-2.5 rounded-xl text-xs font-medium ${s.textMuted} hover:text-red-500 transition-colors`}>
+              <RotateCcw className="h-3 w-3" /> Limpar
+            </button>
+          )}
+          <span className={`text-[11px] ${s.textMuted}`}>{totalProducts} produto(s)</span>
         </div>
-      </form>
+      </div>
+
+      {showFilters && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+          className={`rounded-2xl border ${s.card} p-4`}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Categoria</label>
+              <select value={filterCategory} onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }}
+                className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20`}>
+                <option value="">Todas</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Loja</label>
+              <select value={filterStore} onChange={(e) => { setFilterStore(e.target.value); setPage(1); }}
+                className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20`}>
+                <option value="">Todas</option>
+                {allStores.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Stock</label>
+              <select value={filterStock} onChange={(e) => { setFilterStock(e.target.value); setPage(1); }}
+                className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20`}>
+                <option value="">Todos</option>
+                <option value="in_stock">Em stock</option>
+                <option value="out_of_stock">Esgotado</option>
+              </select>
+            </div>
+            <div>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Estado</label>
+              <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+                className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20`}>
+                <option value="">Todos</option>
+                <option value="true">Activos</option>
+                <option value="false">Desactivados</option>
+              </select>
+            </div>
+            <div>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Preco Min</label>
+              <input type="number" value={filterMinPrice} onChange={(e) => { setFilterMinPrice(e.target.value); setPage(1); }} placeholder="0"
+                className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20`} />
+            </div>
+            <div>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Preco Max</label>
+              <input type="number" value={filterMaxPrice} onChange={(e) => { setFilterMaxPrice(e.target.value); setPage(1); }} placeholder="999999"
+                className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20`} />
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Pending Featured Requests ── */}
+      {pendingFeatured.length > 0 && (
+        <div className={`rounded-2xl border-2 border-amber-500/30 ${s.isDark ? "bg-amber-500/[0.03]" : "bg-amber-50/50"} overflow-hidden`}>
+          <div className={`px-5 py-3 border-b ${s.isDark ? "border-amber-500/20" : "border-amber-200"} flex items-center justify-between`}>
+            <div className="flex items-center gap-2">
+              <Crown className="h-4 w-4 text-amber-500" />
+              <h3 className={`text-sm font-bold ${s.textPrimary}`}>Pedidos de Destaque</h3>
+              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-bold">{pendingFeatured.length}</span>
+            </div>
+          </div>
+          <div className="divide-y divide-amber-200/30">
+            {pendingFeatured.map((p) => (
+              <div key={p.id} className={`px-5 py-3 flex items-center gap-4 ${s.isDark ? "hover:bg-white/[0.02]" : "hover:bg-amber-50"} transition-colors`}>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {p.images?.[0] ? <img src={imgUrl(p.images[0])} alt="" className="h-10 w-10 rounded-xl object-cover" />
+                    : <div className={`h-10 w-10 rounded-xl ${s.isDark ? "bg-white/5" : "bg-gray-100"} flex items-center justify-center`}><ImageIcon className={`h-4 w-4 ${s.textMuted}`} /></div>}
+                  <div className="min-w-0">
+                    <p className={`text-xs font-semibold ${s.textPrimary} truncate`}>{p.name}</p>
+                    <p className={`text-[10px] ${s.textMuted}`}>{p.store?.name || "—"} · {fmt(p.price)} Kz</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button onClick={() => approveFeatured(p)} disabled={featuredLoading === p.id}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-semibold transition-colors disabled:opacity-50">
+                    {featuredLoading === p.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />} Aprovar
+                  </button>
+                  <button onClick={() => rejectFeatured(p)} disabled={featuredLoading === p.id}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-[11px] font-semibold transition-colors disabled:opacity-50">
+                    {featuredLoading === p.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />} Rejeitar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className={`rounded-2xl border ${s.card} overflow-hidden`}>
         <div className="overflow-x-auto">
@@ -260,13 +436,16 @@ export default function AdminProducts() {
               {loading ? [...Array(6)].map((_, i) => <tr key={i}><td colSpan={7} className="px-5 py-4"><div className={`h-4 ${s.skeleton} rounded animate-pulse`} /></td></tr>)
               : products.length === 0 ? <tr><td colSpan={7} className="text-center py-12"><Package className={`h-10 w-10 ${s.empty} mx-auto mb-2`} /><p className={`text-xs ${s.textMuted}`}>Nenhum produto</p></td></tr>
               : products.map((p) => (
-                <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${s.hoverRow} transition-colors`}>
+                <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${s.hoverRow} transition-colors ${p.is_active === false ? "opacity-50" : ""}`}>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
-                      {p.images?.[0] ? <img src={imgUrl(p.images[0])} alt="" className="h-10 w-10 rounded-xl object-cover bg-gray-100" />
+                      {p.images?.[0] ? <img src={imgUrl(p.images[0])} alt="" className={`h-10 w-10 rounded-xl object-cover bg-gray-100 ${p.is_active === false ? "grayscale" : ""}`} />
                         : <div className={`h-10 w-10 rounded-xl ${s.isDark ? "bg-white/5" : "bg-gray-100"} flex items-center justify-center`}><ImageIcon className={`h-4 w-4 ${s.textMuted}`} /></div>}
                       <div className="min-w-0">
-                        <p className={`text-xs font-semibold ${s.textPrimary} truncate max-w-[180px]`}>{p.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className={`text-xs font-semibold ${s.textPrimary} truncate max-w-[180px]`}>{p.name}</p>
+                          {p.is_active === false && <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-500">INACTIVO</span>}
+                        </div>
                         {p.badge && <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${p.badge === "Promo" ? s.badge("red") : s.badge("blue")}`}>{p.badge}</span>}
                       </div>
                     </div>
@@ -289,9 +468,14 @@ export default function AdminProducts() {
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex justify-end gap-1">
+                      <button onClick={() => toggleActive(p)} disabled={actionLoading === p.id}
+                        title={p.is_active === false ? "Activar produto" : "Desactivar produto"}
+                        className={`p-1.5 rounded-lg transition-colors ${p.is_active === false ? "text-red-400 hover:text-green-500" : "text-green-500 hover:text-red-400"}`}>
+                        <Power className="h-4 w-4" />
+                      </button>
                       <button onClick={() => { setDetailProd(p); setDetailImg(0); }} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-cyan-500 transition-colors`} title="Ver Detalhes"><Eye className="h-4 w-4" /></button>
                       <button onClick={() => openEdit(p)} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-orange-500 transition-colors`} title="Editar"><Edit3 className="h-4 w-4" /></button>
-                      <button onClick={() => deleteProduct(p.id, p.name)} disabled={actionLoading === p.id} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`} title="Eliminar">{actionLoading === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</button>
+                      <button onClick={() => setConfirmDelete({ id: p.id, name: p.name })} disabled={actionLoading === p.id} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`} title="Eliminar">{actionLoading === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</button>
                     </div>
                   </td>
                 </motion.tr>
@@ -556,6 +740,14 @@ export default function AdminProducts() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Eliminar produto"
+        message={`Tem a certeza que deseja eliminar "${confirmDelete?.name}"?`}
+        onConfirm={() => confirmDelete && deleteProduct(confirmDelete.id, confirmDelete.name)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

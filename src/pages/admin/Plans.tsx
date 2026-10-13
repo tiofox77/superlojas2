@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import Modal from "@/components/admin/Modal";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -144,8 +145,9 @@ export default function AdminPlans() {
     } finally { setSaving(false); }
   };
 
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+
   const deletePlan = async (id: number) => {
-    if (!confirm("Eliminar este plano?")) return;
     setActionLoading(id);
     try {
       const res = await fetch(`${API}/admin/plans/${id}`, {
@@ -154,7 +156,7 @@ export default function AdminPlans() {
       const data = await res.json();
       if (res.ok) { fetchPlans(); toast.success("Plano eliminado"); }
       else toast.error("Erro", data.message || "Nao foi possivel eliminar.");
-    } finally { setActionLoading(null); }
+    } finally { setActionLoading(null); setConfirmDelete(null); }
   };
 
   const addFeature = () => {
@@ -296,7 +298,7 @@ export default function AdminPlans() {
                     <button onClick={() => openEdit(plan)} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-orange-500 transition-colors`}>
                       <Edit3 className="h-3.5 w-3.5" />
                     </button>
-                    <button onClick={() => deletePlan(plan.id)} disabled={actionLoading === plan.id}
+                    <button onClick={() => setConfirmDelete(plan.id)} disabled={actionLoading === plan.id}
                       className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`}>
                       {actionLoading === plan.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                     </button>
@@ -417,6 +419,14 @@ export default function AdminPlans() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={confirmDelete !== null}
+        title="Eliminar plano"
+        message="Tem a certeza que deseja eliminar este plano?"
+        onConfirm={() => confirmDelete !== null && deletePlan(confirmDelete)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

@@ -96,9 +96,9 @@ function ClientPanelInner() {
               <Link to="/favoritos" className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-pink-500 ${hoverBg} transition-colors`}>
                 <Heart className="h-3.5 w-3.5" /> Favoritos
               </Link>
-              {user.role === "store_owner" && user.store?.slug && (
-                <Link to={`/loja/${user.store.slug}/painel`} className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-emerald-500 ${hoverBg} transition-colors`}>
-                  <Store className="h-3.5 w-3.5" /> Painel da Loja
+              {user.role === "store_owner" && (user.stores?.length || user.store?.slug) && (
+                <Link to="/minha-loja" className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-emerald-500 ${hoverBg} transition-colors`}>
+                  <Store className="h-3.5 w-3.5" /> {(user.stores?.length || 0) > 1 ? "Minhas Lojas" : "Painel da Loja"}
                 </Link>
               )}
             </>
@@ -144,6 +144,16 @@ function ClientPanelInner() {
               <Link to="/" onClick={() => setMobileSidebar(false)} className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-orange-500 ${hoverBg} transition-colors`}>
                 <Home className="h-3.5 w-3.5" /> Voltar ao Site
               </Link>
+              {user.role === "store_owner" && (user.stores?.length || user.store?.slug) && (
+                <Link to="/minha-loja" onClick={() => setMobileSidebar(false)} className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-emerald-500 ${hoverBg} transition-colors`}>
+                  <Store className="h-3.5 w-3.5" /> {(user.stores?.length || 0) > 1 ? "Minhas Lojas" : "Painel da Loja"}
+                </Link>
+              )}
+              {user.role === "super_admin" && (
+                <Link to="/admin" onClick={() => setMobileSidebar(false)} className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-blue-500 ${hoverBg} transition-colors`}>
+                  <LayoutDashboard className="h-3.5 w-3.5" /> Painel Admin
+                </Link>
+              )}
               <button onClick={() => { logout(); navigate("/"); }} className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-red-500 hover:bg-red-50 transition-colors`}>
                 <LogOut className="h-3.5 w-3.5" /> Terminar Sessao
               </button>

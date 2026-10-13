@@ -56,7 +56,7 @@ class NotificationController extends Controller
     public function markRead(string $slug, Notification $notification)
     {
         $store = $this->getStore($slug);
-        abort_if($notification->store_id !== $store->id, 403);
+        abort_if((int) $notification->store_id !== (int) $store->id, 403);
         $notification->update(['is_read' => true, 'read_at' => now()]);
         return response()->json(['message' => 'Marcada como lida']);
     }

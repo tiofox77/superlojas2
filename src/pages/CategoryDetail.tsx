@@ -1,12 +1,14 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useMemo } from "react";
 import { useCategories, useProducts } from "@/hooks/useApi";
 import { ProductCard } from "@/components/ProductCard";
 import { motion } from "framer-motion";
 import { ChevronDown, Grid3X3, List, ArrowLeft, Search, SlidersHorizontal, X, Tag } from "lucide-react";
+import AgeGate, { isAdultConfirmed } from "@/components/AgeGate";
 
 const CategoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [sortBy, setSortBy] = useState<"relevance" | "price-asc" | "price-desc" | "rating" | "newest">("relevance");
   const [viewGrid, setViewGrid] = useState(true);
   const [search, setSearch] = useState("");
@@ -14,11 +16,13 @@ const CategoryDetail = () => {
   const [maxPrice, setMaxPrice] = useState("");
   const [selectedBadge, setSelectedBadge] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(isAdultConfirmed());
 
   const { data: allCategories = [] } = useCategories();
   const category = allCategories.find((c) => c.slug === slug);
+  const needsAgeGate = category?.isAdult && !ageConfirmed;
 
-  const { data: products = [] } = useProducts(category ? { category: category.name } : undefined);
+  const { data: products = [] } = useProducts(category && !needsAgeGate ? { category: category.name } : undefined);
 
   const badges = useMemo(() => [...new Set(products.map(p => p.badge).filter(Boolean))], [products]);
 
@@ -54,6 +58,16 @@ const CategoryDetail = () => {
   };
 
   const formatPrice = (val: number) => new Intl.NumberFormat("pt-AO").format(val);
+
+  // Age gate for adult categories (after all hooks)
+  if (needsAgeGate) {
+    return (
+      <AgeGate
+        onConfirm={() => setAgeConfirmed(true)}
+        onCancel={() => navigate("/categorias")}
+      />
+    );
+  }
 
   if (!category) {
     return (

@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import fetchApi from "@/services/api";
 
+interface StoreInfo {
+  id: number;
+  name: string;
+  slug: string;
+  logo: string;
+  status: string;
+}
+
 interface AuthUser {
   id: number;
   name: string;
@@ -9,7 +17,8 @@ interface AuthUser {
   phone: string | null;
   avatar: string | null;
   store_id: number | null;
-  store?: { id: number; name: string; slug: string; logo: string; status: string } | null;
+  store?: StoreInfo | null;
+  stores?: StoreInfo[];
   is_active: boolean;
 }
 

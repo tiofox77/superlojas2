@@ -1,5 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
@@ -148,12 +149,14 @@ export default function StoreSubscription() {
 
   const selectedPayMethod = payMethods.find(m => m.id === parseInt(payMethodId));
 
+  const [confirmDowngrade, setConfirmDowngrade] = useState(false);
+
   const downgrade = async () => {
-    if (!confirm("Tem a certeza que deseja voltar ao plano gratuito?")) return;
     const res = await fetch(`${API}/store-panel/${slug}/subscription/downgrade`, { method: "POST", headers });
     const d = await res.json();
     if (res.ok) { toast.success("Plano alterado", d.message); fetchCurrent(); fetchHistory(); }
     else toast.error("Erro", d.error || "Erro.");
+    setConfirmDowngrade(false);
   };
 
   const toggleRenew = async () => {
@@ -287,7 +290,7 @@ export default function StoreSubscription() {
               <ArrowUpRight className="h-4 w-4" /> {plan?.is_free ? "Fazer Upgrade" : "Alterar Plano"}
             </button>
             {plan && !plan.is_free && (
-              <button onClick={downgrade} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium ${s.btnSecondary}`}>
+              <button onClick={() => setConfirmDowngrade(true)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium ${s.btnSecondary}`}>
                 Voltar ao Gratuito
               </button>
             )}
@@ -516,6 +519,16 @@ export default function StoreSubscription() {
           </div>
         )}
       </Modal>
+
+      <ConfirmModal
+        open={confirmDowngrade}
+        title="Voltar ao plano gratuito"
+        message="Tem a certeza que deseja voltar ao plano gratuito? Perdera acesso as funcionalidades do plano actual."
+        variant="warning"
+        confirmLabel="Confirmar"
+        onConfirm={downgrade}
+        onCancel={() => setConfirmDowngrade(false)}
+      />
     </div>
   );
 }

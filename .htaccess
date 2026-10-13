@@ -19,6 +19,13 @@
   RewriteCond %{DOCUMENT_ROOT}/api/public/storage/%1 -f
   RewriteRule ^storage/(.*)$ /api/public/storage/$1 [L]
 
+  # ─── Sitemap & Robots ───
+  RewriteRule ^sitemap\.xml$ /sitemap.php?type=index [L,QSA]
+  RewriteRule ^sitemap-main\.xml$ /sitemap.php?type=main [L,QSA]
+  RewriteRule ^sitemap-stores\.xml$ /sitemap.php?type=stores [L,QSA]
+  RewriteRule ^sitemap-products\.xml$ /sitemap.php?type=products [L,QSA]
+  RewriteRule ^sitemap-store-([a-z0-9\-]+)\.xml$ /sitemap.php?type=store&slug=$1 [L,QSA]
+
   # ─── Frontend: serve existing files from disk (prevents loops) ───
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]

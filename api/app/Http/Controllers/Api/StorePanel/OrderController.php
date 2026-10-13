@@ -76,7 +76,7 @@ class OrderController extends Controller
     public function show(string $slug, Order $order)
     {
         $store = $this->getStore($slug);
-        abort_if($order->store_id !== $store->id, 403);
+        abort_if((int) $order->store_id !== (int) $store->id, 403);
 
         return response()->json($order->load('items'));
     }
@@ -87,7 +87,7 @@ class OrderController extends Controller
     public function updateStatus(Request $request, string $slug, Order $order)
     {
         $store = $this->getStore($slug);
-        abort_if($order->store_id !== $store->id, 403);
+        abort_if((int) $order->store_id !== (int) $store->id, 403);
 
         $data = $request->validate([
             'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled',

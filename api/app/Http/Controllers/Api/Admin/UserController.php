@@ -10,7 +10,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with('store');
+        $query = User::with(['store', 'stores:id,user_id,name,slug,logo,status']);
 
         if ($request->has('role')) {
             $query->where('role', $request->role);
@@ -35,7 +35,7 @@ class UserController extends Controller
 
     public function show(User $user)
     {
-        return response()->json($user->load('store'));
+        return response()->json($user->load(['store', 'stores:id,user_id,name,slug,logo,status']));
     }
 
     public function store(Request $request)
@@ -60,7 +60,7 @@ class UserController extends Controller
             'is_active' => $request->get('is_active', true),
         ]);
 
-        return response()->json($user->load('store'), 201);
+        return response()->json($user->load(['store', 'stores:id,user_id,name,slug,logo,status']), 201);
     }
 
     public function update(Request $request, User $user)
@@ -84,7 +84,7 @@ class UserController extends Controller
 
         $user->update($data);
 
-        return response()->json($user->fresh()->load('store'));
+        return response()->json($user->fresh()->load(['store', 'stores:id,user_id,name,slug,logo,status']));
     }
 
     public function destroy(User $user)
@@ -115,6 +115,6 @@ class UserController extends Controller
             $user->tokens()->delete();
         }
 
-        return response()->json($user->fresh()->load('store'));
+        return response()->json($user->fresh()->load(['store', 'stores:id,user_id,name,slug,logo,status']));
     }
 }

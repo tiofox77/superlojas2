@@ -1,18 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Store, CheckCircle2, Upload, Loader2, ChevronRight, ChevronLeft, MapPin, User, Phone, FileText, Image as ImageIcon, Rocket, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Store, CheckCircle2, Upload, Loader2, ChevronRight, ChevronLeft, MapPin, User, FileText, Image as ImageIcon, Rocket, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import PhoneInput from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCategories } from "@/hooks/useApi";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
 interface ProvinceData { name: string; municipalities: string[]; }
 
-const CATEGORIES = ["Electronica", "Moda", "Casa & Jardim", "Desporto", "Beleza", "Alimentacao", "Automoveis", "Servicos", "Saude", "Educacao", "Outros"];
-
 const RegisterStore = () => {
   const { token, user, isAuthenticated, setAuth } = useAuth();
   const navigate = useNavigate();
+  const { data: apiCategories = [] } = useCategories();
 
   // Provinces data from API
   const [provinces, setProvinces] = useState<ProvinceData[]>([]);
@@ -146,7 +147,7 @@ const RegisterStore = () => {
           </p>
           <div className="flex gap-3 justify-center">
             <Link to="/"><Button variant="outline">Voltar ao Inicio</Button></Link>
-            {autoApproved && <Button onClick={() => navigate("/")}>Ir para Minha Loja</Button>}
+            {autoApproved && <Button onClick={() => navigate("/minha-loja")}>Ir para Minha Loja</Button>}
           </div>
         </div>
       </main>
@@ -247,7 +248,7 @@ const RegisterStore = () => {
                   <label className={labelClass}>Categoria Principal *</label>
                   <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
                     <option value="">Seleccionar...</option>
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    {apiCategories.map((c) => <option key={c.id} value={c.name}>{c.icon} {c.name}</option>)}
                   </select>
                 </div>
               </div>
@@ -289,7 +290,7 @@ const RegisterStore = () => {
                 </div>
                 <div>
                   <label className={labelClass}>WhatsApp *</label>
-                  <input type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="+244 9XX XXX XXX" className={inputClass} />
+                  <PhoneInput value={whatsapp} onChange={setWhatsapp} className={inputClass} />
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelClass}>Endereco / Rua</label>
@@ -323,7 +324,7 @@ const RegisterStore = () => {
                 </div>
                 <div>
                   <label className={labelClass}>Telefone</label>
-                  <input type="tel" value={userPhone} onChange={(e) => setUserPhone(e.target.value)} placeholder="+244 9XX XXX XXX" className={inputClass} />
+                  <PhoneInput value={userPhone} onChange={setUserPhone} className={inputClass} />
                 </div>
 
                 {/* Campos de criacao de conta — so para visitantes */}

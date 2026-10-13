@@ -1,8 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useMemo } from "react";
 import { useCategories } from "@/hooks/useApi";
 import { motion } from "framer-motion";
-import { Grid3X3, Search, X, ChevronDown } from "lucide-react";
+import { Grid3X3, Search, X, ChevronDown, ShieldAlert } from "lucide-react";
+import AgeGate, { isAdultConfirmed } from "@/components/AgeGate";
 
 const COLORS = [
   "from-orange-500/10 to-amber-500/10 border-orange-200/50 dark:border-orange-800/30",
@@ -21,9 +22,12 @@ const Categories = () => {
   const { data: globalCategories = [] } = useCategories();
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"default" | "name" | "products">("default");
+  const [showAgeGate, setShowAgeGate] = useState(false);
+  const [pendingAdultSlug, setPendingAdultSlug] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const filtered = useMemo(() => {
-    let cats = [...globalCategories];
+    let cats = globalCategories.filter((c) => !c.isAdult);
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -35,6 +39,24 @@ const Categories = () => {
 
     return cats;
   }, [globalCategories, search, sortBy]);
+
+  const adultCategories = useMemo(() => {
+    let cats = globalCategories.filter((c) => c.isAdult);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      cats = cats.filter((c) => c.name.toLowerCase().includes(q));
+    }
+    return cats;
+  }, [globalCategories, search]);
+
+  const handleAdultClick = (slug: string) => {
+    if (isAdultConfirmed()) {
+      navigate(`/categoria/${slug}`);
+    } else {
+      setPendingAdultSlug(slug);
+      setShowAgeGate(true);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-secondary/30">
@@ -117,7 +139,7 @@ const Categories = () => {
           })}
         </div>
 
-        {filtered.length === 0 && (
+        {filtered.length === 0 && adultCategories.length === 0 && (
           <div className="text-center py-16">
             <Grid3X3 className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-muted-foreground font-medium">Nenhuma categoria encontrada.</p>
@@ -126,7 +148,60 @@ const Categories = () => {
             )}
           </div>
         )}
+
+        {/* Adult Categories Section */}
+        {adultCategories.length > 0 && (
+          <div className="mt-10">
+            <div className="flex items-center gap-2 mb-5">
+              <ShieldAlert className="h-5 w-5 text-red-500" />
+              <h2 className="text-lg font-bold">Conteudo Adulto (18+)</h2>
+              <span className="text-[10px] font-bold bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full">+18</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {adultCategories.map((cat, i) => (
+                <motion.div
+                  key={cat.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: i * 0.05 }}
+                >
+                  <button
+                    onClick={() => handleAdultClick(cat.slug)}
+                    className="group block w-full text-left rounded-2xl border border-red-200/50 dark:border-red-800/30 bg-card overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300"
+                  >
+                    <div className="aspect-[4/3] overflow-hidden relative bg-gradient-to-br from-red-500/10 to-pink-500/10 flex items-center justify-center">
+                      <span className="text-7xl group-hover:scale-110 transition-transform duration-300 drop-shadow-sm">
+                        {cat.icon || "🔞"}
+                      </span>
+                      <div className="absolute top-2 right-2">
+                        <span className="text-[9px] font-bold bg-red-500 text-white px-2 py-0.5 rounded-full">+18</span>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent pt-8 pb-3 px-3">
+                        <h3 className="text-white font-bold text-sm drop-shadow-md">{cat.name}</h3>
+                        <p className="text-white/80 text-[11px]">{cat.productCount} produtos</p>
+                      </div>
+                    </div>
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Age Gate Modal */}
+      {showAgeGate && (
+        <AgeGate
+          onConfirm={() => {
+            setShowAgeGate(false);
+            if (pendingAdultSlug) navigate(`/categoria/${pendingAdultSlug}`);
+          }}
+          onCancel={() => {
+            setShowAgeGate(false);
+            setPendingAdultSlug(null);
+          }}
+        />
+      )}
     </main>
   );
 };

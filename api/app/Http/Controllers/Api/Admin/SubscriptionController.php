@@ -53,6 +53,7 @@ class SubscriptionController extends Controller
             'auto_renew' => 'sometimes|boolean',
             'notes' => 'nullable|string',
             'status' => 'sometimes|in:active,pending,trial',
+            'duration_months' => 'nullable|integer|in:1,3,6,12',
         ]);
 
         $store = Store::findOrFail($data['store_id']);
@@ -65,7 +66,8 @@ class SubscriptionController extends Controller
 
         $status = $data['status'] ?? ($plan->is_free ? 'active' : 'pending');
         $startsAt = $status === 'active' ? now() : null;
-        $expiresAt = $status === 'active' ? Subscription::calcExpiry($plan) : null;
+        $duration = $data['duration_months'] ?? null;
+        $expiresAt = $status === 'active' ? Subscription::calcExpiry($plan, null, $duration) : null;
 
         $subscription = Subscription::create([
             'store_id' => $store->id,
@@ -87,6 +89,11 @@ class SubscriptionController extends Controller
             'plan_id' => $plan->id,
             'plan_expires_at' => $expiresAt,
         ]);
+
+        // Propagar para todas as lojas do utilizador
+        if ($status === 'active') {
+            Subscription::syncPlanToUserStores($store, $plan, $subscription);
+        }
 
         return response()->json($subscription->load(['store:id,name,slug', 'plan:id,name,slug,price']), 201);
     }
@@ -115,6 +122,7 @@ class SubscriptionController extends Controller
             'payment_reference' => 'nullable|string',
             'amount_paid' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
+            'duration_months' => 'nullable|integer|in:1,3,6,12',
         ]);
 
         $plan = $subscription->plan;
@@ -128,7 +136,7 @@ class SubscriptionController extends Controller
         $subscription->update([
             'status' => 'active',
             'starts_at' => now(),
-            'expires_at' => Subscription::calcExpiry($plan),
+            'expires_at' => Subscription::calcExpiry($plan, null, $data['duration_months'] ?? null),
             'payment_method' => $data['payment_method'] ?? $subscription->payment_method,
             'payment_reference' => $data['payment_reference'] ?? $subscription->payment_reference,
             'amount_paid' => $data['amount_paid'] ?? $subscription->amount_paid,
@@ -141,6 +149,9 @@ class SubscriptionController extends Controller
             'plan_id' => $plan->id,
             'plan_expires_at' => $subscription->expires_at,
         ]);
+
+        // Propagar para todas as lojas do utilizador
+        Subscription::syncPlanToUserStores($subscription->store, $plan, $subscription);
 
         // Send subscription activated email
         try {
@@ -218,6 +229,7 @@ class SubscriptionController extends Controller
             'payment_reference' => 'nullable|string',
             'amount_paid' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
+            'duration_months' => 'nullable|integer|in:1,3,6,12',
         ]);
 
         $plan = $subscription->plan;
@@ -227,7 +239,7 @@ class SubscriptionController extends Controller
             ? $subscription->expires_at
             : now();
 
-        $newExpiry = Subscription::calcExpiry($plan, $from);
+        $newExpiry = Subscription::calcExpiry($plan, $from, $data['duration_months'] ?? null);
 
         // Create new subscription record (history)
         $newSub = Subscription::create([
@@ -255,6 +267,9 @@ class SubscriptionController extends Controller
             'plan_id' => $plan->id,
             'plan_expires_at' => $newExpiry,
         ]);
+
+        // Propagar para todas as lojas do utilizador
+        Subscription::syncPlanToUserStores($subscription->store, $plan, $newSub);
 
         return response()->json([
             'message' => 'Subscricao renovada com sucesso.',

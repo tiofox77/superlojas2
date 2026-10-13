@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import { useEffect, useState } from "react";
 import { MapPin, Plus, Trash2, Loader2, CheckCircle2, Phone, User, Edit3 } from "lucide-react";
+import PhoneInput from "@/components/PhoneInput";
 import { useToastNotification } from "@/contexts/ToastContext";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
@@ -134,7 +135,7 @@ export default function ClientAddresses() {
             </div>
             <div>
               <label className={labelCls}>Telefone *</label>
-              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputCls} placeholder="+244 9XX XXX XXX" />
+              <PhoneInput value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Provincia *</label>

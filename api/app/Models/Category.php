@@ -13,6 +13,11 @@ class Category extends Model
         'slug',
         'icon',
         'product_count',
+        'is_adult',
+    ];
+
+    protected $casts = [
+        'is_adult' => 'boolean',
     ];
 
     public function subcategories(): HasMany

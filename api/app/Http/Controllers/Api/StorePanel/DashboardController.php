@@ -112,7 +112,7 @@ class DashboardController extends Controller
     private function authorizeStoreAccess($user, Store $store): void
     {
         if ($user->role === 'super_admin') return;
-        if ($user->role === 'store_owner' && $user->store_id === $store->id) return;
+        if ($user->role === 'store_owner' && (int)$store->user_id === (int)$user->id) return;
         abort(403, 'Nao tem permissao para aceder a esta loja.');
     }
 }

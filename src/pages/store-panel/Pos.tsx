@@ -1,13 +1,15 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
   ShoppingCart, Search, Plus, Minus, Trash2, Loader2, CreditCard,
   Banknote, Receipt, Wifi, WifiOff, Package, X, Check, AlertTriangle,
   ChevronDown, ChevronUp, History, BarChart3, RefreshCw, Printer,
-  User, Phone, FileText, Lock, ArrowUpRight
+  User, FileText, Lock, ArrowUpRight
 } from "lucide-react";
+import PhoneInput from "@/components/PhoneInput";
 import { useToastNotification } from "@/contexts/ToastContext";
 import Modal from "@/components/admin/Modal";
 
@@ -301,12 +303,14 @@ export default function StorePos() {
     if (showHistory && hasAccess && isOnline) { loadSales(); loadStats(); }
   }, [showHistory]);
 
+  const [confirmVoid, setConfirmVoid] = useState<number | null>(null);
+
   const voidSale = async (id: number) => {
-    if (!confirm("Anular esta venda? O stock sera reposto.")) return;
     const res = await fetch(`${API}/store-panel/${slug}/pos/sales/${id}/void`, { method: "POST", headers });
     const d = await res.json();
     if (res.ok) { toast.success("Anulada", d.message); loadSales(); loadStats(); loadProducts(); }
     else toast.error("Erro", d.message || "Erro.");
+    setConfirmVoid(null);
   };
 
   const formatPrice = (p: number) => new Intl.NumberFormat("pt-AO", { minimumFractionDigits: 0 }).format(p) + " Kz";
@@ -401,7 +405,7 @@ export default function StorePos() {
                       {formatPrice(parseFloat(sl.total))}
                     </span>
                     {sl.status === "completed" && (
-                      <button onClick={() => voidSale(sl.id)} className="text-red-400 hover:text-red-600 p-1" title="Anular">
+                      <button onClick={() => setConfirmVoid(sl.id)} className="text-red-400 hover:text-red-600 p-1" title="Anular">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     )}
@@ -423,7 +427,7 @@ export default function StorePos() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2 content-start">
+          <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 content-start">
             {filtered.map((p) => {
               const price = getPrice(p);
               const inCart = cart.find((c) => c.product_id === p.id);
@@ -438,16 +442,16 @@ export default function StorePos() {
                   )}
                   <div className={`aspect-square ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"} flex items-center justify-center overflow-hidden`}>
                     {imgSrc ? (
-                      <img src={imgSrc} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
-                    ) : (
-                      <Package className={`h-8 w-8 ${s.empty}`} />
-                    )}
+                      <img src={imgSrc} alt={p.name} className="w-full h-full object-contain p-1" loading="lazy"
+                        onError={(e) => { const t = e.currentTarget; t.style.display = "none"; t.parentElement?.querySelector(".pos-img-fallback")?.classList.remove("hidden"); }} />
+                    ) : null}
+                    <Package className={`h-8 w-8 ${s.empty} ${imgSrc ? "hidden" : ""} pos-img-fallback`} />
                   </div>
-                  <div className="p-2">
-                    <p className={`text-[10px] font-semibold ${s.textPrimary} truncate`}>{p.name}</p>
-                    <div className="flex items-center justify-between mt-0.5">
+                  <div className="px-2 py-1.5">
+                    <p className={`text-[11px] font-semibold ${s.textPrimary} line-clamp-2 leading-tight`}>{p.name}</p>
+                    <div className="flex items-center justify-between mt-1">
                       <span className="text-xs font-bold text-orange-500">{formatPrice(price)}</span>
-                      <span className={`text-[9px] ${p.stock <= 3 ? "text-red-500" : s.textMuted}`}>{p.stock} un</span>
+                      <span className={`text-[10px] font-medium ${p.stock <= 3 ? "text-red-500" : s.textMuted}`}>{p.stock} un</span>
                     </div>
                   </div>
                 </button>
@@ -515,8 +519,8 @@ export default function StorePos() {
               <div className="mt-2 space-y-1.5">
                 <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Nome"
                   className={`w-full ${s.input} border rounded-lg px-2.5 py-1.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-orange-500/20`} />
-                <input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="Telefone"
-                  className={`w-full ${s.input} border rounded-lg px-2.5 py-1.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-orange-500/20`} />
+                <PhoneInput value={customerPhone} onChange={setCustomerPhone} compact
+                  className={`w-full ${s.input} border rounded-lg text-[11px] focus:outline-none focus:ring-1 focus:ring-orange-500/20`} />
                 <input value={saleNotes} onChange={(e) => setSaleNotes(e.target.value)} placeholder="Notas"
                   className={`w-full ${s.input} border rounded-lg px-2.5 py-1.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-orange-500/20`} />
               </div>
@@ -626,6 +630,16 @@ export default function StorePos() {
           </div>
         )}
       </Modal>
+
+      <ConfirmModal
+        open={confirmVoid !== null}
+        title="Anular venda"
+        message="Tem a certeza que deseja anular esta venda? O stock sera reposto."
+        variant="warning"
+        confirmLabel="Anular"
+        onConfirm={() => confirmVoid !== null && voidSale(confirmVoid)}
+        onCancel={() => setConfirmVoid(null)}
+      />
     </div>
   );
 }

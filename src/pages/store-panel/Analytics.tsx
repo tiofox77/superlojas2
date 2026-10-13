@@ -243,9 +243,9 @@ export default function StoreAnalytics() {
           {dailyChart.length === 0 ? (
             <div className={`flex items-center justify-center h-40 ${s.textMuted} text-xs`}>Sem dados neste periodo</div>
           ) : (
-            <div className="flex items-end gap-[3px] h-40">
+            <div className="flex gap-[3px] h-40">
               {dailyChart.map((d, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-[2px] group relative" title={`${d.date}: ${d.views} views, ${d.visitors} unicos`}>
+                <div key={i} className="flex-1 h-full flex flex-col items-center justify-end gap-[2px] group relative" title={`${d.date}: ${d.views} views, ${d.visitors} unicos`}>
                   <div className="w-full rounded-t bg-blue-500/80" style={{ height: `${(d.views / maxDaily) * 100}%`, minHeight: d.views > 0 ? 4 : 0 }} />
                   <div className="w-full rounded-t bg-violet-500/60" style={{ height: `${(d.visitors / maxDaily) * 100}%`, minHeight: d.visitors > 0 ? 2 : 0 }} />
                   {i % Math.max(1, Math.floor(dailyChart.length / 7)) === 0 && (
@@ -265,12 +265,12 @@ export default function StoreAnalytics() {
           {hourlyChart.length === 0 ? (
             <div className={`flex items-center justify-center h-40 ${s.textMuted} text-xs`}>Sem dados hoje</div>
           ) : (
-            <div className="flex items-end gap-[2px] h-40">
+            <div className="flex gap-[2px] h-40">
               {Array.from({ length: 24 }, (_, h) => {
                 const point = hourlyChart.find(p => p.hour === h);
                 const v = point?.views || 0;
                 return (
-                  <div key={h} className="flex-1 flex flex-col items-center group" title={`${h}h: ${v} views`}>
+                  <div key={h} className="flex-1 h-full flex flex-col items-center justify-end group" title={`${h}h: ${v} views`}>
                     <div className="w-full rounded-t bg-amber-500/70" style={{ height: `${(v / maxHourly) * 100}%`, minHeight: v > 0 ? 3 : 0 }} />
                     {h % 6 === 0 && <span className={`text-[8px] ${s.textMuted} mt-1`}>{h}h</span>}
                   </div>

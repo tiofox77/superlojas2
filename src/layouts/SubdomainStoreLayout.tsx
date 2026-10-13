@@ -14,22 +14,37 @@ import Auth from "@/pages/Auth";
 import {
   Store, ShoppingCart, Heart, User, ExternalLink, MapPin, Phone,
   Mail, MessageCircle, Star, Loader2, AlertTriangle, ArrowUpRight,
-  BadgeCheck, Menu, X
+  BadgeCheck, Menu, X, ShieldCheck, LayoutDashboard, Package, LogOut, ChevronDown
 } from "lucide-react";
 import { logoSrc, bannerSrc, onImgError } from "@/lib/imageHelpers";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import StoreSeoHead from "@/components/StoreSeoHead";
 
 function SubdomainHeader() {
   const { store } = useSubdomainStore();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { items } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userMenu, setUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const mainSite = getMainSiteUrl();
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
 
   if (!store) return null;
 
   const cartCount = items.reduce((s, i) => s + i.quantity, 0);
+  const userStores = (user?.stores && user.stores.length > 0)
+    ? user.stores
+    : user?.store ? [user.store] : [];
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur border-b border-border">
@@ -74,9 +89,148 @@ function SubdomainHeader() {
             )}
           </Link>
           {user ? (
-            <Link to="/entrar" className="p-2 rounded-lg hover:bg-secondary transition-colors">
-              <User className="h-4.5 w-4.5" />
-            </Link>
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setUserMenu((v) => !v)}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-secondary transition-colors"
+                aria-label="Menu do utilizador"
+              >
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-[11px] font-bold text-primary">{user.name.charAt(0).toUpperCase()}</span>
+                </div>
+                <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${userMenu ? "rotate-180" : ""}`} />
+              </button>
+
+              {userMenu && (
+                <div className="absolute right-0 top-full mt-2 w-64 bg-card border border-border rounded-2xl shadow-xl z-50 py-2 animate-fade-up">
+                  {/* User info */}
+                  <div className="px-4 py-3 border-b border-border">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="text-sm font-bold text-primary">{user.name.charAt(0).toUpperCase()}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold truncate">{user.name}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                        {user.role === "super_admin" && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full mt-1">
+                            <ShieldCheck className="h-3 w-3" /> Super Admin
+                          </span>
+                        )}
+                        {user.role === "store_owner" && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-orange-600 bg-orange-500/10 px-1.5 py-0.5 rounded-full mt-1">
+                            <Store className="h-3 w-3" /> Dono de Loja
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground italic mt-2">
+                      Painéis abrem no SuperLojas <ExternalLink className="inline h-2.5 w-2.5" />
+                    </p>
+                  </div>
+
+                  {/* Admin */}
+                  {user.role === "super_admin" && (
+                    <div className="py-1 border-b border-border">
+                      <a
+                        href={`${mainSite}/admin`}
+                        className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors"
+                      >
+                        <LayoutDashboard className="h-4 w-4 text-primary" />
+                        <span>Painel Admin</span>
+                        <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Store owner — multi-store */}
+                  {user.role === "store_owner" && userStores.length > 0 && (
+                    <div className="py-1 border-b border-border">
+                      <p className="px-4 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        {userStores.length > 1 ? "Minhas Lojas" : "Minha Loja"}
+                      </p>
+                      {userStores.map((s) => (
+                        <a
+                          key={s.slug}
+                          href={`${mainSite}/loja/${s.slug}/painel`}
+                          className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors"
+                        >
+                          <LayoutDashboard className="h-4 w-4 text-orange-500" />
+                          <span className="truncate flex-1">{s.name}</span>
+                          {s.status && s.status !== "approved" && (
+                            <span className="text-[9px] font-bold bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full">
+                              {s.status === "pending" ? "Pendente" : s.status}
+                            </span>
+                          )}
+                          <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                        </a>
+                      ))}
+                      <a
+                        href={`${mainSite}/cadastro-loja`}
+                        className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors text-muted-foreground"
+                      >
+                        <Store className="h-4 w-4 text-emerald-500" />
+                        <span>Abrir Nova Loja</span>
+                        <ExternalLink className="h-3 w-3 ml-auto" />
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Customer */}
+                  {user.role === "customer" && (
+                    <div className="py-1 border-b border-border">
+                      <a
+                        href={`${mainSite}/cadastro-loja`}
+                        className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors"
+                      >
+                        <Store className="h-4 w-4 text-emerald-500" />
+                        <span>Abrir Minha Loja</span>
+                        <span className="ml-auto text-[9px] font-bold bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded-full">Grátis</span>
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Common — client area */}
+                  <div className="py-1 border-b border-border">
+                    <a
+                      href={`${mainSite}/minha-conta`}
+                      className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors"
+                    >
+                      <LayoutDashboard className="h-4 w-4 text-orange-500" />
+                      <span>Minha Conta</span>
+                      <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+                    </a>
+                    <a
+                      href={`${mainSite}/minha-conta/pedidos`}
+                      className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors"
+                    >
+                      <Package className="h-4 w-4 text-amber-500" />
+                      <span>Meus Pedidos</span>
+                      <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+                    </a>
+                    <a
+                      href={`${mainSite}/favoritos`}
+                      className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors"
+                    >
+                      <Heart className="h-4 w-4 text-pink-500" />
+                      <span>Favoritos</span>
+                      <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+                    </a>
+                  </div>
+
+                  {/* Logout */}
+                  <div className="py-1">
+                    <button
+                      onClick={async () => { await logout(); setUserMenu(false); }}
+                      className="flex items-center gap-3 px-4 py-2 text-sm w-full hover:bg-destructive/5 text-destructive transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Terminar Sessão</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <Link to="/entrar" className="text-xs font-medium px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
               Entrar

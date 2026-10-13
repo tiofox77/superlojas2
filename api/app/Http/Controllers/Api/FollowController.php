@@ -18,7 +18,7 @@ class FollowController extends Controller
         $user = $request->user();
 
         // Prevent following own store
-        if ($user->store_id === $store->id) {
+        if ((int)$store->user_id === (int)$user->id) {
             return response()->json(['message' => 'Nao pode seguir a sua propria loja.'], 422);
         }
 

@@ -4,9 +4,9 @@ import { FeaturedCategories } from "@/components/FeaturedCategories";
 import { StoreCard } from "@/components/StoreCard";
 import { ProductCard } from "@/components/ProductCard";
 import { FlashDeals } from "@/components/FlashDeals";
-import { useFeaturedStores, useTrendingProducts } from "@/hooks/useApi";
+import { useFeaturedStores, useTrendingProducts, useLatestProducts, useFeaturedProducts } from "@/hooks/useApi";
 import { motion } from "framer-motion";
-import { ArrowRight, TrendingUp, Store } from "lucide-react";
+import { ArrowRight, TrendingUp, Store, Award, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const fadeUp = {
@@ -19,6 +19,8 @@ const fadeUp = {
 const Index = () => {
   const { data: featuredStores = [] } = useFeaturedStores();
   const { data: trendingProducts = [] } = useTrendingProducts();
+  const { data: latestProducts = [] } = useLatestProducts();
+  const { data: featuredProducts = [] } = useFeaturedProducts();
 
   return (
     <main className="min-h-screen bg-secondary/30">
@@ -42,6 +44,28 @@ const Index = () => {
         <FlashDeals />
       </motion.section>
 
+      {/* Featured Products */}
+      {featuredProducts.length > 0 && (
+        <motion.section className="container mt-10" {...fadeUp} transition={{ duration: 0.5, delay: 0.12 }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Award className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">Produtos em Destaque</h2>
+                <p className="text-xs text-muted-foreground">Seleccionados pelas melhores lojas</p>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </motion.section>
+      )}
+
       {/* Featured Stores */}
       <motion.section className="container mt-10" {...fadeUp} transition={{ duration: 0.5, delay: 0.15 }}>
         <div className="flex items-center justify-between mb-4">
@@ -64,6 +88,28 @@ const Index = () => {
           ))}
         </div>
       </motion.section>
+
+      {/* Latest Products */}
+      {latestProducts.length > 0 && (
+        <motion.section className="container mt-10" {...fadeUp} transition={{ duration: 0.5, delay: 0.18 }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-success/10 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-success" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">Ultimos Produtos</h2>
+                <p className="text-xs text-muted-foreground">Acabados de chegar as lojas</p>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {latestProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </motion.section>
+      )}
 
       {/* Trending Products */}
       <motion.section className="container mt-10 pb-10" {...fadeUp} transition={{ duration: 0.5, delay: 0.2 }}>
