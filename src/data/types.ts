@@ -22,6 +22,13 @@ export interface StoreSocials {
   website?: string;
 }
 
+export interface BusinessHour {
+  day: string;
+  open?: string;
+  close?: string;
+  active?: boolean;
+}
+
 export interface Store {
   id: string;
   name: string;
@@ -34,6 +41,10 @@ export interface Store {
   whatsapp: string;
   phone?: string;
   email?: string;
+  businessHours?: BusinessHour[];
+  minOrderValue?: number;
+  createdAt?: string;
+  fbPixelId?: string | null;
   rating: number;
   reviewCount: number;
   status: "pending" | "approved" | "rejected";
@@ -78,6 +89,7 @@ export interface Product {
   subcategoryId?: string;
   isFeatured?: boolean;
   featuredStatus?: string | null;
+  createdAt?: string;
 }
 
 export interface HeroSlide {

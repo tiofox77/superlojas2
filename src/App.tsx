@@ -74,7 +74,6 @@ import ClientSecurity from "./pages/client/Security";
 import ClientFollowing from "./pages/client/Following";
 import ClientFeed from "./pages/client/Feed";
 import PwaInstallPrompt from "./components/PwaInstallPrompt";
-import PwaBottomNav from "./components/PwaBottomNav";
 import { SubdomainStoreProvider } from "./contexts/SubdomainStoreContext";
 import SubdomainStoreLayout from "./layouts/SubdomainStoreLayout";
 import { isSubdomainMode } from "./hooks/useSubdomain";
@@ -117,7 +116,6 @@ const StoreFrontLayout = () => (
       <Route path="*" element={<NotFound />} />
     </Routes></div>
     <Footer />
-    <PwaBottomNav />
   </>
 );
 

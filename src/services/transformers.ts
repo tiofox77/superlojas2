@@ -49,6 +49,12 @@ interface ApiStore {
   has_subdomain?: boolean;
   product_count?: number;
   follower_count?: number;
+  phone?: string | null;
+  email?: string | null;
+  business_hours?: { day: string; open?: string; close?: string; active?: boolean }[] | null;
+  min_order_value?: string | number | null;
+  created_at?: string;
+  fb_pixel_id?: string | null;
   products?: ApiProduct[];
   hero_slides?: ApiHeroSlide[];
 }
@@ -78,6 +84,7 @@ interface ApiProduct {
   category_relation?: { id: number; name: string; slug: string } | null;
   is_featured?: boolean;
   featured_status?: string | null;
+  created_at?: string;
 }
 
 interface ApiHeroSlide {
@@ -134,6 +141,12 @@ export function transformStore(api: ApiStore): Store {
     hasSubdomain: api.has_subdomain ?? false,
     productCount: api.product_count ?? 0,
     followerCount: api.follower_count ?? 0,
+    phone: api.phone || undefined,
+    email: api.email || undefined,
+    businessHours: api.business_hours || undefined,
+    minOrderValue: api.min_order_value != null ? Number(api.min_order_value) : undefined,
+    createdAt: api.created_at,
+    fbPixelId: api.fb_pixel_id ?? null,
   };
 }
 
@@ -161,6 +174,7 @@ export function transformProduct(api: ApiProduct): Product {
     subcategoryId: api.subcategory_id ? String(api.subcategory_id) : undefined,
     isFeatured: api.is_featured ?? false,
     featuredStatus: api.featured_status ?? null,
+    createdAt: api.created_at,
   };
 }
 

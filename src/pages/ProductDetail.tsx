@@ -23,7 +23,7 @@ const ProductDetail = () => {
 
   // The store's pixel — from the subdomain context, or the product's own store
   // when browsing the main marketplace.
-  const storePixelId = subdomainStore?.fb_pixel_id || (product as { store?: { fb_pixel_id?: string | null } })?.store?.fb_pixel_id;
+  const storePixelId = subdomainStore?.fb_pixel_id || product?.store?.fbPixelId;
 
   // Fire ViewContent when the product loads. Bootstrap the pixel here on the
   // main marketplace (on the subdomain the context already inits it).
