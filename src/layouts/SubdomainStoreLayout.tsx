@@ -24,6 +24,7 @@ function SubdomainHeader() {
   const { store } = useSubdomainStore();
   const { user } = useAuth();
   const { items } = useCart();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const mainSite = getMainSiteUrl();
 
@@ -42,12 +43,12 @@ function SubdomainHeader() {
             className="h-8 w-8 rounded-lg object-cover"
             onError={onImgError("logo", store.name)}
           />
-          <div className="hidden sm:block">
+          <div className="block min-w-0">
             <h1 className="text-sm font-bold leading-tight flex items-center gap-1">
               {store.name}
               {store.is_official && <BadgeCheck className="h-3.5 w-3.5 text-blue-500" />}
             </h1>
-            <p className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+            <p className="hidden sm:flex text-[10px] text-muted-foreground items-center gap-0.5">
               <MapPin className="h-2.5 w-2.5" /> {store.province}, {store.city}
             </p>
           </div>
@@ -55,11 +56,11 @@ function SubdomainHeader() {
 
         {/* Nav links (desktop) */}
         <nav className="hidden md:flex items-center gap-6 text-xs font-medium">
-          <Link to="/" className="hover:text-primary transition-colors">Inicio</Link>
-          <Link to="/produtos" className="hover:text-primary transition-colors">Produtos</Link>
-          <Link to="/contacto" className="hover:text-primary transition-colors">Contacto</Link>
+          <Link to="/" aria-current={location.pathname === "/" ? "page" : undefined} className={location.pathname === "/" ? "text-primary font-semibold" : "hover:text-primary transition-colors"}>Início</Link>
+          <Link to="/produtos" aria-current={location.pathname === "/produtos" ? "page" : undefined} className={location.pathname === "/produtos" ? "text-primary font-semibold" : "hover:text-primary transition-colors"}>Produtos</Link>
+          <Link to="/contacto" aria-current={location.pathname === "/contacto" ? "page" : undefined} className={location.pathname === "/contacto" ? "text-primary font-semibold" : "hover:text-primary transition-colors"}>Contacto</Link>
           <a href={mainSite} className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
-            SuperLojas <ExternalLink className="h-3 w-3" />
+            SuperLoja <ExternalLink className="h-3 w-3" />
           </a>
         </nav>
 
@@ -74,15 +75,15 @@ function SubdomainHeader() {
             )}
           </Link>
           {user ? (
-            <Link to="/entrar" className="p-2 rounded-lg hover:bg-secondary transition-colors">
+            <a href={`${mainSite}/minha-conta`} aria-label="Minha conta" className="p-2 rounded-lg hover:bg-secondary transition-colors">
               <User className="h-4.5 w-4.5" />
-            </Link>
+            </a>
           ) : (
             <Link to="/entrar" className="text-xs font-medium px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
               Entrar
             </Link>
           )}
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 rounded-lg hover:bg-secondary">
+          <button onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"} aria-expanded={mobileOpen} className="md:hidden p-2 rounded-lg hover:bg-secondary">
             {mobileOpen ? <X className="h-4.5 w-4.5" /> : <Menu className="h-4.5 w-4.5" />}
           </button>
         </div>
@@ -91,11 +92,11 @@ function SubdomainHeader() {
       {/* Mobile nav */}
       {mobileOpen && (
         <div className="md:hidden border-t border-border bg-card px-4 py-3 space-y-2">
-          <Link to="/" onClick={() => setMobileOpen(false)} className="block text-sm py-1.5 hover:text-primary">Inicio</Link>
+          <Link to="/" onClick={() => setMobileOpen(false)} className="block text-sm py-1.5 hover:text-primary">Início</Link>
           <Link to="/produtos" onClick={() => setMobileOpen(false)} className="block text-sm py-1.5 hover:text-primary">Produtos</Link>
           <Link to="/contacto" onClick={() => setMobileOpen(false)} className="block text-sm py-1.5 hover:text-primary">Contacto</Link>
           <a href={mainSite} className="block text-sm py-1.5 text-muted-foreground hover:text-primary">
-            SuperLojas <ExternalLink className="inline h-3 w-3" />
+            SuperLoja <ExternalLink className="inline h-3 w-3" />
           </a>
         </div>
       )}
@@ -137,7 +138,7 @@ function SubdomainFooter() {
             <h4 className="font-semibold text-xs mb-3">Links</h4>
             <div className="space-y-1.5 text-xs">
               <a href={mainSite} className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors">
-                Visitar SuperLojas <ArrowUpRight className="h-3 w-3" />
+                Visitar SuperLoja <ArrowUpRight className="h-3 w-3" />
               </a>
               <Link to="/carrinho" className="block text-muted-foreground hover:text-primary transition-colors">Carrinho</Link>
             </div>
@@ -146,7 +147,7 @@ function SubdomainFooter() {
 
         <div className="mt-6 pt-4 border-t border-border flex items-center justify-between text-[10px] text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} {store.name}. Todos os direitos reservados.</p>
-          <p>Powered by <a href={mainSite} className="text-primary hover:underline">SuperLojas</a></p>
+          <p>Powered by <a href={mainSite} className="text-primary hover:underline">SuperLoja</a></p>
         </div>
       </div>
     </footer>
@@ -181,7 +182,7 @@ function ErrorScreen({ message, needsUpgrade }: { message: string; needsUpgrade:
           </p>
         )}
         <a href={mainSite} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-          <Store className="h-4 w-4" /> Ir para SuperLojas
+          <Store className="h-4 w-4" /> Ir para SuperLoja
         </a>
       </div>
     </div>
@@ -201,6 +202,10 @@ export default function SubdomainStoreLayout() {
         storeSlug={store.slug}
         storeDescription={store.description}
         storeLogo={store.logo ?? undefined}
+        storeBanner={store.banner ?? undefined}
+        province={store.province}
+        city={store.city}
+        phone={store.phone ?? store.whatsapp ?? undefined}
         metaTitle={store.meta_title ?? undefined}
         metaDescription={store.meta_description ?? undefined}
         metaKeywords={store.meta_keywords ?? undefined}

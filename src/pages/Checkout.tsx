@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useCart } from "@/contexts/CartContext";
+import { useCart, cartItemKey } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, CreditCard, MapPin, Phone, User, Mail, CheckCircle2, Truck, ShieldCheck, Loader2, AlertTriangle, BookmarkCheck, PenLine, Upload, Building2, Copy, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { logoSrc, productImgSrc, onImgError } from "@/lib/imageHelpers";
+import { isValidEmail, isAngolanPhone } from "@/lib/validators";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
@@ -46,7 +47,7 @@ const Checkout = () => {
   const [freshPaymentMethods, setFreshPaymentMethods] = useState<Record<string, { type: string; label: string; details: string; account: string; is_active: boolean }[]>>({});
 
   useEffect(() => {
-    fetch(`${API}/provinces`).then(r => r.json()).then(d => setProvinces(d)).catch(() => {});
+    fetch(`${API}/provinces`).then(r => r.json()).then(d => setProvinces(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
 
   // Update form with user data when auth loads
@@ -114,7 +115,8 @@ const Checkout = () => {
     return acc;
   }, {} as Record<string, { store: typeof items[0]["product"]["store"]; items: typeof items }>);
 
-  const deliveryFee = Object.keys(byStore).length * 2500;
+  // "Recolha na loja" (cash_pickup) has no delivery fee
+  const deliveryFee = Object.keys(byStore).reduce((sum, sid) => sum + (storePayments[sid] === "cash_pickup" ? 0 : 2500), 0);
 
   // Fetch fresh payment methods from API for all stores in cart
   useEffect(() => {
@@ -152,7 +154,14 @@ const Checkout = () => {
 
   // Validation
   const allStoresHavePayment = Object.keys(byStore).every(sid => !!storePayments[sid]);
-  const canContinue = !!form.name && !!form.email && !!form.phone && !!form.address && !!form.province && !!form.city && allStoresHavePayment;
+  const canContinue =
+    !!form.name.trim() &&
+    isValidEmail(form.email) &&
+    isAngolanPhone(form.phone) &&
+    !!form.address.trim() &&
+    !!form.province &&
+    !!form.city &&
+    allStoresHavePayment;
 
   if (items.length === 0 && step !== "done") {
     return (
@@ -324,7 +333,7 @@ const Checkout = () => {
                           <div className="flex items-center gap-2">
                             <img src={logoSrc(store.logo, store.name)} alt="" className="h-6 w-6 rounded-lg" onError={onImgError("logo", store.name)} />
                             <span className="text-sm font-semibold">{store.name}</span>
-                            <span className="ml-auto text-xs font-medium text-muted-foreground">{formatPrice(storeSubtotal + 2500)} Kz</span>
+                            <span className="ml-auto text-xs font-medium text-muted-foreground">{formatPrice(storeSubtotal + (storePayments[sid] === "cash_pickup" ? 0 : 2500))} Kz</span>
                           </div>
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {methods.map((m) => (
@@ -422,6 +431,12 @@ const Checkout = () => {
                   </div>
                 </div>
 
+                {!canContinue && (
+                  <p className="text-sm text-muted-foreground" role="status">
+                    Preencha todos os campos, um email válido e um telefone angolano com 9 dígitos (ou +244), e seleccione o pagamento.
+                  </p>
+                )}
+
                 <Button onClick={() => setStep("confirm")}
                   disabled={!canContinue}
                   className="w-full bg-hero-gradient text-primary-foreground hover:opacity-90 rounded-xl">
@@ -447,8 +462,7 @@ const Checkout = () => {
 
                 {/* Products by store + payment chosen */}
                 {Object.entries(byStore).map(([sid, { store, items: storeItems }]) => {
-                  const methods = getStoreMethods(store);
-                  const chosen = methods.find(m => m.type === storePayments[sid]);
+                  const chosen = getStoreMethods(store).find(m => m.type === storePayments[sid]);
                   return (
                     <div key={store.id} className="rounded-2xl border border-border bg-card p-4">
                       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
@@ -459,7 +473,7 @@ const Checkout = () => {
                         </div>
                       </div>
                       {storeItems.map((item) => (
-                        <div key={item.product.id} className="flex items-center gap-3 py-2">
+                        <div key={cartItemKey(item.product.id, item.selectedVariants)} className="flex items-center gap-3 py-2">
                           <img src={productImgSrc(item.product.images[0])} alt={item.product.name} className="h-12 w-12 rounded-lg object-cover" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{item.product.name}</p>
@@ -475,13 +489,18 @@ const Checkout = () => {
                 {stockErrors.length > 0 && (
                   <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-1">
                     <div className="flex items-center gap-2 text-destructive font-semibold text-sm mb-1">
-                      <AlertTriangle className="h-4 w-4" /> Stock insuficiente
+                      <AlertTriangle className="h-4 w-4" /> Não foi possível concluir
                     </div>
                     {stockErrors.map((e, i) => <p key={i} className="text-xs text-destructive/80">{e}</p>)}
                   </div>
                 )}
 
                 <Button onClick={async () => {
+                  // Re-validate: the confirm step must never submit invalid data
+                  if (!canContinue || processing) {
+                    setStep("info");
+                    return;
+                  }
                   setProcessing(true); setStockErrors([]);
                   try {
                     const fd = new FormData();
@@ -494,7 +513,13 @@ const Checkout = () => {
                     fd.append("customer[phone]", form.phone);
                     fd.append("customer[address]", form.address);
                     fd.append("customer[province]", form.province);
-                    if (form.notes) fd.append("customer[notes]", form.notes);
+                    fd.append("customer[city]", form.city);
+                    // Chosen variants go into the order notes so the store sees them
+                    const variantNotes = items
+                      .filter(item => Object.keys(item.selectedVariants).length)
+                      .map(item => `${item.product.name} (${item.quantity}): ${Object.entries(item.selectedVariants).map(([k, v]) => `${k}: ${v}`).join(", ")}`)
+                      .join("; ");
+                    fd.append("customer[notes]", [form.notes, variantNotes].filter(Boolean).join("\n"));
                     Object.entries(storePayments).forEach(([sid, method]) => {
                       fd.append(`payment_methods[${sid}]`, method);
                     });
@@ -512,10 +537,17 @@ const Checkout = () => {
                     });
                     const d = await res.json();
                     if (res.ok) { setOrderNumbers(d.order_numbers || []); clearCart(); setStep("done"); }
-                    else { setStockErrors(d.stock_errors || [d.error || "Erro ao processar pedido."]); }
+                    else {
+                      setStockErrors(
+                        d.stock_errors ||
+                          (d.errors
+                            ? (Object.values(d.errors) as string[][]).flat().map(String)
+                            : [d.error || d.message || "Erro ao processar pedido."])
+                      );
+                    }
                   } catch { setStockErrors(["Erro de conexao. Tente novamente."]); }
                   finally { setProcessing(false); }
-                }} disabled={processing}
+                }} disabled={processing || !canContinue}
                   className="w-full bg-hero-gradient text-primary-foreground hover:opacity-90 rounded-xl gap-2 disabled:opacity-60">
                   {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                   {processing ? "A processar..." : `Confirmar Pedido — ${formatPrice(totalPrice + deliveryFee)} Kz`}
@@ -537,7 +569,7 @@ const Checkout = () => {
               </div>
               <div className="mt-4 space-y-2">
                 {[
-                  { icon: <Truck className="h-4 w-4 text-primary" />, text: "Entrega 2-5 dias" },
+                  { icon: <Truck className="h-4 w-4 text-primary" />, text: deliveryFee === 0 ? "Recolha na loja — combinar horário" : "Entrega 2-5 dias" },
                   { icon: <ShieldCheck className="h-4 w-4 text-success" />, text: "Compra protegida" },
                 ].map((b) => (
                   <div key={b.text} className="flex items-center gap-2 text-xs text-muted-foreground">

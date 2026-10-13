@@ -88,7 +88,7 @@ function AdminLayoutInner() {
             {sidebarOpen && (
               <div className="flex flex-col leading-none">
                 <span className={`text-[10px] font-medium ${textMuted} uppercase tracking-widest`}>Admin</span>
-                <span className={`text-sm font-bold ${textPrimary}`}>SuperLojas</span>
+                <span className={`text-sm font-bold ${textPrimary}`}>SuperLoja</span>
               </div>
             )}
           </Link>
@@ -142,7 +142,7 @@ function AdminLayoutInner() {
                 <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center">
                   <ShieldCheck className="h-5 w-5 text-white" />
                 </div>
-                <span className={`text-sm font-bold ${textPrimary}`}>SuperLojas</span>
+                <span className={`text-sm font-bold ${textPrimary}`}>SuperLoja</span>
               </Link>
               <button onClick={() => setMobileSidebar(false)} className={textMuted}><X className="h-5 w-5" /></button>
             </div>
@@ -161,7 +161,7 @@ function AdminLayoutInner() {
             <button onClick={() => setMobileSidebar(true)} className={`lg:hidden ${textSecondary}`}><Menu className="h-5 w-5" /></button>
             <div>
               <h1 className={`text-sm font-bold ${textPrimary}`}>{currentPage?.label || "Admin"}</h1>
-              <p className={`text-[11px] ${textMuted}`}>SuperLojas — Painel de Administracao</p>
+              <p className={`text-[11px] ${textMuted}`}>SuperLoja — Painel de Administracao</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">

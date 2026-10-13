@@ -30,6 +30,7 @@ import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
 import MyStore from "./pages/MyStore";
 import NotFound from "./pages/NotFound";
+import SearchResults from "./pages/SearchResults";
 import DynamicHead from "./components/DynamicHead";
 import { PageTracker } from "./components/PageTracker";
 import AdminLayout from "./layouts/AdminLayout";
@@ -82,7 +83,7 @@ const StoreFrontLayout = () => (
   <>
     <Header />
     <CartDrawer />
-    <Routes>
+    <div className="pb-16 lg:pb-0"><Routes>
       <Route path="/" element={<Index />} />
       <Route path="/lojas" element={<Stores />} />
       <Route path="/lojas/:slug" element={<StoreDetail />} />
@@ -92,6 +93,7 @@ const StoreFrontLayout = () => (
       <Route path="/entrar" element={<Auth />} />
       <Route path="/ofertas" element={<FlashSale />} />
       <Route path="/categorias" element={<Categories />} />
+      <Route path="/pesquisa" element={<SearchResults />} />
       <Route path="/categoria/:slug" element={<CategoryDetail />} />
       <Route path="/favoritos" element={<Wishlist />} />
       <Route path="/cadastro-loja" element={<RegisterStore />} />
@@ -102,7 +104,7 @@ const StoreFrontLayout = () => (
       <Route path="/contacto" element={<Contact />} />
       <Route path="/minha-loja" element={<MyStore />} />
       <Route path="*" element={<NotFound />} />
-    </Routes>
+    </Routes></div>
     <Footer />
   </>
 );

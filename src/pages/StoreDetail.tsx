@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useStoreSlug } from "@/hooks/useStoreSlug";
 import { useStore, useStoreHeroSlides } from "@/hooks/useApi";
 import { ProductCard } from "@/components/ProductCard";
@@ -6,7 +6,7 @@ import { ReviewSection } from "@/components/ReviewSection";
 import { getCategoryTheme, defaultTheme } from "@/lib/categoryThemes";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
-  Star, MapPin, MessageCircle, Clock, Heart, Phone, Mail,
+  Star, MapPin, MessageCircle, Clock, Phone, Mail,
   ChevronLeft, ChevronRight, Zap, Grid3X3, List,
   CheckCircle2, Truck, ShieldCheck, RotateCcw, Search,
   Instagram, Facebook, Globe, ExternalLink,
@@ -26,6 +26,10 @@ function TikTokIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+/** Accepts a full URL or a handle ("@loja" / "loja"). */
+const socialUrl = (value: string, base: string, prefix = "") =>
+  /^https?:\/\//i.test(value) ? value : `${base}${prefix}${value.replace(/^@/, "")}`;
 
 /* ─── Store Hero Slider ─── */
 function StoreHeroSlider({ storeSlug }: { storeSlug: string }) {
@@ -110,6 +114,7 @@ function calc(target: Date) {
 
 /* ─── Main Page ─── */
 const StoreDetail = () => {
+  const location = useLocation();
   const slug = useStoreSlug();
   const { data: storeData, isLoading } = useStore(slug || "");
   const { data: siteSettings } = useSiteSettings();
@@ -118,6 +123,12 @@ const StoreDetail = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewGrid, setViewGrid] = useState(true);
   const countdown = useCountdown();
+
+  // Store subdomain routes (/, /produtos, /contacto) all render this page — scroll to the matching section.
+  useEffect(() => {
+    const target = location.pathname === "/produtos" ? "produtos" : location.pathname === "/contacto" ? "contacto" : "topo-loja";
+    requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }, [location.pathname, storeData]);
 
   if (isLoading) {
     return (
@@ -162,12 +173,16 @@ const StoreDetail = () => {
   const formatPrice = (val: number) => new Intl.NumberFormat("pt-AO").format(val);
 
   return (
-    <main className="min-h-screen bg-secondary/30">
+    <main id="topo-loja" className="min-h-screen bg-secondary/30 scroll-mt-20">
       <StoreSeoHead
         storeName={store.name}
         storeSlug={store.slug}
         storeDescription={store.description}
         storeLogo={store.logo}
+        storeBanner={store.banner}
+        province={store.province}
+        city={store.city}
+        phone={store.whatsapp}
         metaTitle={store.metaTitle}
         metaDescription={store.metaDescription}
         metaKeywords={store.metaKeywords}
@@ -175,7 +190,7 @@ const StoreDetail = () => {
       {/* ─── Banner + Store Info ─── */}
       <div className="relative">
         <div className="h-48 sm:h-60 overflow-hidden">
-          <img src={bannerSrc(store.banner)} alt={`Banner ${store.name}`} className="w-full h-full object-cover" onError={onImgError("banner")} />
+          <img src={bannerSrc(store.banner)} alt={`Banner da loja ${store.name}`} className="w-full h-full object-cover" onError={onImgError("banner")} />
           <div className="absolute inset-0" style={{ background: theme.bannerGradient }} />
         </div>
         <div className="container relative -mt-24 z-10 pb-6">
@@ -186,7 +201,7 @@ const StoreDetail = () => {
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="text-2xl font-extrabold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{store.name}</h1>
                 {store.isOfficial && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/90 text-white text-[10px] font-bold shadow-lg backdrop-blur-sm" title="Loja Oficial SuperLojas">
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/90 text-white text-[10px] font-bold shadow-lg backdrop-blur-sm" title="Loja Oficial SuperLoja">
                     <CheckCircle2 className="h-3.5 w-3.5" /> Oficial
                   </span>
                 )}
@@ -199,27 +214,28 @@ const StoreDetail = () => {
                 <span className="flex items-center gap-1">{allStoreProducts.length} produtos</span>
               </div>
               <div className="flex flex-wrap gap-2 mt-3">
-                <a href={`https://wa.me/${store.whatsapp.replace(/\+/g, "")}`} target="_blank" rel="noopener noreferrer">
+                <a href={`https://wa.me/${(store.whatsapp || "").replace(/[^\d]/g, "")}`} target="_blank" rel="noopener noreferrer">
                   <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90 gap-1 rounded-xl text-xs h-8">
                     <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                   </Button>
                 </a>
-                <Button variant="outline" size="sm" className="gap-1 rounded-xl text-xs h-8 bg-card/80 backdrop-blur border-border">
-                  <Heart className="h-3.5 w-3.5" /> Seguir Loja
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1 rounded-xl text-xs h-8 bg-card/80 backdrop-blur border-border">
-                  <Phone className="h-3.5 w-3.5" /> Ligar
-                </Button>
+                {(store.phone || store.whatsapp) && (
+                  <a href={`tel:${(store.phone || store.whatsapp).replace(/\s/g, "")}`}>
+                    <Button variant="outline" size="sm" className="gap-1 rounded-xl text-xs h-8 bg-card/80 backdrop-blur border-border">
+                      <Phone className="h-3.5 w-3.5" /> Ligar
+                    </Button>
+                  </a>
+                )}
                 {/* Social Media */}
                 {store.socials?.instagram && (
-                  <a href={`https://instagram.com/${store.socials.instagram}`} target="_blank" rel="noopener noreferrer">
+                  <a href={socialUrl(store.socials.instagram, "https://instagram.com/")} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl bg-card/80 backdrop-blur border-border">
                       <Instagram className="h-3.5 w-3.5" />
                     </Button>
                   </a>
                 )}
                 {store.socials?.facebook && (
-                  <a href={`https://facebook.com/${store.socials.facebook}`} target="_blank" rel="noopener noreferrer">
+                  <a href={socialUrl(store.socials.facebook, "https://facebook.com/")} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl bg-card/80 backdrop-blur border-border">
                       <Facebook className="h-3.5 w-3.5" />
                     </Button>
@@ -325,7 +341,7 @@ const StoreDetail = () => {
         )}
 
         {/* ─── All Products ─── */}
-        <section>
+        <section id="produtos" className="scroll-mt-20">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
             <div>
               <h2 className="text-lg font-bold">{activeCategory || "Todos os Produtos"}</h2>
@@ -442,7 +458,7 @@ const StoreDetail = () => {
         )}
 
         {/* ─── Contact / About / Social ─── */}
-        <section className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <section id="contacto" className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4 scroll-mt-20">
           <div className="rounded-2xl border border-border bg-card p-6">
             <h3 className="font-bold mb-3">Sobre a Loja</h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">{store.description}</p>
@@ -450,7 +466,7 @@ const StoreDetail = () => {
               <p className="flex items-center gap-2"><MapPin className={`h-4 w-4 ${theme.accentText}`} /> {store.province}, {store.city}</p>
               <p className="flex items-center gap-2"><Clock className={`h-4 w-4 ${theme.accentText}`} /> Seg - Sáb: 08:00 - 18:00</p>
               <p className="flex items-center gap-2"><Phone className={`h-4 w-4 ${theme.accentText}`} /> {store.whatsapp}</p>
-              <p className="flex items-center gap-2"><Mail className={`h-4 w-4 ${theme.accentText}`} /> contacto@{store.slug}.ao</p>
+              {store.email && <p className="flex items-center gap-2"><Mail className={`h-4 w-4 ${theme.accentText}`} /> {store.email}</p>}
             </div>
             {/* Social links */}
             {store.socials && (
@@ -458,19 +474,19 @@ const StoreDetail = () => {
                 <p className="text-xs font-semibold mb-2">Redes Sociais</p>
                 <div className="flex gap-2">
                   {store.socials.instagram && (
-                    <a href={`https://instagram.com/${store.socials.instagram}`} target="_blank" rel="noopener noreferrer"
+                    <a href={socialUrl(store.socials.instagram, "https://instagram.com/")} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs hover:bg-accent transition-colors">
                       <Instagram className="h-3.5 w-3.5" /> @{store.socials.instagram}
                     </a>
                   )}
                   {store.socials.facebook && (
-                    <a href={`https://facebook.com/${store.socials.facebook}`} target="_blank" rel="noopener noreferrer"
+                    <a href={socialUrl(store.socials.facebook, "https://facebook.com/")} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs hover:bg-accent transition-colors">
                       <Facebook className="h-3.5 w-3.5" /> Facebook
                     </a>
                   )}
                   {store.socials.tiktok && (
-                    <a href={`https://tiktok.com/@${store.socials.tiktok}`} target="_blank" rel="noopener noreferrer"
+                    <a href={socialUrl(store.socials.tiktok, "https://tiktok.com/", "@")} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs hover:bg-accent transition-colors">
                       <TikTokIcon className="h-3.5 w-3.5" /> TikTok
                     </a>

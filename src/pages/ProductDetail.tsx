@@ -114,7 +114,7 @@ const ProductDetail = () => {
     : null;
 
   const whatsAppMsg = encodeURIComponent(
-    `Olá, quero comprar:\n\n• ${product.name}${Object.entries(selectedVariants).map(([k, v]) => ` (${k}: ${v})`).join("")} x${quantity} — ${formatPrice(product.price * quantity)} Kz\n\nEnviado via SuperLojas`
+    `Olá, quero comprar:\n\n• ${product.name}${Object.entries(selectedVariants).map(([k, v]) => ` (${k}: ${v})`).join("")} x${quantity} — ${formatPrice(product.price * quantity)} Kz\n\nEnviado via SuperLoja`
   );
 
   const related = relatedProducts.filter((p) => p.id !== product.id).slice(0, 4);
@@ -312,7 +312,7 @@ const ProductDetail = () => {
           </div>
           <div className="mt-3">
             <a
-              href={`https://wa.me/${product.store.whatsapp.replace(/\+/g, "")}?text=${whatsAppMsg}`}
+              href={`https://wa.me/${(product.store.whatsapp || "").replace(/[^\d]/g, "")}?text=${whatsAppMsg}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full"

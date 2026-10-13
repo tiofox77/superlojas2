@@ -1,0 +1,2 @@
+# Built assets are deployed byte-for-byte: never convert their line endings.
+dist/** -text

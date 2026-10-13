@@ -11,7 +11,7 @@ const categories = [
     color: "text-blue-500",
     bg: "bg-blue-50",
     items: [
-      { q: "Como faco uma compra no SuperLojas?", a: "Navegue pelos produtos ou lojas, encontre o que deseja e clique no botao de WhatsApp para contactar directamente o vendedor. Combine os detalhes de pagamento e entrega com ele." },
+      { q: "Como faco uma compra no SuperLoja?", a: "Navegue pelos produtos ou lojas, encontre o que deseja e clique no botao de WhatsApp para contactar directamente o vendedor. Combine os detalhes de pagamento e entrega com ele." },
       { q: "Preciso criar conta para comprar?", a: "Nao e obrigatorio criar conta para navegar pelos produtos. Porem, com uma conta pode guardar favoritos, acompanhar o historico e ter uma melhor experiencia." },
       { q: "Posso comprar produtos de lojas diferentes?", a: "Sim! Pode adicionar produtos de varias lojas ao carrinho. Porem, como cada loja e independente, a entrega e pagamento serao combinados separadamente com cada vendedor." },
       { q: "Os precos incluem entrega?", a: "Geralmente nao. O preco exibido e do produto. O custo de entrega e combinado directamente com o vendedor, pois depende da localizacao e forma de envio." },
@@ -25,7 +25,7 @@ const categories = [
     bg: "bg-violet-50",
     items: [
       { q: "Quais formas de pagamento sao aceites?", a: "O pagamento e combinado directamente com o vendedor. As formas mais comuns sao: Multicaixa Express (transferencia), pagamento na entrega (contra-entrega), deposito bancario e pagamento em dinheiro na recolha." },
-      { q: "O pagamento e feito pela plataforma?", a: "Nao. O SuperLojas e um marketplace que conecta compradores e vendedores. O pagamento e feito directamente ao vendedor, sem intermediacao da plataforma." },
+      { q: "O pagamento e feito pela plataforma?", a: "Nao. O SuperLoja e um marketplace que conecta compradores e vendedores. O pagamento e feito directamente ao vendedor, sem intermediacao da plataforma." },
       { q: "E seguro pagar antes de receber?", a: "Recomendamos o pagamento na entrega sempre que possivel. Se pagar antecipadamente, guarde o comprovativo e confirme todos os detalhes com o vendedor via WhatsApp." },
     ],
   },
@@ -46,7 +46,7 @@ const categories = [
     color: "text-orange-500",
     bg: "bg-orange-50",
     items: [
-      { q: "Como abrir uma loja no SuperLojas?", a: "Crie uma conta, aceda a pagina 'Abrir Minha Loja' e preencha os dados em 3 passos simples. A sua loja sera analisada e aprovada pela nossa equipa. E 100% gratuito!" },
+      { q: "Como abrir uma loja no SuperLoja?", a: "Crie uma conta, aceda a pagina 'Abrir Minha Loja' e preencha os dados em 3 passos simples. A sua loja sera analisada e aprovada pela nossa equipa. E 100% gratuito!" },
       { q: "Quanto custa ter uma loja?", a: "O registo e uso da plataforma e totalmente gratuito. Nao cobramos taxas de inscricao nem comissoes sobre as vendas." },
       { q: "Quanto tempo demora a aprovacao?", a: "A nossa equipa analisa cada loja em ate 48 horas. Recebera uma notificacao assim que a sua loja for aprovada." },
       { q: "Posso ter mais de uma loja?", a: "Actualmente, cada conta de utilizador pode ter uma loja associada. Se precisar de mais, entre em contacto connosco." },
@@ -60,7 +60,7 @@ const categories = [
     bg: "bg-red-50",
     items: [
       { q: "As lojas sao verificadas?", a: "Sim. Todas as lojas passam por um processo de verificacao antes de serem publicadas na plataforma. A nossa equipa analisa os dados fornecidos." },
-      { q: "O que fazer se tiver um problema com um vendedor?", a: "Tente resolver directamente com o vendedor. Se nao conseguir, entre em contacto connosco via email (info@superlojas.ao) ou WhatsApp com os detalhes da situacao." },
+      { q: "O que fazer se tiver um problema com um vendedor?", a: "Tente resolver directamente com o vendedor. Se nao conseguir, entre em contacto connosco via email (info@superloja.vip) ou WhatsApp com os detalhes da situacao." },
       { q: "Os meus dados estao seguros?", a: "Sim. Utilizamos encriptacao e medidas de seguranca para proteger os seus dados. Consulte a nossa Politica de Privacidade para mais detalhes." },
     ],
   },
@@ -72,7 +72,7 @@ const categories = [
     items: [
       { q: "Como criar uma conta?", a: "Clique em 'Entrar' no menu superior e depois em 'Criar Conta'. Preencha o seu nome, email e senha. E rapido e gratuito." },
       { q: "Esqueci a minha senha, o que faco?", a: "Na pagina de login, clique em 'Esqueci a senha' e siga as instrucoes para redefinir a sua palavra-passe por email." },
-      { q: "Como eliminar a minha conta?", a: "Entre em contacto connosco via email (info@superlojas.ao) solicitando a eliminacao da sua conta. Os seus dados serao removidos conforme a nossa Politica de Privacidade." },
+      { q: "Como eliminar a minha conta?", a: "Entre em contacto connosco via email (info@superloja.vip) solicitando a eliminacao da sua conta. Os seus dados serao removidos conforme a nossa Politica de Privacidade." },
     ],
   },
 ];
@@ -113,7 +113,7 @@ export default function FAQ() {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary-foreground">Perguntas Frequentes</h1>
           </div>
           <p className="text-primary-foreground/80 text-sm max-w-lg mx-auto">
-            Encontre respostas rapidas para as duvidas mais comuns sobre o SuperLojas.
+            Encontre respostas rapidas para as duvidas mais comuns sobre o SuperLoja.
           </p>
         </div>
       </div>
@@ -163,7 +163,7 @@ export default function FAQ() {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-500 text-white text-sm font-semibold hover:bg-green-600 transition-colors">
               <MessageCircle className="h-4 w-4" /> WhatsApp
             </a>
-            <a href="mailto:info@superlojas.ao"
+            <a href="mailto:info@superloja.vip"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border bg-card text-sm font-medium hover:bg-secondary transition-colors">
               Enviar Email
             </a>

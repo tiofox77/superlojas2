@@ -31,6 +31,8 @@ export interface Store {
   province: string;
   city: string;
   whatsapp: string;
+  phone?: string;
+  email?: string;
   rating: number;
   reviewCount: number;
   status: "pending" | "approved" | "rejected";

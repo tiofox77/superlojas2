@@ -65,7 +65,7 @@ export default function HowToBuy() {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary-foreground">Como Comprar</h1>
           </div>
           <p className="text-primary-foreground/80 text-sm max-w-lg mx-auto">
-            Comprar no SuperLojas e simples, seguro e rapido. Siga os passos abaixo para fazer a sua primeira compra.
+            Comprar no SuperLoja e simples, seguro e rapido. Siga os passos abaixo para fazer a sua primeira compra.
           </p>
         </div>
       </div>
@@ -114,7 +114,7 @@ export default function HowToBuy() {
             <div>
               <h3 className="font-bold mb-1">Compra Segura</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Todas as lojas no SuperLojas sao verificadas pela nossa equipa antes de serem aprovadas. 
+                Todas as lojas no SuperLoja sao verificadas pela nossa equipa antes de serem aprovadas. 
                 No entanto, recomendamos sempre que confirme os detalhes do produto directamente com o vendedor 
                 via WhatsApp antes de efectuar o pagamento. Em caso de problema, contacte o nosso suporte.
               </p>

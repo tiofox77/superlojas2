@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://superloja.vip/sitemap.xml

@@ -47,7 +47,7 @@ const Categories = () => {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary-foreground">Todas as Categorias</h1>
           </div>
           <p className="text-primary-foreground/80 text-sm max-w-md mx-auto">
-            Explore todas as categorias disponíveis no SuperLojas
+            Explore todas as categorias disponíveis no SuperLoja
           </p>
           {/* Search */}
           <div className="max-w-xl mx-auto mt-6 relative">

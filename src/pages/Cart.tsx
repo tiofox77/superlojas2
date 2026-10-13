@@ -1,4 +1,4 @@
-import { useCart } from "@/contexts/CartContext";
+import { useCart, cartItemKey } from "@/contexts/CartContext";
 import { Link } from "react-router-dom";
 import { Minus, Plus, Trash2, MessageCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ const Cart = () => {
       total += subtotal;
       msg += `• ${item.product.name} x${item.quantity} — ${formatPrice(subtotal)} Kz\n`;
     });
-    msg += `\nTotal: ${formatPrice(total)} Kz\n\nEnviado via SuperLojas`;
+    msg += `\nTotal: ${formatPrice(total)} Kz\n\nEnviado via SuperLoja`;
     return encodeURIComponent(msg);
   };
 
@@ -54,7 +54,7 @@ const Cart = () => {
               </div>
               <div className="space-y-4">
                 {storeItems.map((item) => (
-                  <div key={item.product.id} className="flex gap-4">
+                  <div key={cartItemKey(item.product.id, item.selectedVariants)} className="flex gap-4">
                     <img src={productImgSrc(item.product.images[0])} alt={item.product.name} className="h-20 w-20 rounded-lg object-cover" />
                     <div className="flex-1">
                       <Link to={`/produto/${item.product.slug}`} className="text-sm font-medium hover:text-primary">
@@ -63,11 +63,11 @@ const Cart = () => {
                       <p className="text-sm font-bold mt-1">{formatPrice(item.product.price)} Kz</p>
                       <div className="flex items-center gap-3 mt-2">
                         <div className="flex items-center border border-border rounded-lg">
-                          <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} className="px-2 py-1 hover:bg-secondary"><Minus className="h-3 w-3" /></button>
+                          <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariants)} className="px-2 py-1 hover:bg-secondary"><Minus className="h-3 w-3" /></button>
                           <span className="px-3 py-1 text-sm border-x border-border">{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} className="px-2 py-1 hover:bg-secondary"><Plus className="h-3 w-3" /></button>
+                          <button onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariants)} className="px-2 py-1 hover:bg-secondary"><Plus className="h-3 w-3" /></button>
                         </div>
-                        <button onClick={() => removeItem(item.product.id)} className="text-destructive hover:text-destructive/80">
+                        <button onClick={() => removeItem(item.product.id, item.selectedVariants)} className="text-destructive hover:text-destructive/80">
                           <Trash2 className="h-4 w-4" />
                         </button>
                         <span className="ml-auto font-semibold text-sm">{formatPrice(item.product.price * item.quantity)} Kz</span>
@@ -77,14 +77,16 @@ const Cart = () => {
                 ))}
               </div>
               {/* WhatsApp for this store */}
-              <a
-                href={`https://wa.me/${store.whatsapp.replace(/\+/g, "")}?text=${generateWhatsAppMessage(storeItems)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-success text-success text-sm font-medium hover:bg-success/10 transition-colors"
-              >
-                <MessageCircle className="h-4 w-4" /> Comprar via WhatsApp
-              </a>
+              {store.whatsapp && (
+                <a
+                  href={`https://wa.me/${store.whatsapp.replace(/[^\d]/g, "")}?text=${generateWhatsAppMessage(storeItems)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-success text-success text-sm font-medium hover:bg-success/10 transition-colors"
+                >
+                  <MessageCircle className="h-4 w-4" /> Comprar via WhatsApp
+                </a>
+              )}
             </div>
           ))}
         </div>

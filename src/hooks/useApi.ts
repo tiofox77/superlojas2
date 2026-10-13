@@ -78,8 +78,8 @@ export function useProducts(params?: Record<string, string>) {
   return useQuery<Product[]>({
     queryKey: ["products", params],
     queryFn: async () => {
-      const data = await fetchApi<ApiProduct[]>("/products", params);
-      return data.map(transformProduct);
+      const data = await fetchApi<ApiProduct[] | { data: ApiProduct[] }>("/products", params);
+      return (Array.isArray(data) ? data : data.data).map(transformProduct);
     },
     enabled: params !== undefined,
     staleTime: 2 * 60 * 1000,

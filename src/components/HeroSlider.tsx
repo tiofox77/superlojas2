@@ -18,7 +18,7 @@ export function HeroSlider() {
   const slide = heroSlides[current];
 
   return (
-    <div className="relative overflow-hidden rounded-2xl h-full min-h-[280px] sm:min-h-[360px]">
+    <div className="relative overflow-hidden rounded-2xl h-full min-h-[280px] sm:min-h-[360px] shadow-sm" role="region" aria-label="Destaques SuperLoja">
       <AnimatePresence mode="wait">
         <motion.div
           key={slide.id}
@@ -29,11 +29,11 @@ export function HeroSlider() {
           className={`${!slide.bgColor || slide.bgColor === "none" ? "bg-gray-900" : `bg-gradient-to-r ${slide.bgColor}`} px-8 py-12 sm:px-12 sm:py-16 text-primary-foreground h-full flex flex-col justify-center min-h-[280px] sm:min-h-[360px] relative overflow-hidden`}
         >
           {slide.image && (
-            <img src={slide.image} alt="" className={`absolute inset-0 w-full h-full object-cover ${!slide.bgColor || slide.bgColor === "none" ? "" : "mix-blend-overlay opacity-60"}`} />
+            <img src={slide.image} alt={slide.title} className={`absolute inset-0 w-full h-full object-cover ${!slide.bgColor || slide.bgColor === "none" ? "" : "mix-blend-overlay opacity-60"}`} />
           )}
           <div className="max-w-md relative z-10">
             <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary-foreground/70 mb-2">
-              SuperLojas
+              SuperLoja
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold mb-3 leading-tight">{slide.title}</h2>
             {slide.subtitle && <p className="text-primary-foreground/80 text-sm sm:text-base mb-6">{slide.subtitle}</p>}
@@ -54,6 +54,8 @@ export function HeroSlider() {
           <button
             key={i}
             onClick={() => setCurrent(i)}
+            aria-label={`Mostrar destaque ${i + 1}`}
+            aria-current={i === current ? "true" : undefined}
             className={`h-2 rounded-full transition-all ${i === current ? "w-6 bg-primary-foreground" : "w-2 bg-primary-foreground/40"}`}
           />
         ))}
@@ -61,12 +63,14 @@ export function HeroSlider() {
       {/* Arrows */}
       <button
         onClick={() => setCurrent((p) => (p - 1 + heroSlides.length) % heroSlides.length)}
+        aria-label="Destaque anterior"
         className="absolute left-3 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-card/20 backdrop-blur flex items-center justify-center text-primary-foreground hover:bg-card/40 transition-colors"
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
       <button
         onClick={() => setCurrent((p) => (p + 1) % heroSlides.length)}
+        aria-label="Próximo destaque"
         className="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-card/20 backdrop-blur flex items-center justify-center text-primary-foreground hover:bg-card/40 transition-colors"
       >
         <ChevronRight className="h-5 w-5" />

@@ -360,8 +360,8 @@ export default function StorePanelSettings() {
           <div className={`p-4 rounded-xl ${s.isDark ? "bg-white/[0.03] border border-white/[0.06]" : "bg-white border border-gray-200"}`}>
             <p className={`text-[10px] font-semibold ${s.textMuted} uppercase tracking-wider mb-2`}>Pre-visualizacao no Google</p>
             <div>
-              <p className="text-blue-600 text-sm font-medium truncate">{form.meta_title || form.name || "Nome da Loja"} — SuperLojas</p>
-              <p className="text-green-700 text-[11px] truncate">superlojas.ao/lojas/{slug}</p>
+              <p className="text-blue-600 text-sm font-medium truncate">{form.meta_title || form.name || "Nome da Loja"} — SuperLoja</p>
+              <p className="text-green-700 text-[11px] truncate">superloja.vip/lojas/{slug}</p>
               <p className={`text-xs ${s.textMuted} line-clamp-2 mt-0.5`}>{form.meta_description || form.description || "Descricao da loja aparece aqui..."}</p>
             </div>
           </div>

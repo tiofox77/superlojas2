@@ -8,6 +8,10 @@ interface StoreSeoProps {
   storeSlug: string;
   storeDescription?: string;
   storeLogo?: string;
+  storeBanner?: string;
+  province?: string;
+  city?: string;
+  phone?: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
@@ -42,22 +46,27 @@ export default function StoreSeoHead({
   storeSlug,
   storeDescription,
   storeLogo,
+  storeBanner,
+  province,
+  city,
+  phone,
   metaTitle,
   metaDescription,
   metaKeywords,
   isSubdomain = false,
 }: StoreSeoProps) {
   const { data: siteSettings } = useSiteSettings();
-  const siteName = siteSettings?.site_name || "SuperLojas";
+  const siteName = siteSettings?.site_name || "SuperLoja";
 
   useEffect(() => {
     const title = metaTitle
       ? `${metaTitle} — ${siteName}`
       : `${storeName} — ${siteName}`;
-    const description = metaDescription || storeDescription || `${storeName} no ${siteName}. Veja os melhores produtos e ofertas.`;
-    const logoUrl = storeLogo
-      ? (storeLogo.startsWith("http") ? storeLogo : `${BASE}${storeLogo}`)
-      : "";
+    const clean = (value = "") => value.replace(/\s+/g, " ").trim();
+    const description = clean(metaDescription || storeDescription || `${storeName} no ${siteName}. Compre online com entrega em Angola.`).slice(0, 160);
+    const absolute = (value?: string) => value ? (value.startsWith("http") ? value : `${BASE}${value}`) : "";
+    const logoUrl = absolute(storeLogo);
+    const shareImage = absolute(storeBanner) || logoUrl || `${window.location.origin}/og-superloja.jpg`;
     const storeUrl = isSubdomain
       ? window.location.origin
       : `${window.location.origin}/lojas/${storeSlug}`;
@@ -67,6 +76,7 @@ export default function StoreSeoHead({
 
     // Meta
     setMeta("description", description);
+    setMeta("robots", "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1");
     if (metaKeywords) setMeta("keywords", metaKeywords);
 
     // Open Graph
@@ -75,35 +85,61 @@ export default function StoreSeoHead({
     setMeta("og:type", "website", "property");
     setMeta("og:url", storeUrl, "property");
     setMeta("og:site_name", siteName, "property");
-    if (logoUrl) setMeta("og:image", logoUrl, "property");
+    setMeta("og:locale", "pt_AO", "property");
+    setMeta("og:image", shareImage, "property");
+    setMeta("og:image:alt", `${storeName} — loja online`, "property");
 
     // Twitter
     setMeta("twitter:card", "summary_large_image");
     setMeta("twitter:title", title);
     setMeta("twitter:description", description);
-    if (logoUrl) setMeta("twitter:image", logoUrl);
+    setMeta("twitter:image", shareImage);
 
-    // Favicon override for subdomain (use store logo as favicon)
-    if (isSubdomain && logoUrl) {
-      setLink("icon", logoUrl);
-      setLink("apple-touch-icon", logoUrl);
-    }
+    // Always the SuperLoja favicon (store logos made poor favicons)
+    setLink("icon", "/superloja-favicon-v3.ico", "image/x-icon");
+    setLink("apple-touch-icon", "/superloja-apple-v3.png", "image/png");
 
-    // Canonical
-    setLink("canonical", storeUrl);
+    // Canonical — always the main-domain store page (subdomains have no TLS)
+    setLink("canonical", `https://superloja.vip/lojas/${storeSlug}`);
+
+    // Structured data for Google and other search engines.
+    const ldId = "store-structured-data";
+    document.getElementById(ldId)?.remove();
+    const ld = document.createElement("script");
+    ld.id = ldId;
+    ld.type = "application/ld+json";
+    ld.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "OnlineStore",
+      "@id": `${storeUrl}#store`,
+      name: storeName,
+      url: storeUrl,
+      description,
+      ...(logoUrl ? { logo: logoUrl, image: shareImage } : {}),
+      ...(phone ? { telephone: phone } : {}),
+      address: (province || city) ? {
+        "@type": "PostalAddress",
+        addressLocality: city,
+        addressRegion: province,
+        addressCountry: "AO",
+      } : undefined,
+      parentOrganization: { "@type": "Organization", name: siteName, url: "https://superloja.vip" },
+    });
+    document.head.appendChild(ld);
 
     // Cleanup: restore original title when unmounting
     return () => {
       const originalTitle = siteSettings?.site_name
         ? `${siteSettings.site_name} — Marketplace de Angola`
-        : "SuperLojas — Marketplace de Angola";
+        : "SuperLoja — Marketplace de Angola";
       document.title = originalTitle;
 
       // Remove store-specific canonical
       const canonical = document.querySelector('link[rel="canonical"]');
       if (canonical) canonical.remove();
+      document.getElementById(ldId)?.remove();
     };
-  }, [storeName, storeSlug, storeDescription, storeLogo, metaTitle, metaDescription, metaKeywords, isSubdomain, siteName]);
+  }, [storeName, storeSlug, storeDescription, storeLogo, storeBanner, province, city, phone, metaTitle, metaDescription, metaKeywords, isSubdomain, siteName]);
 
   return null;
 }

@@ -58,7 +58,7 @@ const InputFieldStable = ({ label, value, onChange, type = "text", placeholder =
 interface SmtpConfig { host: string; port: string; username: string; password: string; encryption: string; from_address: string; from_name: string; timeout: string; auth_mode: string; verify_peer: string; }
 interface SmsConfig { provider: string; api_key: string; api_secret: string; sender_id: string; base_url: string; }
 
-const defaultSmtp: SmtpConfig = { host: "", port: "587", username: "", password: "", encryption: "tls", from_address: "", from_name: "SuperLojas", timeout: "30", auth_mode: "auto", verify_peer: "true" };
+const defaultSmtp: SmtpConfig = { host: "", port: "587", username: "", password: "", encryption: "tls", from_address: "", from_name: "SuperLoja", timeout: "30", auth_mode: "auto", verify_peer: "true" };
 const defaultSms: SmsConfig = { provider: "twilio", api_key: "", api_secret: "", sender_id: "", base_url: "" };
 
 type TabKey = "general" | "seo" | "marquee" | "contact" | "social" | "restrictions" | "smtp" | "sms" | "pwa";
@@ -89,7 +89,7 @@ export default function AdminSettings() {
   const [testEmail, setTestEmail] = useState("");
 
   // ─── General ───
-  const [siteName, setSiteName] = useState("SuperLojas");
+  const [siteName, setSiteName] = useState("SuperLoja");
   const [siteDescription, setSiteDescription] = useState("");
   const [storeAutoApprove, setStoreAutoApprove] = useState(false);
   const [categoryThemesEnabled, setCategoryThemesEnabled] = useState(true);
@@ -402,7 +402,7 @@ export default function AdminSettings() {
     <div className="space-y-6 max-w-4xl">
       <div>
         <h2 className={`text-lg font-bold ${s.textPrimary}`}>Configuracoes da Plataforma</h2>
-        <p className={`text-xs ${s.textMuted}`}>Gerir todas as configuracoes do SuperLojas</p>
+        <p className={`text-xs ${s.textMuted}`}>Gerir todas as configuracoes do SuperLoja</p>
       </div>
 
       {/* Tabs */}
@@ -469,7 +469,7 @@ export default function AdminSettings() {
 
           {/* Name + Description */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <InputFieldStable label="Nome do Site" value={siteName} onChange={setSiteName} placeholder="SuperLojas" required inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
+            <InputFieldStable label="Nome do Site" value={siteName} onChange={setSiteName} placeholder="SuperLoja" required inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
             <div className="sm:col-span-2">
               <label className={labelCls}>Descricao do Site</label>
               <textarea value={siteDescription} onChange={(e) => setSiteDescription(e.target.value)} rows={3} placeholder="O maior marketplace de Angola..."
@@ -523,7 +523,7 @@ export default function AdminSettings() {
             <div className="space-y-4">
               <div>
                 <label className={labelCls}>Titulo SEO (Title Tag)</label>
-                <input value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="SuperLojas — O Maior Marketplace de Angola" className={inputCls} maxLength={70} />
+                <input value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="SuperLoja — O Maior Marketplace de Angola" className={inputCls} maxLength={70} />
                 <div className="flex justify-between mt-1">
                   <p className={`text-[10px] ${s.textMuted}`}>Aparece como titulo nos resultados do Google. Max 60-70 caracteres.</p>
                   <span className={`text-[10px] font-medium ${seoTitle.length > 60 ? "text-amber-500" : s.textMuted}`}>{seoTitle.length}/70</span>
@@ -548,7 +548,7 @@ export default function AdminSettings() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>URL Canonica</label>
-                  <input value={seoCanonical} onChange={(e) => setSeoCanonical(e.target.value)} placeholder="https://superlojas.ao" className={inputCls} />
+                  <input value={seoCanonical} onChange={(e) => setSeoCanonical(e.target.value)} placeholder="https://superloja.vip" className={inputCls} />
                   <p className={`text-[10px] ${s.textMuted} mt-1`}>URL principal do site (evita conteudo duplicado)</p>
                 </div>
                 <div>
@@ -568,8 +568,8 @@ export default function AdminSettings() {
             <div className={`rounded-xl p-4 border ${s.borderLight}`}>
               <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider mb-2 font-semibold`}>Pre-visualizacao Google</p>
               <div className="space-y-0.5">
-                <p className="text-[#1a0dab] text-sm font-medium truncate">{seoTitle || siteName || "SuperLojas"} — Marketplace de Angola</p>
-                <p className="text-[#006621] text-xs truncate">{seoCanonical || "https://superlojas.ao"}</p>
+                <p className="text-[#1a0dab] text-sm font-medium truncate">{seoTitle || siteName || "SuperLoja"} — Marketplace de Angola</p>
+                <p className="text-[#006621] text-xs truncate">{seoCanonical || "https://superloja.vip"}</p>
                 <p className={`text-xs ${s.textMuted} line-clamp-2`}>{seoDescription || siteDescription || "O maior marketplace de Angola. Compre e venda produtos de lojas locais."}</p>
               </div>
             </div>
@@ -581,7 +581,7 @@ export default function AdminSettings() {
 
             <div>
               <label className={labelCls}>Imagem OG (Open Graph)</label>
-              <input value={seoOgImage} onChange={(e) => setSeoOgImage(e.target.value)} placeholder="https://superlojas.ao/og-image.jpg" className={inputCls} />
+              <input value={seoOgImage} onChange={(e) => setSeoOgImage(e.target.value)} placeholder="https://superloja.vip/og-image.jpg" className={inputCls} />
               <p className={`text-[10px] ${s.textMuted} mt-1`}>URL da imagem que aparece ao partilhar o site. Recomendado: 1200x630px</p>
             </div>
 
@@ -591,8 +591,8 @@ export default function AdminSettings() {
                 {seoOgImage ? <img src={seoOgImage} alt="OG" className="h-full w-full object-cover" /> : <Image className={`h-10 w-10 ${s.textMuted}`} />}
               </div>
               <div className="p-3 space-y-0.5">
-                <p className={`text-[10px] ${s.textMuted} uppercase`}>{seoCanonical ? new URL(seoCanonical).hostname : "superlojas.ao"}</p>
-                <p className={`text-xs font-semibold ${s.textPrimary} truncate`}>{seoTitle || siteName || "SuperLojas"}</p>
+                <p className={`text-[10px] ${s.textMuted} uppercase`}>{seoCanonical ? new URL(seoCanonical).hostname : "superloja.vip"}</p>
+                <p className={`text-xs font-semibold ${s.textPrimary} truncate`}>{seoTitle || siteName || "SuperLoja"}</p>
                 <p className={`text-[11px] ${s.textMuted} line-clamp-2`}>{seoDescription || siteDescription || "O maior marketplace de Angola."}</p>
               </div>
             </div>
@@ -677,7 +677,7 @@ export default function AdminSettings() {
 
           <div className={`p-3 rounded-xl text-[10px] ${s.isDark ? "bg-amber-500/5 text-amber-400 border border-amber-500/10" : "bg-amber-50 text-amber-700 border border-amber-100"}`}>
             <Volume2 className="h-3.5 w-3.5 inline mr-1.5" />
-            Dica: Use emojis para tornar as mensagens mais atractivas. Ex: "🎉 Bem-vindo ao SuperLojas!"
+            Dica: Use emojis para tornar as mensagens mais atractivas. Ex: "🎉 Bem-vindo ao SuperLoja!"
           </div>
 
           <SaveBtnStable onClick={saveMarquee} saving={saving} label="Guardar Publicidade" btnPrimary={s.btnPrimary} />
@@ -690,7 +690,7 @@ export default function AdminSettings() {
           <SectionHeaderStable icon={Phone} color="text-blue-500" title="Informacoes de Contacto" desc="Dados que aparecem na pagina de contacto e no rodape" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <InputFieldStable label="Email" value={contactEmail} onChange={setContactEmail} placeholder="info@superlojas.ao" hint="Aparece na pagina de contacto e rodape" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
+            <InputFieldStable label="Email" value={contactEmail} onChange={setContactEmail} placeholder="info@superloja.vip" hint="Aparece na pagina de contacto e rodape" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
             <InputFieldStable label="Telefone" value={contactPhone} onChange={setContactPhone} placeholder="+244 923 456 789" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
             <InputFieldStable label="WhatsApp" value={contactWhatsapp} onChange={setContactWhatsapp} placeholder="+244 923 456 789" hint="Numero com codigo do pais" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
             <InputFieldStable label="Cidade" value={contactCity} onChange={setContactCity} placeholder="Luanda, Angola" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
@@ -740,7 +740,7 @@ export default function AdminSettings() {
               { label: "YouTube", val: socialYoutube, set: setSocialYoutube, icon: Globe, p: "https://youtube.com/@superlojas", color: "text-red-500" },
               { label: "Twitter / X", val: socialTwitter, set: setSocialTwitter, icon: Globe, p: "https://x.com/superlojas", color: "text-sky-500" },
               { label: "LinkedIn", val: socialLinkedin, set: setSocialLinkedin, icon: Globe, p: "https://linkedin.com/company/superlojas", color: "text-blue-700" },
-              { label: "Website", val: socialWebsite, set: setSocialWebsite, icon: Globe, p: "https://superlojas.ao", color: "text-emerald-500" },
+              { label: "Website", val: socialWebsite, set: setSocialWebsite, icon: Globe, p: "https://superloja.vip", color: "text-emerald-500" },
             ].map((net) => (
               <div key={net.label} className="flex items-center gap-3">
                 <div className={`h-10 w-10 rounded-xl ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"} flex items-center justify-center shrink-0`}>
@@ -878,8 +878,8 @@ export default function AdminSettings() {
               <span className={`text-xs font-semibold ${s.textPrimary}`}>Remetente</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InputFieldStable label="Email Remetente" value={smtp.from_address} onChange={(v) => setSmtp({ ...smtp, from_address: v })} placeholder="noreply@superlojas.ao" required inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
-              <InputFieldStable label="Nome Remetente" value={smtp.from_name} onChange={(v) => setSmtp({ ...smtp, from_name: v })} placeholder="SuperLojas" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
+              <InputFieldStable label="Email Remetente" value={smtp.from_address} onChange={(v) => setSmtp({ ...smtp, from_address: v })} placeholder="noreply@superloja.vip" required inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
+              <InputFieldStable label="Nome Remetente" value={smtp.from_name} onChange={(v) => setSmtp({ ...smtp, from_name: v })} placeholder="SuperLoja" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
             </div>
           </div>
 
@@ -943,7 +943,7 @@ export default function AdminSettings() {
                 <option value="africas_talking">Africa's Talking</option><option value="custom">Custom API</option>
               </select>
             </div>
-            <InputFieldStable label="Sender ID" value={sms.sender_id} onChange={(v) => setSms({ ...sms, sender_id: v })} placeholder="SuperLojas" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
+            <InputFieldStable label="Sender ID" value={sms.sender_id} onChange={(v) => setSms({ ...sms, sender_id: v })} placeholder="SuperLoja" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
             <div>
               <label className={labelCls}>API Key <span className="text-red-500">*</span></label>
               <div className="relative">
@@ -1034,8 +1034,8 @@ export default function AdminSettings() {
 
           {/* App info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <InputFieldStable label="Nome da App" value={pwaName} onChange={setPwaName} placeholder="SuperLojas — Marketplace" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} hint="Nome completo exibido na instalacao" />
-            <InputFieldStable label="Nome Curto" value={pwaShortName} onChange={setPwaShortName} placeholder="SuperLojas" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} hint="Exibido no ecra inicial (max 12 caracteres)" />
+            <InputFieldStable label="Nome da App" value={pwaName} onChange={setPwaName} placeholder="SuperLoja — Marketplace" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} hint="Nome completo exibido na instalacao" />
+            <InputFieldStable label="Nome Curto" value={pwaShortName} onChange={setPwaShortName} placeholder="SuperLoja" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} hint="Exibido no ecra inicial (max 12 caracteres)" />
             <div className="sm:col-span-2">
               <label className={labelCls}>Descricao</label>
               <textarea value={pwaDescription} onChange={(e) => setPwaDescription(e.target.value)} rows={2} placeholder="O maior marketplace de Angola..." className={`${inputCls} resize-none`} />
@@ -1084,7 +1084,7 @@ export default function AdminSettings() {
                 </div>
               </div>
               <div>
-                <p className={`text-sm font-bold ${s.textPrimary}`}>{pwaShortName || pwaName || "SuperLojas"}</p>
+                <p className={`text-sm font-bold ${s.textPrimary}`}>{pwaShortName || pwaName || "SuperLoja"}</p>
                 <p className={`text-[11px] ${s.textMuted}`}>{pwaDescription || "Marketplace de Angola"}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium" style={{ backgroundColor: pwaThemeColor + "20", color: pwaThemeColor }}>

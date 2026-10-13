@@ -1,5 +1,5 @@
 import { X, Minus, Plus, Trash2, MessageCircle } from "lucide-react";
-import { useCart } from "@/contexts/CartContext";
+import { useCart, cartItemKey } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { logoSrc, productImgSrc, onImgError } from "@/lib/imageHelpers";
@@ -26,19 +26,19 @@ export function CartDrawer() {
       const variants = Object.entries(item.selectedVariants).map(([k, v]) => `${k}: ${v}`).join(", ");
       msg += `• ${item.product.name}${variants ? ` (${variants})` : ""} x${item.quantity} — ${formatPrice(subtotal)} Kz\n`;
     });
-    msg += `\nTotal: ${formatPrice(total)} Kz\n\nEnviado via SuperLojas`;
+    msg += `\nTotal: ${formatPrice(total)} Kz\n\nEnviado via SuperLoja`;
     return encodeURIComponent(msg);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-[100] flex justify-end" role="dialog" aria-modal="true" aria-label="Carrinho de compras">
       <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
-      <div className="relative w-full max-w-md bg-card border-l border-border h-full animate-slide-in flex flex-col">
+      <div className="relative w-full sm:max-w-md bg-card border-l border-border h-[100dvh] animate-slide-in flex flex-col pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="font-bold text-lg">Carrinho ({items.length})</h2>
-          <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-secondary rounded-lg transition-colors">
+          <h2 className="font-bold text-lg">Carrinho ({items.reduce((acc, i) => acc + i.quantity, 0)})</h2>
+          <button onClick={() => setIsOpen(false)} aria-label="Fechar carrinho" className="p-2 hover:bg-secondary rounded-lg transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -58,31 +58,33 @@ export function CartDrawer() {
                       <img src={logoSrc(store.logo, store.name)} alt={store.name} className="h-6 w-6 rounded" onError={onImgError("logo", store.name)} />
                       <span className="text-sm font-semibold">{store.name}</span>
                     </div>
-                    <a
-                      href={`https://wa.me/${store.whatsapp.replace(/\+/g, "")}?text=${generateWhatsAppMessage(store.name, storeItems)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[11px] font-medium text-success hover:underline"
-                    >
-                      <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-                    </a>
+                    {store.whatsapp && (
+                      <a
+                        href={`https://wa.me/${store.whatsapp.replace(/[^\d]/g, "")}?text=${generateWhatsAppMessage(store.name, storeItems)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-[11px] font-medium text-success hover:underline"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                      </a>
+                    )}
                   </div>
                   <div className="space-y-3">
                     {storeItems.map((item) => (
-                      <div key={item.product.id} className="flex gap-3 p-2 rounded-lg bg-secondary/50">
+                      <div key={cartItemKey(item.product.id, item.selectedVariants)} className="flex gap-3 p-2 rounded-lg bg-secondary/50">
                         <img src={productImgSrc(item.product.images[0])} alt={item.product.name} className="h-16 w-16 rounded-lg object-cover" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{item.product.name}</p>
                           <p className="text-xs text-muted-foreground">{formatPrice(item.product.price)} Kz</p>
                           <div className="flex items-center gap-2 mt-1">
-                            <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} className="h-6 w-6 rounded bg-secondary flex items-center justify-center hover:bg-border">
+                            <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariants)} className="h-6 w-6 rounded bg-secondary flex items-center justify-center hover:bg-border">
                               <Minus className="h-3 w-3" />
                             </button>
                             <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} className="h-6 w-6 rounded bg-secondary flex items-center justify-center hover:bg-border">
+                            <button onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariants)} className="h-6 w-6 rounded bg-secondary flex items-center justify-center hover:bg-border">
                               <Plus className="h-3 w-3" />
                             </button>
-                            <button onClick={() => removeItem(item.product.id)} className="ml-auto text-destructive hover:text-destructive/80">
+                            <button onClick={() => removeItem(item.product.id, item.selectedVariants)} className="ml-auto text-destructive hover:text-destructive/80">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
