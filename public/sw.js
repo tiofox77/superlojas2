@@ -1,137 +1,30 @@
-// ─── SuperLojas PWA Service Worker ───
-// Bump VERSION to trigger auto-update on all clients
-const VERSION = '20';
-const CACHE_NAME = 'superlojas-v' + VERSION;
+const CACHE = "superloja-shell-qa20260926";
+const SHELL = ["/", "/manifest.webmanifest", "/logo-superloja-icon.png", "/superloja-pwa-192-v3.png", "/superloja-pwa-512-v3.png"];
 
-// Install — immediately activate (skipWaiting)
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 
-// Activate — purge ALL old caches, claim all clients instantly
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
-     .then(() => {
-       // Notify all open tabs that a new version is active
-       self.clients.matchAll({ type: 'window' }).then((clients) => {
-         clients.forEach((client) => client.postMessage({ type: 'SW_UPDATED', version: VERSION }));
-       });
-     })
-  );
+self.addEventListener("activate", (event) => {
+  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim()));
 });
 
-// Fetch strategy:
-//   Navigation (HTML pages) → Network-first (always get latest, fallback to cache)
-//   Hashed assets (/assets/) → Cache-first (immutable filenames)
-//   Everything else → Network-first with cache fallback
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  if (request.method !== 'GET') return;
-
-  // API / auth — never cache
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/sanctum/')) return;
-
-  // Chrome extensions, etc.
-  if (!url.protocol.startsWith('http')) return;
-
-  // Navigation requests (HTML) — ALWAYS network-first
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        }
-        return response;
-      }).catch(() => caches.match('/index.html').then((r) => r || caches.match('/')))
-    );
-    return;
-  }
-
-  // Hashed static assets (JS/CSS with hash in filename) — cache-first
-  if (url.pathname.startsWith('/assets/')) {
-    event.respondWith(
-      caches.open(CACHE_NAME).then((cache) =>
-        cache.match(request).then((cached) => {
-          if (cached) return cached;
-          return fetch(request).then((response) => {
-            if (response.ok) cache.put(request, response.clone());
-            return response;
-          });
-        })
-      )
-    );
-    return;
-  }
-
-  // Other resources (images, fonts, etc.) — network-first, cache fallback
-  event.respondWith(
-    fetch(request).then((response) => {
-      if (response.ok) {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET" || !event.request.url.startsWith(self.location.origin)) return;
+  if (event.request.mode === "navigate") {
+    event.respondWith(fetch(event.request, { cache: "no-cache" }).catch(async () => {
+      const path = new URL(event.request.url).pathname;
+      if (/^\/(checkout|entrar|cadastro-loja|minha-conta|minha-loja|loja\/.*\/painel)(\/|$)/.test(path)) {
+        return new Response('<!doctype html><html lang="pt"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ligação indisponível — SuperLoja</title><body style="font-family:system-ui;padding:32px;max-width:540px;margin:auto"><h1>Ligação indisponível</h1><p>Não foi possível contactar a SuperLoja. Verifique a ligação e tente novamente. Se estava a enviar um pedido, consulte o histórico antes de repetir.</p><button onclick="location.reload()" style="padding:12px 20px">Tentar novamente</button></body></html>', {status:503,headers:{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-store"}});
       }
-      return response;
-    }).catch(() => caches.open(CACHE_NAME).then((cache) => cache.match(request)))
-  );
-});
-
-// ─── Push Notifications ───
-self.addEventListener('push', (event) => {
-  let data = { title: 'SuperLojas', body: 'Novidade disponivel!', icon: '/pwa-192.png', badge: '/pwa-192.png', url: '/' };
-  try {
-    if (event.data) {
-      const json = event.data.json();
-      data = { ...data, ...json };
+      return (await caches.match("/")) || Response.error();
+    }));
+    return;
+  }
+  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+    if (response.ok && ["style", "script", "image", "font"].includes(event.request.destination)) {
+      const copy = response.clone(); caches.open(CACHE).then((cache) => cache.put(event.request, copy));
     }
-  } catch (e) {
-    if (event.data) data.body = event.data.text();
-  }
-
-  const options = {
-    body: data.body,
-    icon: data.icon || '/pwa-192.png',
-    badge: data.badge || '/pwa-192.png',
-    image: data.image || undefined,
-    tag: data.tag || 'superlojas-notification',
-    renotify: true,
-    vibrate: [200, 100, 200],
-    data: { url: data.url || '/' },
-    actions: [
-      { action: 'open', title: 'Abrir' },
-      { action: 'close', title: 'Fechar' },
-    ],
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
-});
-
-// Notification click — open the target URL
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  if (event.action === 'close') return;
-
-  const url = event.notification.data?.url || '/';
-
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Focus existing tab if possible
-      for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.navigate(url);
-          return client.focus();
-        }
-      }
-      // Otherwise open new window
-      return self.clients.openWindow(url);
-    })
-  );
+    return response;
+  })));
 });
