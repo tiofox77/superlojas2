@@ -35,7 +35,7 @@ function storeSubdomainUrl(string $slug, string $domain): string {
 // ─── Helper: get stores with subdomain info ───
 function getStoresWithSubdomain(): \Illuminate\Support\Collection {
     return DB::table('stores')
-        ->join('plans', 'stores.plan_id', '=', 'plans.id')
+        ->leftJoin('plans', 'stores.plan_id', '=', 'plans.id')
         ->where('stores.status', 'approved')
         ->select(
             'stores.slug',
@@ -62,23 +62,6 @@ if ($type === 'index') {
         echo "  </sitemap>\n";
     }
 
-    // Per-store sub-sitemaps for stores with subdomains
-    try {
-        $subStores = DB::table('stores')
-            ->join('plans', 'stores.plan_id', '=', 'plans.id')
-            ->where('stores.status', 'approved')
-            ->where('plans.custom_domain', true)
-            ->select('stores.slug', 'stores.updated_at')
-            ->get();
-        foreach ($subStores as $st) {
-            $date = $st->updated_at ? date('Y-m-d', strtotime($st->updated_at)) : $now;
-            echo "  <sitemap>\n";
-            echo "    <loc>{$base}/sitemap-store-{$st->slug}.xml</loc>\n";
-            echo "    <lastmod>{$date}</lastmod>\n";
-            echo "  </sitemap>\n";
-        }
-    } catch (Exception $e) {}
-
     echo '</sitemapindex>' . "\n";
     exit;
 }
@@ -91,14 +74,15 @@ echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 if ($type === 'main') {
     $staticPages = [
         ['loc' => '/',              'priority' => '1.0', 'changefreq' => 'daily'],
-        ['loc' => '/produtos',      'priority' => '0.9', 'changefreq' => 'daily'],
+        ['loc' => '/ofertas',      'priority' => '0.9', 'changefreq' => 'daily'],
         ['loc' => '/lojas',         'priority' => '0.8', 'changefreq' => 'daily'],
         ['loc' => '/categorias',    'priority' => '0.8', 'changefreq' => 'weekly'],
         ['loc' => '/contacto',      'priority' => '0.5', 'changefreq' => 'monthly'],
-        ['loc' => '/sobre',         'priority' => '0.5', 'changefreq' => 'monthly'],
-        ['loc' => '/login',         'priority' => '0.4', 'changefreq' => 'monthly'],
-        ['loc' => '/registar',      'priority' => '0.5', 'changefreq' => 'monthly'],
-        ['loc' => '/registar-loja', 'priority' => '0.6', 'changefreq' => 'monthly'],
+        ['loc' => '/faq',           'priority' => '0.6', 'changefreq' => 'monthly'],
+        ['loc' => '/como-comprar',  'priority' => '0.6', 'changefreq' => 'monthly'],
+        ['loc' => '/termos',        'priority' => '0.3', 'changefreq' => 'yearly'],
+        ['loc' => '/privacidade',   'priority' => '0.3', 'changefreq' => 'yearly'],
+        ['loc' => '/cadastro-loja', 'priority' => '0.6', 'changefreq' => 'monthly'],
     ];
 
     foreach ($staticPages as $page) {
@@ -111,7 +95,12 @@ if ($type === 'main') {
     }
 
     try {
-        $categories = DB::table('categories')->select('slug', 'updated_at')->get();
+        $categories = DB::table('categories')->whereExists(function ($query) {
+            $query->select(DB::raw(1))->from('products')
+                ->join('stores', 'products.store_id', '=', 'stores.id')
+                ->whereColumn('products.category', 'categories.name')
+                ->where('products.is_active', true)->where('stores.status', 'approved');
+        })->select('slug', 'updated_at')->get();
         foreach ($categories as $cat) {
             $date = $cat->updated_at ? date('Y-m-d', strtotime($cat->updated_at)) : $now;
             echo "  <url>\n";
@@ -131,22 +120,21 @@ if ($type === 'stores') {
         foreach ($stores as $store) {
             $date = $store->updated_at ? date('Y-m-d', strtotime($store->updated_at)) : $now;
 
-            // Main domain URL: /loja/{slug}
-            echo "  <url>\n";
-            echo "    <loc>{$base}/loja/{$store->slug}</loc>\n";
-            echo "    <lastmod>{$date}</lastmod>\n";
-            echo "    <changefreq>daily</changefreq>\n";
-            echo "    <priority>0.7</priority>\n";
-            echo "  </url>\n";
-
-            // Subdomain URL: {slug}.superloja.vip
-            if ($store->has_subdomain) {
+            // Emit only the preferred canonical store URL to avoid duplicates.
+            if (false) {
                 $subBase = storeSubdomainUrl($store->slug, $domain);
                 echo "  <url>\n";
                 echo "    <loc>{$subBase}/</loc>\n";
                 echo "    <lastmod>{$date}</lastmod>\n";
                 echo "    <changefreq>daily</changefreq>\n";
                 echo "    <priority>0.8</priority>\n";
+                echo "  </url>\n";
+            } else {
+                echo "  <url>\n";
+                echo "    <loc>{$base}/lojas/{$store->slug}</loc>\n";
+                echo "    <lastmod>{$date}</lastmod>\n";
+                echo "    <changefreq>daily</changefreq>\n";
+                echo "    <priority>0.7</priority>\n";
                 echo "  </url>\n";
             }
         }
@@ -158,7 +146,7 @@ if ($type === 'products') {
     try {
         $products = DB::table('products')
             ->join('stores', 'products.store_id', '=', 'stores.id')
-            ->join('plans', 'stores.plan_id', '=', 'plans.id')
+            ->leftJoin('plans', 'stores.plan_id', '=', 'plans.id')
             ->where('products.is_active', true)
             ->where('stores.status', 'approved')
             ->select(
@@ -173,22 +161,21 @@ if ($type === 'products') {
         foreach ($products as $p) {
             $date = $p->updated_at ? date('Y-m-d', strtotime($p->updated_at)) : $now;
 
-            // Main domain: /loja/{store}/produto/{product}
-            echo "  <url>\n";
-            echo "    <loc>{$base}/loja/{$p->store_slug}/produto/{$p->slug}</loc>\n";
-            echo "    <lastmod>{$date}</lastmod>\n";
-            echo "    <changefreq>weekly</changefreq>\n";
-            echo "    <priority>0.6</priority>\n";
-            echo "  </url>\n";
-
-            // Subdomain: {store}.superloja.vip/produto/{product}
-            if ($p->has_subdomain) {
+            // Emit only one canonical URL per product.
+            if (false) {
                 $subBase = storeSubdomainUrl($p->store_slug, $domain);
                 echo "  <url>\n";
                 echo "    <loc>{$subBase}/produto/{$p->slug}</loc>\n";
                 echo "    <lastmod>{$date}</lastmod>\n";
                 echo "    <changefreq>weekly</changefreq>\n";
                 echo "    <priority>0.7</priority>\n";
+                echo "  </url>\n";
+            } else {
+                echo "  <url>\n";
+                echo "    <loc>{$base}/produto/{$p->slug}</loc>\n";
+                echo "    <lastmod>{$date}</lastmod>\n";
+                echo "    <changefreq>weekly</changefreq>\n";
+                echo "    <priority>0.6</priority>\n";
                 echo "  </url>\n";
             }
         }

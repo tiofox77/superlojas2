@@ -69,7 +69,7 @@ export default function PwaInstallPrompt() {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
   }, []);
 
-  const siteName = settings?.site_name || "SuperLojas";
+  const siteName = settings?.site_name || "SuperLoja";
   const siteLogo = settings?.site_logo || "";
 
   // Android/Desktop prompt

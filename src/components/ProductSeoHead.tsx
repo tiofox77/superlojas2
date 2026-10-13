@@ -45,7 +45,7 @@ export default function ProductSeoHead({
   category,
 }: ProductSeoProps) {
   const { data: siteSettings } = useSiteSettings();
-  const siteName = siteSettings?.site_name || "SuperLojas";
+  const siteName = siteSettings?.site_name || "SuperLoja";
 
   useEffect(() => {
     const title = storeName
@@ -89,7 +89,7 @@ export default function ProductSeoHead({
     return () => {
       const originalTitle = siteSettings?.site_name
         ? `${siteSettings.site_name} — Marketplace de Angola`
-        : "SuperLojas — Marketplace de Angola";
+        : "SuperLoja — Marketplace de Angola";
       document.title = originalTitle;
       const canonical = document.querySelector('link[rel="canonical"]');
       if (canonical) canonical.remove();

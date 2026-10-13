@@ -1,6 +1,13 @@
 <IfModule mod_rewrite.c>
-  RewriteEngine On
+RewriteEngine On
+
+AddType application/manifest+json .webmanifest
+AddType application/javascript .js
   RewriteBase /
+
+  # ─── One canonical host: redirect www to apex ───
+  RewriteCond %{HTTP_HOST} ^www\.superloja\.vip$ [NC]
+  RewriteRule ^ https://superloja.vip%{REQUEST_URI} [R=301,END,NE]
 
   # ─── Force HTTPS ───
   RewriteCond %{HTTPS} off
@@ -8,23 +15,23 @@
 
   # ─── Laravel API: route /api/* to api/public/index.php ───
   RewriteCond %{REQUEST_URI} ^/api/
-  RewriteRule ^api/(.*)$ /api/public/index.php [L,QSA]
+  RewriteRule ^api/(.*)$ /api/public/index.php [END,QSA]
 
   # ─── Sanctum CSRF cookie ───
   RewriteCond %{REQUEST_URI} ^/sanctum/
-  RewriteRule ^sanctum/(.*)$ /api/public/index.php [L,QSA]
+  RewriteRule ^sanctum/(.*)$ /api/public/index.php [END,QSA]
 
   # ─── Storage: serve uploaded files from api/public/storage/ ───
   RewriteCond %{REQUEST_URI} ^/storage/(.*)$
   RewriteCond %{DOCUMENT_ROOT}/api/public/storage/%1 -f
-  RewriteRule ^storage/(.*)$ /api/public/storage/$1 [L]
+  RewriteRule ^storage/(.*)$ /api/public/storage/$1 [END]
 
   # ─── Sitemap & Robots ───
-  RewriteRule ^sitemap\.xml$ /sitemap.php?type=index [L,QSA]
-  RewriteRule ^sitemap-main\.xml$ /sitemap.php?type=main [L,QSA]
-  RewriteRule ^sitemap-stores\.xml$ /sitemap.php?type=stores [L,QSA]
-  RewriteRule ^sitemap-products\.xml$ /sitemap.php?type=products [L,QSA]
-  RewriteRule ^sitemap-store-([a-z0-9\-]+)\.xml$ /sitemap.php?type=store&slug=$1 [L,QSA]
+  RewriteRule ^sitemap\.xml$ /sitemap.php?type=index [END,QSA]
+  RewriteRule ^sitemap-main\.xml$ /sitemap.php?type=main [END,QSA]
+  RewriteRule ^sitemap-stores\.xml$ /sitemap.php?type=stores [END,QSA]
+  RewriteRule ^sitemap-products\.xml$ /sitemap.php?type=products [END,QSA]
+  RewriteRule ^sitemap-store-([a-z0-9\-]+)\.xml$ /sitemap.php?type=store&slug=$1 [END,QSA]
 
   # ─── Frontend: serve existing files from disk (prevents loops) ───
   RewriteCond %{REQUEST_FILENAME} -f
@@ -34,6 +41,12 @@
   RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
   RewriteRule ^(.*)$ /dist/$1 [L]
 
-  # ─── SPA fallback: everything else serves dist/index.html ───
-  RewriteRule ^ /dist/index.html [L]
+  # ─── Store domains/subdomains: server-rendered SEO metadata ───
+  # Social crawlers do not reliably execute the React app. Serve a dynamic
+  # HTML shell containing canonical, Open Graph, icons and Schema.org data.
+  RewriteCond %{HTTP_HOST} !^(www\.)?superloja\.vip$ [NC]
+  RewriteRule ^ /store-seo.php [END,QSA]
+
+  # ─── Main marketplace: crawlable HTML + React application ───
+  RewriteRule ^ /main-seo.php [END,QSA]
 </IfModule>

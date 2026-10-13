@@ -227,7 +227,14 @@ export default function StorePanelProducts() {
     if (!form.name) errs.name = "Nome e obrigatorio.";
     if (!form.slug) errs.slug = "Slug e obrigatorio.";
     else if (slugStatus === "taken") errs.slug = "Este slug ja esta em uso.";
-    if (!form.price) errs.price = "Preco e obrigatorio.";
+    if (!form.price || !Number.isFinite(Number(form.price)) || Number(form.price) <= 0) errs.price = "Informe um preço maior que zero.";
+    if (!Number.isInteger(Number(form.stock || "0")) || Number(form.stock) < 0) errs.stock = "Stock deve ser um inteiro igual ou maior que zero.";
+    if (form.original_price && (!Number.isFinite(Number(form.original_price)) || Number(form.original_price) < Number(form.price))) {
+      errs.original_price = "Preço anterior não pode ser inferior ao preço actual.";
+    }
+    if (imageFiles.some((file) => !["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type) || file.size > 4 * 1024 * 1024)) {
+      errs.images = "Use imagens JPG, PNG, WEBP ou GIF até 4 MB.";
+    }
     if (!form.category && !form.category_id) errs.category_id = "Seleccione uma categoria.";
     if (!editProd && imageFiles.length === 0) errs.images = "Pelo menos uma imagem e obrigatoria.";
     if (Object.keys(errs).length > 0) { setFieldErrors(errs); setFormError(""); return; }
@@ -282,6 +289,9 @@ export default function StorePanelProducts() {
         fetchProducts(true);
         toast.success(editProd ? "Produto actualizado" : "Produto criado", `"${form.name}" guardado com sucesso.`);
       }
+    } catch {
+      // The request may have reached the server — avoid a blind retry creating a duplicate.
+      setFormError("Falha de ligação. Verifique a lista de produtos antes de tentar novamente.");
     } finally { setSaving(false); }
   };
 
@@ -538,8 +548,8 @@ export default function StorePanelProducts() {
                         className={`p-1.5 rounded-lg transition-colors ${p.is_featured ? (p.featured_status === 'approved' ? 'text-amber-500' : 'text-amber-400 animate-pulse') : `${s.textMuted} hover:text-amber-500`}`}>
                         <Award className="h-4 w-4" />
                       </button>
-                      <button onClick={() => openEdit(p)} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-emerald-500 transition-colors`}><Edit3 className="h-4 w-4" /></button>
-                      <button onClick={() => setConfirmDelete({ id: p.id, name: p.name })} disabled={actionLoading === p.id} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`}>
+                      <button aria-label={`Editar ${p.name}`} onClick={() => openEdit(p)} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-emerald-500 transition-colors`}><Edit3 className="h-4 w-4" /></button>
+                      <button aria-label={`Eliminar ${p.name}`} onClick={() => setConfirmDelete({ id: p.id, name: p.name })} disabled={actionLoading === p.id} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-red-500 transition-colors disabled:opacity-50`}>
                         {actionLoading === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                       </button>
                     </div>

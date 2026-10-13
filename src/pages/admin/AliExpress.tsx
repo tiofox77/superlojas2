@@ -87,7 +87,7 @@ export default function AdminAliExpress() {
   const [savingCfg, setSavingCfg] = useState(false);
   const [showHelper, setShowHelper] = useState(false);
 
-  // Import queue (SuperLojas -> Hermes)
+  // Import queue (SuperLoja -> Hermes)
   const [stores, setStores] = useState<{ id: number; name: string; slug: string }[]>([]);
   const [enqStore, setEnqStore] = useState("");
   const [enqUrls, setEnqUrls] = useState("");
@@ -394,7 +394,7 @@ export default function AdminAliExpress() {
           <div className="space-y-3 md:col-span-2 pt-2 border-t border-dashed">
             <div className={`text-xs font-semibold uppercase tracking-wide ${s.textMuted}`}>Webhook do Hermes (push — opcional)</div>
             <p className={`text-xs ${s.textMuted}`}>
-              Se preenchido, ao enfileirar uma URL o SuperLojas faz POST assinado para este endereço (o Hermes não precisa fazer polling). Deixe vazio para usar apenas a fila (polling).
+              Se preenchido, ao enfileirar uma URL o SuperLoja faz POST assinado para este endereço (o Hermes não precisa fazer polling). Deixe vazio para usar apenas a fila (polling).
             </p>
             <div className="grid md:grid-cols-2 gap-3">
               <Field label="URL do webhook do Hermes" s={s}>
@@ -494,7 +494,7 @@ export default function AdminAliExpress() {
           <h2 className={`font-semibold ${s.textPrimary}`}>Enviar URLs para o Hermes (fila)</h2>
         </div>
         <p className={`text-xs ${s.textMuted}`}>
-          O SuperLojas coloca as URLs numa fila; o Hermes consulta a fila, abre cada página, extrai tudo e cria os produtos.
+          O SuperLoja coloca as URLs numa fila; o Hermes consulta a fila, abre cada página, extrai tudo e cria os produtos.
         </p>
         <div className="grid md:grid-cols-[200px_1fr] gap-3">
           <select value={enqStore} onChange={(e) => setEnqStore(e.target.value)}

@@ -4,9 +4,9 @@ import { ShieldCheck, ArrowLeft } from "lucide-react";
 const sections = [
   {
     title: "1. Introducao",
-    content: `A SuperLojas ("nos", "nosso" ou "Plataforma") esta comprometida com a proteccao da privacidade dos seus utilizadores. Esta Politica de Privacidade explica como recolhemos, utilizamos, armazenamos e protegemos as suas informacoes pessoais quando utiliza a nossa plataforma.
+    content: `A SuperLoja ("nos", "nosso" ou "Plataforma") esta comprometida com a proteccao da privacidade dos seus utilizadores. Esta Politica de Privacidade explica como recolhemos, utilizamos, armazenamos e protegemos as suas informacoes pessoais quando utiliza a nossa plataforma.
 
-Ao utilizar a SuperLojas, o utilizador consente com a recolha e tratamento dos seus dados conforme descrito nesta politica.`,
+Ao utilizar a SuperLoja, o utilizador consente com a recolha e tratamento dos seus dados conforme descrito nesta politica.`,
   },
   {
     title: "2. Dados que Recolhemos",
@@ -43,7 +43,7 @@ Dados de Navegacao:
   },
   {
     title: "4. Partilha de Dados",
-    content: `A SuperLojas NAO vende os seus dados pessoais a terceiros.
+    content: `A SuperLoja NAO vende os seus dados pessoais a terceiros.
 
 Podemos partilhar informacoes nas seguintes situacoes:
 • Informacoes publicas da loja: nome, logo, localizacao, produtos e contacto WhatsApp sao publicamente visiveis na Plataforma
@@ -95,8 +95,8 @@ Para exercer estes direitos, entre em contacto connosco atraves dos canais indic
   {
     title: "11. Contacto",
     content: `Para questoes sobre privacidade e proteccao de dados:
-• Email: privacidade@superlojas.ao
-• Email geral: info@superlojas.ao
+• Email: privacidade@superloja.vip
+• Email geral: info@superloja.vip
 • WhatsApp: +244 923 456 789
 • Endereco: Luanda, Angola`,
   },

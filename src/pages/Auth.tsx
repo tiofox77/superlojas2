@@ -6,8 +6,12 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { isSubdomainMode, getMainSiteUrl } from "@/hooks/useSubdomain";
+import { isAngolanPhone } from "@/lib/validators";
+import PasswordReset from "@/components/auth/PasswordReset";
 
 const Auth = () => {
+  // `?reset=<token>` (link from the recovery email) opens the password reset form directly
+  const [showReset, setShowReset] = useState(new URLSearchParams(window.location.search).has("reset"));
   const navigate = useNavigate();
   const { login, register, isAuthenticated, user, logout } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -17,6 +21,17 @@ const Auth = () => {
   const [success, setSuccess] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
+
+  if (showReset) {
+    return (
+      <PasswordReset
+        onBack={() => {
+          window.history.replaceState(null, "", "/entrar");
+          setShowReset(false);
+        }}
+      />
+    );
+  }
 
   // If already logged in, show welcome with role-aware quick links
   if (isAuthenticated && user) {
@@ -69,7 +84,7 @@ const Auth = () => {
             {roleBadge}
             {onSubdomain && (
               <p className="text-[10px] text-muted-foreground mt-2 italic">
-                Está numa loja parceira. Os painéis abrem no SuperLojas.
+                Está numa loja parceira. Os painéis abrem no SuperLoja.
               </p>
             )}
           </div>
@@ -182,6 +197,12 @@ const Auth = () => {
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    if (mode === "register" && form.phone && !isAngolanPhone(form.phone)) {
+      setError("Informe um telefone angolano válido (9 dígitos ou +244).");
+      return;
+    }
+
     setIsSubmitting(true);
 
     if (mode === "register" && form.password !== form.confirmPassword) {
@@ -216,6 +237,8 @@ const Auth = () => {
           setError(result.error || "Erro ao criar conta.");
         }
       }
+    } catch {
+      setError("Falha de ligação. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -249,9 +272,9 @@ const Auth = () => {
         >
           <Link to="/" className="flex items-center justify-center gap-2 mb-8 group">
             <div className="h-10 w-10 rounded-xl bg-hero-gradient flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
-              <Store className="h-5 w-5 text-primary-foreground" />
+              <img src="/superloja-favicon-v3.png" alt="" className="h-9 w-9 object-contain" />
             </div>
-            <span className="text-xl font-extrabold">Super<span className="text-gradient">Lojas</span></span>
+            <span className="text-xl font-extrabold">Super<span className="text-gradient">Loja</span></span>
           </Link>
         </motion.div>
 
@@ -490,14 +513,18 @@ const Auth = () => {
                     <input type="checkbox" className="rounded border-border accent-primary" />
                     <span className="group-hover:text-foreground transition-colors">Lembrar-me</span>
                   </label>
-                  <a href="#" className="text-xs text-primary hover:underline font-medium hover:text-primary/80 transition-colors">Esqueceu a palavra-passe?</a>
+                  <button type="button" onClick={() => setShowReset(true)} className="text-xs text-primary hover:underline">
+                    Esqueceu a palavra-passe?
+                  </button>
                 </div>
               )}
 
               {mode === "register" && (
                 <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer group">
                   <input type="checkbox" className="rounded border-border mt-0.5 accent-primary" required />
-                  <span className="group-hover:text-foreground transition-colors">Aceito os <a href="#" className="text-primary hover:underline">Termos de Uso</a> e <a href="#" className="text-primary hover:underline">Politica de Privacidade</a></span>
+                  <span className="group-hover:text-foreground transition-colors">
+                    Aceito os <a href="/termos" target="_blank" rel="noopener" className="text-primary hover:underline">Termos de Uso</a> e <a href="/privacidade" target="_blank" rel="noopener" className="text-primary hover:underline">Politica de Privacidade</a>
+                  </span>
                 </label>
               )}
 
@@ -526,40 +553,6 @@ const Auth = () => {
                 </Button>
               </motion.div>
             </form>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 my-6">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground">ou continue com</span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
-
-            {/* Social login */}
-            <div className="flex gap-3">
-              <motion.button
-                whileHover={{ y: -2, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
-                whileTap={{ scale: 0.97 }}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border bg-card hover:bg-secondary transition-colors text-sm font-medium"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                </svg>
-                Google
-              </motion.button>
-              <motion.button
-                whileHover={{ y: -2, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
-                whileTap={{ scale: 0.97 }}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border bg-card hover:bg-secondary transition-colors text-sm font-medium"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                </svg>
-                Apple
-              </motion.button>
-            </div>
           </div>
         </motion.div>
 

@@ -273,5 +273,5 @@ export const storeHeroSlides: Record<string, HeroSlide[]> = {
 export const heroSlides: HeroSlide[] = [
   { id: "1", title: "Descubra as Melhores Lojas de Angola", subtitle: "Milhares de produtos, dezenas de lojas, tudo num só lugar.", cta: "Explorar Lojas", ctaLink: "/lojas", bgColor: "from-primary to-warning" },
   { id: "2", title: "Promoções de Verão — Até 40% OFF", subtitle: "Electrónica, moda e muito mais com preços imperdíveis.", cta: "Ver Ofertas", ctaLink: "/categorias", bgColor: "from-destructive to-primary" },
-  { id: "3", title: "Venda na SuperLojas", subtitle: "Abra sua loja online gratuitamente e alcance milhares de clientes.", cta: "Começar a Vender", ctaLink: "/cadastro-loja", bgColor: "from-success to-accent-foreground" },
+  { id: "3", title: "Venda na SuperLoja", subtitle: "Abra sua loja online gratuitamente e alcance milhares de clientes.", cta: "Começar a Vender", ctaLink: "/cadastro-loja", bgColor: "from-success to-accent-foreground" },
 ];

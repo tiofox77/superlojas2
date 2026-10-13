@@ -93,7 +93,7 @@ const StoreFrontLayout = () => (
   <>
     <Header />
     <CartDrawer />
-    <Routes>
+    <div className="pb-16 lg:pb-0"><Routes>
       <Route path="/" element={<Index />} />
       <Route path="/lojas" element={<Stores />} />
       <Route path="/lojas/:slug" element={<StoreDetail />} />
@@ -115,7 +115,7 @@ const StoreFrontLayout = () => (
       <Route path="/api-docs" element={<ApiDocs />} />
       <Route path="/minha-loja" element={<MyStore />} />
       <Route path="*" element={<NotFound />} />
-    </Routes>
+    </Routes></div>
     <Footer />
     <PwaBottomNav />
   </>

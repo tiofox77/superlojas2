@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const FALLBACK = [
-  "🎉 Bem-vindo ao SuperLojas — O maior marketplace de Angola!",
+  "🎉 Bem-vindo ao SuperLoja — O maior marketplace de Angola!",
   "🔥 Promoções de até 40% OFF em electrónica!",
   "🚚 Frete grátis para Luanda em compras acima de 50.000 Kz",
   "🏪 Quer vender? Abra sua loja gratuitamente!",

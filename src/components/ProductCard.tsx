@@ -50,7 +50,7 @@ export function ProductCard({ product }: { product: Product }) {
           className={`absolute top-2 right-2 h-7 w-7 rounded-full flex items-center justify-center transition-all ${
             wishlisted
               ? "bg-destructive/10 opacity-100"
-              : "bg-card/80 backdrop-blur opacity-0 group-hover:opacity-100 hover:bg-card"
+              : "bg-card/80 backdrop-blur opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-card"
           }`}
         >
           <Heart className={`h-3.5 w-3.5 ${wishlisted ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
@@ -63,16 +63,20 @@ export function ProductCard({ product }: { product: Product }) {
             addItem(product, 1, {});
             toast.success(`"${product.name}" adicionado ao carrinho`);
           }}
-          className="absolute bottom-2 right-2 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all shadow-md"
+          className="absolute bottom-2 right-2 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:translate-y-2 sm:group-hover:translate-y-0 transition-all shadow-md"
           aria-label="Adicionar ao carrinho"
         >
           <ShoppingCart className="h-3.5 w-3.5" />
         </button>
       </Link>
       <div className="p-3 flex flex-col flex-1">
-        <Link to={`/lojas/${product.store.slug}`} className="text-[10px] text-primary font-medium hover:underline mb-0.5">
-          {product.store.name}
-        </Link>
+        {product.store.slug ? (
+          <Link to={`/lojas/${product.store.slug}`} className="text-[10px] text-primary font-medium hover:underline mb-0.5">
+            {product.store.name}
+          </Link>
+        ) : (
+          <span className="text-[10px] text-primary font-medium mb-0.5">{product.store.name}</span>
+        )}
         <Link to={`/produto/${product.slug}`}>
           <h3 className="text-xs font-medium line-clamp-2 mb-2 group-hover:text-primary transition-colors leading-snug">
             {product.name}

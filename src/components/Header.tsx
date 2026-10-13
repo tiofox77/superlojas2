@@ -1,5 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, User, Menu, X, Store, Heart, ChevronDown, ChevronRight, Zap, BookOpen, Phone, Tag, Users, LogOut, ShieldCheck, Settings, Package, LayoutDashboard } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Search, ShoppingCart, User, Menu, X, Store, Heart, ChevronDown, ChevronRight, Zap, BookOpen, Phone, Tag, Users, LogOut, ShieldCheck, Settings, Package, LayoutDashboard, Home, LayoutGrid } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { useCategories } from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const navLinks = [
   { label: "Início", to: "/", icon: null },
@@ -18,27 +17,27 @@ const navLinks = [
 ];
 
 export function Header() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { totalItems, setIsOpen } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
   const { data: allCategories = [] } = useCategories();
   const globalCategories = allCategories.filter((c) => !c.isAdult);
   const { user, isAuthenticated, logout } = useAuth();
-  const { data: settings } = useSiteSettings();
-  const navigate = useNavigate();
   const [mobileMenu, setMobileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = searchQuery.trim();
-    if (!q) return;
-    navigate(`/pesquisa?q=${encodeURIComponent(q)}`);
-    setMobileMenu(false);
-  };
   const [showCategories, setShowCategories] = useState(false);
   const [hoveredCat, setHoveredCat] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) return;
+    navigate(`/pesquisa?q=${encodeURIComponent(query)}`);
+    setMobileMenu(false);
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -51,38 +50,33 @@ export function Header() {
   }, []);
 
   return (
-    <>
+    <div className="sticky top-0 z-50">
       <AnnouncementBar />
-      <header className="sticky top-0 z-50 bg-card border-b border-border">
+      <header className="relative bg-card border-b border-border shadow-sm">
         {/* Main header row */}
         <div className="container flex h-16 items-center gap-4">
           {/* Hamburger mobile */}
           <button
             className="lg:hidden p-2 text-muted-foreground"
             onClick={() => setMobileMenu(!mobileMenu)}
+            aria-label={mobileMenu ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={mobileMenu}
           >
             {mobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 font-extrabold text-lg shrink-0">
-            {settings?.site_logo ? (
-              <img src={settings.site_logo} alt={settings.site_name || "SuperLojas"} style={{ height: `${settings.logo_navbar_height || 40}px` }} className="max-w-[200px] object-contain" />
-            ) : (
-              <>
-                <div className="h-9 w-9 rounded-xl bg-hero-gradient flex items-center justify-center shadow-md">
-                  <Store className="h-4.5 w-4.5 text-primary-foreground" />
-                </div>
-                <div className="hidden sm:flex flex-col leading-none">
-                  <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">Marketplace</span>
-                  <span className="text-base font-extrabold">Super<span className="text-gradient">Lojas</span></span>
-                </div>
-              </>
-            )}
+          <Link to="/" className="flex items-center shrink-0" aria-label="SuperLoja — Início">
+            <img
+              src="/logo-superloja-icon.png?v=20260912"
+              alt=""
+              className="h-11 w-11 object-contain"
+            />
+            <span className="hidden sm:inline text-xl font-extrabold tracking-tight text-[#062552]">Super<span className="text-[#ff6500]">Loja</span></span>
           </Link>
 
           {/* Search */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-2xl hidden md:flex">
+          <form onSubmit={submitSearch} className="flex-1 max-w-2xl hidden md:flex" role="search">
             <div className="relative w-full">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
@@ -256,8 +250,9 @@ export function Header() {
             )}
 
             <button
-              onClick={() => setIsOpen(true)}
-              className="relative flex items-center gap-2 p-2 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => { setMobileMenu(false); setIsOpen(true); }}
+              aria-label={`Abrir carrinho com ${totalItems} ${totalItems === 1 ? "item" : "itens"}`}
+              className="relative hidden sm:flex items-center gap-2 p-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ShoppingCart className="h-5 w-5" />
               <div className="hidden sm:flex flex-col text-xs leading-tight">
@@ -360,7 +355,8 @@ export function Header() {
                 <Link
                   key={link.label}
                   to={link.to}
-                  className="flex items-center gap-1.5 px-4 h-11 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  aria-current={location.pathname === link.to ? "page" : undefined}
+                  className={`flex items-center gap-1.5 px-4 h-11 text-sm font-medium transition-colors ${location.pathname === link.to ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   {link.icon}
                   {link.label}
@@ -373,18 +369,16 @@ export function Header() {
         {/* Mobile menu */}
         {mobileMenu && (
           <div className="lg:hidden border-t border-border p-4 bg-card animate-fade-up max-h-[70vh] overflow-y-auto">
-            <form onSubmit={handleSearch} className="relative mb-4">
+            <form onSubmit={submitSearch} className="relative mb-4" role="search">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Estou à procura de..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-border bg-secondary pl-10 pr-20 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-xl border border-border bg-secondary pl-10 pr-20 py-2.5 text-sm"
               />
-              <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">
-                Buscar
-              </button>
+              <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-primary">Buscar</button>
             </form>
 
             <div className="flex flex-col">
@@ -426,6 +420,26 @@ export function Header() {
           </div>
         )}
       </header>
-    </>
+
+      {/* Navegação móvel estilo aplicação nativa */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-[80] h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_rgba(0,0,0,0.08)] grid grid-cols-5" aria-label="Navegação principal móvel">
+        {[
+          { label: "Início", to: "/", icon: Home },
+          { label: "Categorias", to: "/categorias", icon: LayoutGrid },
+          { label: "Lojas", to: "/lojas", icon: Store },
+          { label: "Favoritos", to: "/favoritos", icon: Heart },
+        ].map(({ label, to, icon: Icon }) => {
+          const active = location.pathname === to;
+          return <Link key={to} to={to} aria-current={active ? "page" : undefined} onClick={() => setMobileMenu(false)} className={`flex flex-col items-center justify-center gap-1 text-[10px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>
+            <Icon className={`h-5 w-5 ${active ? "stroke-[2.5]" : ""}`} />
+            <span>{label}</span>
+          </Link>;
+        })}
+        <button type="button" onClick={() => { setMobileMenu(false); setIsOpen(true); }} className="relative flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-muted-foreground" aria-label={`Abrir carrinho com ${totalItems} ${totalItems === 1 ? "item" : "itens"}`}>
+          <span className="relative"><ShoppingCart className="h-5 w-5" />{totalItems > 0 && <span className="absolute -top-2 -right-3 min-w-4 h-4 px-1 rounded-full bg-destructive text-white text-[9px] font-bold flex items-center justify-center">{totalItems}</span>}</span>
+          <span>Carrinho</span>
+        </button>
+      </nav>
+    </div>
   );
 }

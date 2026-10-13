@@ -408,7 +408,7 @@ const StoreDetail = () => {
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="text-2xl font-extrabold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{store.name}</h1>
                 {store.isOfficial && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/90 text-white text-[10px] font-bold shadow-lg backdrop-blur-sm" title="Loja Oficial SuperLojas">
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/90 text-white text-[10px] font-bold shadow-lg backdrop-blur-sm" title="Loja Oficial SuperLoja">
                     <CheckCircle2 className="h-3.5 w-3.5" /> Oficial
                   </span>
                 )}

@@ -28,13 +28,13 @@ export interface SiteSettings {
 }
 
 const DEFAULTS: SiteSettings = {
-  site_name: "SuperLojas",
+  site_name: "SuperLoja",
   site_description: "O maior marketplace de Angola",
   site_logo: "",
   site_favicon: "",
   logo_navbar_height: 40,
   logo_footer_height: 32,
-  contact_email: "info@superlojas.ao",
+  contact_email: "info@superloja.vip",
   contact_phone: "+244 923 456 789",
   contact_whatsapp: "+244 923 456 789",
   contact_address: "Talatona, Luanda Sul",
@@ -54,7 +54,7 @@ const DEFAULTS: SiteSettings = {
   category_themes_enabled: true,
   marquee_active: true,
   marquee_messages: [
-    "🎉 Bem-vindo ao SuperLojas — O maior marketplace de Angola!",
+    "🎉 Bem-vindo ao SuperLoja — O maior marketplace de Angola!",
     "🔥 Promoções de até 40% OFF em electrónica!",
     "🚚 Frete grátis para Luanda em compras acima de 50.000 Kz",
     "🏪 Quer vender? Abra sua loja gratuitamente!",

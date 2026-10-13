@@ -1,12 +1,12 @@
 /**
  * Subdomain detection utility.
  *
- * Reads VITE_BASE_DOMAIN (e.g. "superlojas.ao" or "lojas.test")
+ * Reads VITE_BASE_DOMAIN (e.g. "superloja.vip" or "lojas.test")
  * and checks if the current hostname has a subdomain prefix.
  *
  * Examples:
- *   techzone.superlojas.ao  →  storeSlug = "techzone"
- *   superlojas.ao           →  storeSlug = null  (main site)
+ *   techzone.superloja.vip  →  storeSlug = "techzone"
+ *   superloja.vip           →  storeSlug = null  (main site)
  *   localhost                →  storeSlug = null  (dev without subdomain)
  */
 

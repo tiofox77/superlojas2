@@ -136,7 +136,7 @@ const Index = () => {
         <div className="rounded-2xl bg-hero-gradient p-8 sm:p-12 text-primary-foreground text-center relative overflow-hidden">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDJ2LTJoMzR6bTAtNHYySDJ2LTJoMzR6bTAtNHYySDJ2LTJoMzR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-40" />
           <div className="relative z-10">
-            <h2 className="text-2xl sm:text-3xl font-extrabold mb-2">🏪 Abra sua loja no SuperLojas</h2>
+            <h2 className="text-2xl sm:text-3xl font-extrabold mb-2">🏪 Abra sua loja no SuperLoja</h2>
             <p className="text-primary-foreground/80 mb-6 max-w-md mx-auto text-sm">Milhares de clientes esperando. Cadastre sua loja gratuitamente e comece a vender hoje.</p>
             <Link
               to="/cadastro-loja"

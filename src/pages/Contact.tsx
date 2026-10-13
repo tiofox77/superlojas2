@@ -72,7 +72,7 @@ const Contact = () => {
           <div className="lg:col-span-2 space-y-4">
             {/* Contact cards */}
             {[
-              { icon: Mail, color: "text-blue-500", bg: "bg-blue-50", title: "Email", value: settings?.contact_email || "info@superlojas.ao", link: `mailto:${settings?.contact_email || "info@superlojas.ao"}`, desc: "Resposta em ate 24h" },
+              { icon: Mail, color: "text-blue-500", bg: "bg-blue-50", title: "Email", value: settings?.contact_email || "info@superloja.vip", link: `mailto:${settings?.contact_email || "info@superloja.vip"}`, desc: "Resposta em ate 24h" },
               { icon: Phone, color: "text-emerald-500", bg: "bg-emerald-50", title: "Telefone", value: settings?.contact_phone || "+244 923 456 789", link: `tel:${(settings?.contact_phone || "+244923456789").replace(/\s/g, "")}`, desc: "Seg-Sex: 08h-18h" },
               { icon: MessageCircle, color: "text-green-500", bg: "bg-green-50", title: "WhatsApp", value: settings?.contact_whatsapp || settings?.contact_phone || "+244 923 456 789", link: `https://wa.me/${(settings?.contact_whatsapp || settings?.contact_phone || "244923456789").replace(/[^0-9]/g, "")}`, desc: "Resposta rapida" },
               { icon: MapPin, color: "text-orange-500", bg: "bg-orange-50", title: "Endereco", value: settings?.contact_city || "Luanda, Angola", link: undefined, desc: settings?.contact_address || "Talatona, Luanda Sul" },

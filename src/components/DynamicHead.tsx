@@ -19,17 +19,6 @@ interface SiteSettings {
   seo_head_scripts?: string;
 }
 
-function setMeta(name: string, content: string, attr = "name") {
-  if (!content) return;
-  let el = document.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement | null;
-  if (!el) {
-    el = document.createElement("meta");
-    el.setAttribute(attr, name);
-    document.head.appendChild(el);
-  }
-  el.content = content;
-}
-
 function setLink(rel: string, href: string, type?: string) {
   if (!href) return;
   let el = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
@@ -50,40 +39,11 @@ export default function DynamicHead() {
     fetch(`${API}/site-settings`)
       .then((r) => r.json())
       .then((d: SiteSettings) => {
-        // Title
-        if (d.seo_title || d.site_name) {
-          document.title = d.seo_title || `${d.site_name} — Marketplace de Angola`;
-        }
-
-        // Favicon
-        if (d.site_favicon) {
-          setLink("icon", d.site_favicon, "image/png");
-          setLink("apple-touch-icon", d.site_favicon);
-        }
-
-        // Meta tags
-        setMeta("description", d.seo_description || d.site_description || "");
-        setMeta("keywords", d.seo_keywords || "");
-        setMeta("robots", d.seo_robots || "index, follow");
-
-        // Canonical
-        if (d.seo_canonical) {
-          setLink("canonical", d.seo_canonical);
-        }
-
-        // Open Graph
-        setMeta("og:title", d.seo_title || d.site_name || "", "property");
-        setMeta("og:description", d.seo_description || d.site_description || "", "property");
-        setMeta("og:type", "website", "property");
-        if (d.seo_og_image) setMeta("og:image", d.seo_og_image, "property");
-        if (d.seo_canonical) setMeta("og:url", d.seo_canonical, "property");
-        if (d.site_name) setMeta("og:site_name", d.site_name, "property");
-
-        // Twitter
-        setMeta("twitter:card", "summary_large_image");
-        setMeta("twitter:title", d.seo_title || d.site_name || "");
-        setMeta("twitter:description", d.seo_description || d.site_description || "");
-        if (d.seo_og_image) setMeta("twitter:image", d.seo_og_image);
+        // Title, description, Open Graph and canonical come from the server-rendered
+        // HTML (main-seo.php / store-seo.php) — only the favicon is set here.
+        setLink("icon", "/superloja-favicon-v3.ico?v=brand3", "image/x-icon");
+        setLink("shortcut icon", "/superloja-favicon-v3.ico?v=brand3", "image/x-icon");
+        setLink("apple-touch-icon", "/superloja-apple-v3.png?v=brand3", "image/png");
 
         // Google Analytics GA4
         if (d.seo_ga_id && !document.querySelector(`script[src*="gtag"]`)) {

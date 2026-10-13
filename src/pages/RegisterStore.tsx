@@ -5,10 +5,14 @@ import PhoneInput from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCategories } from "@/hooks/useApi";
+import { isAllowedImage, isAngolanPhone, isValidEmail } from "@/lib/validators";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
 interface ProvinceData { name: string; municipalities: string[]; }
+
+// Fallback list while the categories from the API load
+const CATEGORIES = ["Electronica", "Moda", "Casa & Jardim", "Desporto", "Beleza", "Alimentacao", "Automoveis", "Servicos", "Saude", "Educacao", "Outros"];
 
 const RegisterStore = () => {
   const { token, user, isAuthenticated, setAuth } = useAuth();
@@ -47,6 +51,14 @@ const RegisterStore = () => {
   const [userPassword, setUserPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // Prefill name/phone once the logged-in user is available (without overwriting typed values)
+  useEffect(() => {
+    if (user) {
+      setUserName((prev) => prev || user.name || "");
+      setUserPhone((prev) => prev || user.phone || "");
+    }
+  }, [user]);
+
   // Submission
   const [submitted, setSubmitted] = useState(false);
   const [autoApproved, setAutoApproved] = useState(false);
@@ -55,7 +67,7 @@ const RegisterStore = () => {
 
   // Fetch provinces
   useEffect(() => {
-    fetch(`${API}/provinces`).then(r => r.json()).then(d => setProvinces(d)).catch(() => {});
+    fetch(`${API}/provinces`).then(r => r.json()).then(d => setProvinces(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
 
   // Get municipalities for selected province
@@ -69,26 +81,36 @@ const RegisterStore = () => {
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) { setLogoFile(file); setLogoPreview(URL.createObjectURL(file)); }
+    if (file && !isAllowedImage(file, 2)) {
+      setError("Logótipo: use JPG, PNG, WEBP ou GIF até 2 MB.");
+      return;
+    }
+    if (file) { setError(""); setLogoFile(file); setLogoPreview(URL.createObjectURL(file)); }
   };
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) { setBannerFile(file); setBannerPreview(URL.createObjectURL(file)); }
+    if (file && !isAllowedImage(file, 4)) {
+      setError("Banner: use JPG, PNG, WEBP ou GIF até 4 MB.");
+      return;
+    }
+    if (file) { setError(""); setBannerFile(file); setBannerPreview(URL.createObjectURL(file)); }
   };
 
   const canGoNext = () => {
-    if (step === 1) return !!storeName && !!description && !!category && !!logoFile;
-    if (step === 2) return !!province && !!municipality && !!whatsapp;
+    if (step === 1) return !!storeName.trim() && !!description.trim() && !!category && !!logoFile;
+    if (step === 2) return !!province && !!municipality && isAngolanPhone(whatsapp);
     if (step === 3) {
-      if (!userName) return false;
-      if (!isAuthenticated) return !!userEmail && !!userPassword && userPassword.length >= 6;
-      return true;
+      if (!userName.trim() || (userPhone && !isAngolanPhone(userPhone))) return false;
+      if (isAuthenticated) return true;
+      return isValidEmail(userEmail) && !!userPassword && userPassword.length >= 6;
     }
     return false;
   };
 
   const handleSubmit = async () => {
+    // Guard against invalid data and double submits
+    if (!canGoNext() || saving) return;
     setSaving(true); setError("");
     const fd = new FormData();
     fd.append("name", storeName);
@@ -118,14 +140,14 @@ const RegisterStore = () => {
       const res = await fetch(endpoint, { method: "POST", headers, body: fd });
       const data = await res.json();
       if (res.ok) {
-        // Auto-login se criou conta nova
-        if (data.token && data.user) {
-          setAuth(data.token, data.user);
+        // Auto-login se criou conta nova (ou actualizar o utilizador da sessao actual)
+        if (data.user && (data.token || token)) {
+          setAuth(data.token || token, data.user);
         }
         setSubmitted(true);
         setAutoApproved(data.auto_approved || false);
       } else {
-        setError(data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.message || "Erro ao registar loja.");
+        setError(data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.error || data.message || "Erro ao registar loja.");
       }
     } catch { setError("Erro de conexao. Tente novamente."); }
     finally { setSaving(false); }
@@ -248,7 +270,9 @@ const RegisterStore = () => {
                   <label className={labelClass}>Categoria Principal *</label>
                   <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
                     <option value="">Seleccionar...</option>
-                    {apiCategories.map((c) => <option key={c.id} value={c.name}>{c.icon} {c.name}</option>)}
+                    {apiCategories.length > 0
+                      ? apiCategories.map((c) => <option key={c.id} value={c.name}>{c.icon} {c.name}</option>)
+                      : CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
               </div>

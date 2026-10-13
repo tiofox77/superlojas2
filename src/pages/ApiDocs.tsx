@@ -597,7 +597,7 @@ export default function ApiDocs() {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary-foreground">Documentacao da API</h1>
           </div>
           <p className="text-primary-foreground/80 text-sm max-w-lg mx-auto">
-            Referencia completa da API REST do SuperLojas. Base URL:
+            Referencia completa da API REST do SuperLoja. Base URL:
           </p>
           <div className="inline-flex items-center gap-2 mt-3 rounded-xl bg-card/10 backdrop-blur px-4 py-2">
             <code className="text-xs font-mono text-primary-foreground">{API_BASE}</code>

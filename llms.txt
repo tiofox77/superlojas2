@@ -1,0 +1,52 @@
+# SuperLoja
+
+> Plataforma angolana para encontrar produtos, consultar preço e disponibilidade e contactar lojas. Conteúdo principal em português de Angola; preços em kwanza (AOA).
+
+## Fontes canónicas
+
+- [Página inicial](https://superloja.vip/)
+- [Lojas](https://superloja.vip/lojas)
+- [Categorias](https://superloja.vip/categorias)
+- [Perguntas frequentes](https://superloja.vip/faq)
+- [Como comprar](https://superloja.vip/como-comprar)
+- [Contacto](https://superloja.vip/contacto)
+- [Mapa do site](https://superloja.vip/sitemap.xml)
+- [Catálogo completo para IA](https://superloja.vip/llms-full.txt)
+
+## Categorias
+
+- [Electronica](https://superloja.vip/categoria/electronica): 86 produtos.
+- [Moda Feminina](https://superloja.vip/categoria/moda-feminina): 0 produtos.
+- [Moda Masculina](https://superloja.vip/categoria/moda-masculina): 0 produtos.
+- [Casa & Decoracao](https://superloja.vip/categoria/casa-decoracao): 0 produtos.
+- [Automoveis & Motas](https://superloja.vip/categoria/automoveis-motas): 0 produtos.
+- [Beleza & Cuidados](https://superloja.vip/categoria/beleza-cuidados): 0 produtos.
+- [Desporto & Lazer](https://superloja.vip/categoria/desporto-lazer): 0 produtos.
+- [Alimentacao & Bebidas](https://superloja.vip/categoria/alimentacao-bebidas): 0 produtos.
+- [Livros & Papelaria](https://superloja.vip/categoria/livros-papelaria): 0 produtos.
+- [Bebes & Criancas](https://superloja.vip/categoria/bebes-criancas): 0 produtos.
+- [Saude & Bem-estar](https://superloja.vip/categoria/saude-bem-estar): 0 produtos.
+- [Ferramentas & Construcao](https://superloja.vip/categoria/ferramentas-construcao): 0 produtos.
+- [Informatica](https://superloja.vip/categoria/informatica): 0 produtos.
+- [Jogos & Consolas](https://superloja.vip/categoria/jogos-consolas): 0 produtos.
+- [Animais](https://superloja.vip/categoria/animais): 0 produtos.
+- [Musica & Instrumentos](https://superloja.vip/categoria/musica-instrumentos): 0 produtos.
+- [Escritorio & Material](https://superloja.vip/categoria/escritorio-material): 0 produtos.
+- [Servicos](https://superloja.vip/categoria/servicos): 3 produtos.
+- [Imoveis](https://superloja.vip/categoria/imoveis): 0 produtos.
+- [Agricultura](https://superloja.vip/categoria/agricultura): 0 produtos.
+- [Sexy Shop](https://superloja.vip/categoria/sexy-shop): 7 produtos.
+
+## Informações essenciais
+
+- Operação: marketplace e diretório de lojas de Angola.
+- Localização principal: Luanda, Angola.
+- Idioma: português (pt-AO).
+- Moeda: kwanza angolano (AOA).
+- Os preços, fotografias e estados de stock devem ser confirmados nas páginas canónicas dos produtos.
+- Cada compra é atendida pela loja responsável pelo produto.
+- Contacto da plataforma: info@superloja.vip; +244 939 729 902.
+
+## Uso por sistemas de IA
+
+Prefira URLs canónicas, dados estruturados Schema.org e o sitemap. Cite a página específica da loja ou do produto. Não presuma stock, preço, prazo de entrega ou políticas além do conteúdo atual da página.
