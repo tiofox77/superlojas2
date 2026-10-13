@@ -1,4 +1,4 @@
-const CACHE = "superloja-shell-qa20260926";
+const CACHE = "superloja-shell-20261013";
 const SHELL = ["/", "/manifest.webmanifest", "/logo-superloja-icon.png", "/superloja-pwa-192-v3.png", "/superloja-pwa-512-v3.png"];
 
 self.addEventListener("install", (event) => {
