@@ -12,6 +12,7 @@ import { productImgSrc } from "@/lib/imageHelpers";
 import ProductSeoHead from "@/components/ProductSeoHead";
 import { useSubdomainStore } from "@/contexts/SubdomainStoreContext";
 import { initPixel, pixelTrack } from "@/lib/facebookPixel";
+import { trackInterest } from "@/lib/demand";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -342,6 +343,7 @@ const ProductDetail = () => {
           <div className="mt-3">
             <a
               href={`https://wa.me/${(product.store.whatsapp || "").replace(/[^\d]/g, "")}?text=${whatsAppMsg}`}
+              onClick={() => trackInterest(product.id, "whatsapp")}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full"

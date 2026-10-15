@@ -8,6 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('page_views', 'search_term')) return; // already applied by hand on some servers
+
         Schema::table('page_views', function (Blueprint $table) {
             $table->string('search_term', 500)->nullable()->after('referrer_domain');
             $table->string('search_engine', 50)->nullable()->after('search_term')->index();

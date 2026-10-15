@@ -11,6 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasColumn('products', 'is_featured')) return; // already applied by hand on some servers
+
         Schema::table('products', function (Blueprint $table) {
             $table->boolean('is_featured')->default(false)->after('flash_sale_end');
             $table->string('featured_status')->nullable()->after('is_featured');

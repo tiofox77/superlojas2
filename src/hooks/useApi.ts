@@ -120,6 +120,18 @@ export function useFeaturedProducts() {
   });
 }
 
+/** Most asked on WhatsApp / most searched in the last 30 days (home "Produtos em Destaque"). */
+export function usePopularProducts() {
+  return useQuery<Product[]>({
+    queryKey: ["products", "popular"],
+    queryFn: async () => {
+      const data = await fetchApi<ApiProduct[]>("/products/popular");
+      return data.map(transformProduct);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useFlashSaleProducts() {
   return useQuery<Product[]>({
     queryKey: ["products", "flash-sale"],

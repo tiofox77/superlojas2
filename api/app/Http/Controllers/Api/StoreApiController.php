@@ -592,4 +592,144 @@ class StoreApiController extends Controller
 
         return response()->json($categories);
     }
+
+    // ─── Demand (WhatsApp agent) ──────────────────────────────────
+
+    /**
+     * Hermes reports what customers ask about on WhatsApp. Each event names a product of this store
+     * (product_id or slug) or carries the customer's free text (query), which is matched to the
+     * store's products by name. Feeds the home page "Produtos em Destaque" ranking.
+     */
+    public function reportDemand(Request $request, \App\Services\ProductDemand $demand)
+    {
+        if (!$this->checkPermission($request, 'write')) {
+            return response()->json(['error' => 'Sem permissao de escrita.'], 403);
+        }
+        $data = $request->validate([
+            'events' => 'required|array|min:1|max:50',
+            'events.*.product_id' => 'nullable|integer',
+            'events.*.slug' => 'nullable|string|max:255',
+            'events.*.query' => 'nullable|string|max:200',
+            'events.*.count' => 'nullable|integer|min:1|max:20',
+        ]);
+
+        $store = $this->store($request);
+        $results = [];
+        foreach ($data['events'] as $i => $event) {
+            $count = (int) ($event['count'] ?? 1);
+            $base = Product::where('store_id', $store->id);
+
+            if (!empty($event['product_id']) || !empty($event['slug'])) {
+                $product = (clone $base)
+                    ->when(!empty($event['product_id']), fn ($q) => $q->where('id', $event['product_id']))
+                    ->when(empty($event['product_id']), fn ($q) => $q->where('slug', $event['slug']))
+                    ->first(['id', 'store_id', 'name', 'slug']);
+                if ($product) {
+                    $demand->record($product->id, $product->store_id, 'whatsapp_inquiries', $count);
+                }
+                $results[] = ['event' => $i, 'matched' => $product ? [['id' => $product->id, 'slug' => $product->slug, 'name' => $product->name]] : []];
+                continue;
+            }
+
+            $query = \App\Services\ProductDemand::normalise((string) ($event['query'] ?? ''));
+            if (mb_strlen($query) < 2) {
+                $results[] = ['event' => $i, 'matched' => [], 'error' => 'Indique product_id, slug ou query.'];
+                continue;
+            }
+
+            $words = $this->queryWords($query);
+            $matches = $this->matchProducts($base, $words);
+
+            // Only the product words are kept — never the customer's full message.
+            if ($words->isNotEmpty()) $demand->recordSearch($words->implode(' '), 'whatsapp', $matches->count());
+            foreach ($matches as $k => $product) {
+                // The best match counts as the product asked about; the others as search results.
+                $demand->record($product->id, $product->store_id, $k === 0 ? 'whatsapp_inquiries' : 'search_hits', $count);
+            }
+            $results[] = ['event' => $i, 'matched' => $matches->map(fn ($p) => ['id' => $p->id, 'slug' => $p->slug, 'name' => $p->name])->all()];
+        }
+
+        return response()->json(['recorded' => count($results), 'results' => $results]);
+    }
+
+    /** Words that say nothing about the product in a WhatsApp question. */
+    private const QUERY_STOPWORDS = [
+        'ola', 'oi', 'bom', 'boa', 'dia', 'tarde', 'noite', 'tem', 'tens', 'ter', 'teem', 'quero', 'queria',
+        'gostaria', 'preciso', 'procuro', 'para', 'por', 'com', 'sem', 'uma', 'uns', 'umas', 'que', 'qual',
+        'quais', 'quanto', 'quantos', 'custa', 'preco', 'precos', 'valor', 'voces', 'ainda', 'disponivel',
+        'disponiveis', 'esse', 'essa', 'este', 'esta', 'isso', 'aqui', 'sim', 'nao', 'favor', 'obrigado',
+        'obrigada', 'mais', 'muito', 'tambem', 'como', 'onde', 'quando', 'loja', 'produto', 'stock', 'estoque',
+        'pode', 'podem', 'ver', 'mandar', 'manda', 'foto', 'fotos', 'entrega', 'luanda', 'kz', 'kwanza', 'kwanzas',
+    ];
+
+    /** Product words of a question: accents removed, no courtesy words, no long numbers (phones). */
+    private function queryWords(string $query): \Illuminate\Support\Collection
+    {
+        return collect(preg_split('/[^\p{L}\p{N}]+/u', Str::lower(Str::ascii($query))))
+            ->filter(fn ($w) => mb_strlen($w) >= 3 && !in_array($w, self::QUERY_STOPWORDS, true) && !preg_match('/^\d{5,}$/', $w))
+            ->unique()->take(8)->values();
+    }
+
+    /**
+     * Up to 3 products of the store best matching a free-text question: name words are compared
+     * accent-insensitively and products are ranked by how many of the question's words they contain.
+     */
+    private function matchProducts($base, \Illuminate\Support\Collection $words)
+    {
+        if ($words->isEmpty()) return collect();
+        $ascii = fn (string $s) => Str::lower(Str::ascii($s));
+
+        return (clone $base)->where('is_active', true)
+            ->where(function ($q) use ($words) {
+                foreach ($words as $w) $q->orWhere('name', 'like', "%{$w}%");
+            })
+            ->get(['id', 'store_id', 'name', 'slug', 'stock'])
+            ->map(function ($p) use ($words, $ascii) {
+                $name = $ascii($p->name);
+                $p->hits = $words->filter(fn ($w) => str_contains($name, $w))->count();
+                return $p;
+            })
+            ->filter(fn ($p) => $p->hits > 0)
+            ->sortBy([['hits', 'desc'], ['stock', 'desc']])
+            ->take(3)
+            ->values();
+    }
+
+    /** Most demanded products of this store (default last 30 days), with the counters behind the score. */
+    public function demandRanking(Request $request, \App\Services\ProductDemand $demand)
+    {
+        if (!$this->checkPermission($request, 'read')) {
+            return response()->json(['error' => 'Sem permissao de leitura.'], 403);
+        }
+        $days = min(max((int) $request->query('days', 30), 1), 90);
+        $store = $this->store($request);
+        $scores = $demand->scores($days, $store->id, 50);
+        $totals = $demand->totals($days, $store->id);
+        $products = Product::whereIn('id', array_keys($scores))->get(['id', 'name', 'slug', 'price', 'stock'])->keyBy('id');
+
+        $ranking = collect($scores)->map(function ($score, $id) use ($products, $totals) {
+            $p = $products[$id] ?? null;
+            if (!$p) return null;
+            $t = $totals[$id] ?? null;
+            return [
+                'id' => $p->id, 'name' => $p->name, 'slug' => $p->slug, 'price' => $p->price, 'stock' => $p->stock,
+                'score' => round($score, 1),
+                'whatsapp_inquiries' => (int) ($t->whatsapp_inquiries ?? 0),
+                'whatsapp_clicks' => (int) ($t->whatsapp_clicks ?? 0),
+                'cart_adds' => (int) ($t->cart_adds ?? 0),
+                'search_hits' => (int) ($t->search_hits ?? 0),
+                'views' => (int) ($t->views ?? 0),
+            ];
+        })->filter()->values();
+
+        $topSearches = \Illuminate\Support\Facades\DB::table('search_terms_daily')
+            ->where('day', '>=', now()->subDays($days)->toDateString())
+            ->groupBy('term')
+            ->selectRaw('term, SUM(count) as count, MIN(results) as min_results')
+            ->orderByDesc('count')
+            ->limit(20)
+            ->get();
+
+        return response()->json(['days' => $days, 'products' => $ranking, 'top_searches' => $topSearches]);
+    }
 }

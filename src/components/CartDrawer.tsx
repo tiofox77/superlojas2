@@ -1,5 +1,6 @@
 import { X, Minus, Plus, Trash2, MessageCircle } from "lucide-react";
 import { useCart, cartItemKey } from "@/contexts/CartContext";
+import { trackInterest } from "@/lib/demand";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { logoSrc, productImgSrc, onImgError } from "@/lib/imageHelpers";
@@ -61,6 +62,7 @@ export function CartDrawer() {
                     {store.whatsapp && (
                       <a
                         href={`https://wa.me/${store.whatsapp.replace(/[^\d]/g, "")}?text=${generateWhatsAppMessage(store.name, storeItems)}`}
+                        onClick={() => storeItems.forEach((i) => trackInterest(i.product.id, "whatsapp"))}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 text-[11px] font-medium text-success hover:underline"

@@ -126,6 +126,15 @@ class TrackingController extends Controller
 
         PageView::create($data);
 
+        // Product page view = demand signal for the home ranking (once per visitor/product/day).
+        if (preg_match('#^/produto/([a-z0-9\-]+)/?$#i', $path, $m)) {
+            $product = \App\Models\Product::where('slug', $m[1])->first(['id', 'store_id']);
+            $demand = app(\App\Services\ProductDemand::class);
+            if ($product && $demand->firstToday("view|{$visitorHash}|{$product->id}")) {
+                $demand->record($product->id, $product->store_id, 'views');
+            }
+        }
+
         return response()->json(['ok' => true]);
     }
 

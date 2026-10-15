@@ -8,6 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('products', 'is_active')) return; // already applied by hand on some servers
+
         Schema::table('products', function (Blueprint $table) {
             $table->boolean('is_active')->default(true)->after('featured_status');
         });

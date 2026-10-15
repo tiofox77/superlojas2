@@ -4,7 +4,7 @@ import { FeaturedCategories } from "@/components/FeaturedCategories";
 import { StoreCard } from "@/components/StoreCard";
 import { ProductCard } from "@/components/ProductCard";
 import { FlashDeals } from "@/components/FlashDeals";
-import { useFeaturedStores, useTrendingProducts, useLatestProducts, useFeaturedProducts } from "@/hooks/useApi";
+import { useFeaturedStores, useTrendingProducts, useLatestProducts, usePopularProducts } from "@/hooks/useApi";
 import { motion } from "framer-motion";
 import { ArrowRight, TrendingUp, Store, Award, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -20,7 +20,10 @@ const Index = () => {
   const { data: featuredStores = [] } = useFeaturedStores();
   const { data: trendingProducts = [] } = useTrendingProducts();
   const { data: latestProducts = [] } = useLatestProducts();
-  const { data: featuredProducts = [] } = useFeaturedProducts();
+  // Destaques = most asked on WhatsApp / most searched (api ProductDemand); "Em Alta" skips those.
+  const { data: featuredProducts = [] } = usePopularProducts();
+  const featuredIds = new Set(featuredProducts.map((p) => p.id));
+  const trendingRest = trendingProducts.filter((p) => !featuredIds.has(p.id));
 
   return (
     <main className="min-h-screen bg-secondary/30">
@@ -54,7 +57,7 @@ const Index = () => {
               </div>
               <div>
                 <h2 className="text-lg font-bold">Produtos em Destaque</h2>
-                <p className="text-xs text-muted-foreground">Seleccionados pelas melhores lojas</p>
+                <p className="text-xs text-muted-foreground">Os mais pedidos no WhatsApp e mais procurados</p>
               </div>
             </div>
           </div>
@@ -120,12 +123,12 @@ const Index = () => {
             </div>
             <div>
               <h2 className="text-lg font-bold">Produtos em Alta</h2>
-              <p className="text-xs text-muted-foreground">Os mais procurados pelos clientes</p>
+              <p className="text-xs text-muted-foreground">Novidades e mais bem avaliados</p>
             </div>
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {trendingProducts.map((product) => (
+          {trendingRest.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>

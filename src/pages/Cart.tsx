@@ -1,4 +1,5 @@
 import { useCart, cartItemKey } from "@/contexts/CartContext";
+import { trackInterest } from "@/lib/demand";
 import { Link } from "react-router-dom";
 import { Minus, Plus, Trash2, MessageCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -80,6 +81,7 @@ const Cart = () => {
               {store.whatsapp && (
                 <a
                   href={`https://wa.me/${store.whatsapp.replace(/[^\d]/g, "")}?text=${generateWhatsAppMessage(storeItems)}`}
+                  onClick={() => storeItems.forEach((i) => trackInterest(i.product.id, "whatsapp"))}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-success text-success text-sm font-medium hover:bg-success/10 transition-colors"

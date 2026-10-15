@@ -50,6 +50,8 @@ Route::get('/products/trending', [ProductController::class, 'trending']);
 Route::get('/products/latest', [ProductController::class, 'latest']);
 Route::get('/products/featured', [ProductController::class, 'featured']);
 Route::get('/products/flash-sale', [ProductController::class, 'flashSale']);
+Route::get('/products/popular', [ProductController::class, 'popular']);
+Route::middleware('throttle:60,1')->post('/products/{product}/interest', [ProductController::class, 'interest'])->whereNumber('product');
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 
 Route::get('/hero-slides', [HeroSlideController::class, 'index']);
@@ -334,6 +336,9 @@ Route::middleware(\App\Http\Middleware\StoreApiAuth::class)->prefix('store-api/{
     Route::put('/products/{productId}', [\App\Http\Controllers\Api\StoreApiController::class, 'productUpdate']);
     Route::delete('/products/{productId}', [\App\Http\Controllers\Api\StoreApiController::class, 'productDestroy']);
     Route::get('/categories', [\App\Http\Controllers\Api\StoreApiController::class, 'categories']);
+    // Demand signals from the WhatsApp agent (Hermes) — see HERMES_DEMAND.md
+    Route::post('/demand', [\App\Http\Controllers\Api\StoreApiController::class, 'reportDemand']);
+    Route::get('/demand', [\App\Http\Controllers\Api\StoreApiController::class, 'demandRanking']);
 });
 
 // ─── Super Admin routes ──────────────────────────────────────

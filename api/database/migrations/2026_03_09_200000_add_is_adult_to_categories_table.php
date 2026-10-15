@@ -8,6 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('categories', 'is_adult')) return; // already applied by hand on some servers
+
         Schema::table('categories', function (Blueprint $table) {
             $table->boolean('is_adult')->default(false)->after('product_count');
         });

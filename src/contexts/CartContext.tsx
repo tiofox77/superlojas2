@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { CartItem, Product } from "@/data/types";
 import { transformProduct } from "@/services/transformers";
+import { trackInterest } from "@/lib/demand";
 
 /** Same product with different variants = different cart line. */
 export const cartItemKey = (productId: string, variants: Record<string, string> = {}) =>
@@ -90,6 +91,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = useCallback((product: Product, quantity: number, variants: Record<string, string>) => {
     if (!Number.isInteger(quantity) || quantity <= 0) return;
+    trackInterest(product.id, "cart");
     setItems((prev) => {
       const inCart = prev.filter((i) => i.product.id === product.id).reduce((acc, i) => acc + i.quantity, 0);
       const toAdd = Math.min(quantity, Math.max(0, product.stock - inCart));

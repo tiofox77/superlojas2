@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Services\ProductDemand;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class ProductController extends Controller
 {
@@ -86,6 +88,18 @@ class ProductController extends Controller
         $perPage = min((int) $request->get('per_page', 24), 100);
         $paginated = $query->paginate($perPage);
 
+        // Site search = demand signal: count the term and credit the first results (once per visitor/term/day).
+        $term = ProductDemand::normalise((string) $request->query('search', ''));
+        if (mb_strlen($term) >= 2 && $paginated->currentPage() === 1) {
+            $demand = app(ProductDemand::class);
+            if ($demand->firstToday('search|' . $request->ip() . '|' . $term)) {
+                $demand->recordSearch($term, 'site', $paginated->total());
+                foreach ($paginated->getCollection()->take(5) as $product) {
+                    $demand->record($product->id, $product->store_id, 'search_hits');
+                }
+            }
+        }
+
         // Standardize currency on output
         $paginated->getCollection()->transform(function ($product) {
             if ($product->currency && strtolower($product->currency) !== 'usd') {
@@ -155,6 +169,71 @@ class ProductController extends Controller
         $products->each(fn ($p) => $p->currency = ($p->currency && strtolower($p->currency) !== 'usd') ? 'Kz' : $p->currency);
 
         return response()->json($products);
+    }
+
+    /**
+     * Home "Produtos em Destaque": most asked on WhatsApp and most searched / viewed in the last
+     * 30 days (see ProductDemand), in stock only. Approved paid highlights get a small boost and
+     * fill the list, followed by trending products, while there is little demand data.
+     */
+    public function popular(ProductDemand $demand)
+    {
+        $limit = 10;
+        $ids = Cache::remember('products:popular:v1', 600, function () use ($demand, $limit) {
+            $scores = $demand->scores(30);
+            $visible = fn () => Product::query()
+                ->where('is_active', true)
+                ->where('stock', '>', 0)
+                ->whereHas('store', fn ($q) => $q->where('status', 'approved'));
+
+            $ranked = $scores
+                ? $visible()->whereIn('id', array_keys($scores))
+                    ->get(['id', 'is_featured', 'featured_status'])
+                    ->sortByDesc(fn ($p) => $scores[$p->id] + ($p->is_featured && $p->featured_status === 'approved' ? 10 : 0))
+                    ->pluck('id')
+                : collect();
+
+            if ($ranked->count() < $limit) {
+                $fill = $visible()
+                    ->whereNotIn('id', $ranked->all())
+                    ->orderByRaw("CASE WHEN is_featured = 1 AND featured_status = 'approved' THEN 0 ELSE 1 END")
+                    ->orderByRaw('(CAST(rating AS DECIMAL(3,1)) * 2 + review_count) DESC')
+                    ->latest()
+                    ->take($limit - $ranked->count())
+                    ->pluck('id');
+                $ranked = $ranked->concat($fill);
+            }
+
+            return $ranked->take($limit)->values()->all();
+        });
+
+        $products = Product::with(['store' => fn ($q) => $q->select(self::$storeListFields)])
+            ->whereIn('id', $ids)
+            ->where('is_active', true)
+            ->where('stock', '>', 0)
+            ->get()
+            ->sortBy(fn ($p) => array_search($p->id, $ids))
+            ->values();
+
+        $products->each(fn ($p) => $p->currency = ($p->currency && strtolower($p->currency) !== 'usd') ? 'Kz' : $p->currency);
+
+        return response()->json($products);
+    }
+
+    /**
+     * Demand events from the site: WhatsApp button clicks and cart adds (once per visitor/product/type/day).
+     */
+    public function interest(Request $request, ProductDemand $demand, int $product)
+    {
+        $data = $request->validate(['type' => 'required|in:whatsapp,cart']);
+        $row = Product::where('id', $product)->where('is_active', true)->first(['id', 'store_id']);
+        if (!$row) return response()->json(['recorded' => false], 404);
+
+        $field = $data['type'] === 'whatsapp' ? 'whatsapp_clicks' : 'cart_adds';
+        $recorded = $demand->firstToday("{$field}|{$request->ip()}|{$row->id}");
+        if ($recorded) $demand->record($row->id, $row->store_id, $field);
+
+        return response()->json(['recorded' => $recorded]);
     }
 
     public function flashSale()
