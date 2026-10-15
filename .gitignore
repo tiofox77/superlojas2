@@ -22,3 +22,7 @@ dist-ssr
 *.sln
 *.sw?
 *.zip
+
+# Deploy snapshots / restore points (scripts/instantaneo_ftp.sh)
+recovery/
+scripts/.lista-deploy.txt

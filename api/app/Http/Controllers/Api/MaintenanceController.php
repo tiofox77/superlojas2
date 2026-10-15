@@ -87,9 +87,28 @@ class MaintenanceController extends Controller
         return response()->json($this->migrationState(true));
     }
 
+    /**
+     * {"file": "2026_10_15_120000_name.php"} runs that migration only (the normal way, one at a time);
+     * {"all": true} runs every pending migration.
+     */
     public function migrate(Request $request)
     {
-        Artisan::call('migrate', ['--force' => true]);
+        $data = $request->validate([
+            'file' => ['nullable', 'string', 'regex:/^\d{4}_\d{2}_\d{2}_\d{6}_[a-z0-9_]+\.php$/'],
+            'all' => 'nullable|boolean',
+        ]);
+        if (empty($data['file']) && empty($data['all'])) {
+            return response()->json(['error' => 'Indique "file" (uma migracao) ou "all": true.'], 422);
+        }
+        $options = ['--force' => true];
+        if (!empty($data['file'])) {
+            if (!is_file(database_path('migrations/' . $data['file']))) {
+                return response()->json(['error' => "Migracao {$data['file']} nao existe no servidor."], 404);
+            }
+            $options['--path'] = 'database/migrations/' . $data['file'];
+        }
+
+        Artisan::call('migrate', $options);
         $output = trim(Artisan::output());
         Cache::forget('products:popular:v1');
         $request->attributes->set('maintenance_summary', mb_substr(preg_replace('/\s+/', ' ', $output), 0, 400));
@@ -118,6 +137,24 @@ class MaintenanceController extends Controller
         return response()->json(['scope' => $scope, 'output' => $out]);
     }
 
+    /** Reset the web server's OPcache (separate from the CLI one) so freshly uploaded classes run. */
+    public function opcacheReset(Request $request)
+    {
+        if (!function_exists('opcache_reset')) {
+            return response()->json(['ok' => false, 'message' => 'OPcache nao disponivel neste servidor.']);
+        }
+        $status = function_exists('opcache_get_status') ? @opcache_get_status(false) : null;
+        $reset = @opcache_reset();
+        $request->attributes->set('maintenance_summary', $reset ? 'reset' : 'not reset');
+
+        return response()->json([
+            'ok' => (bool) $reset,
+            'enabled' => (bool) ($status['opcache_enabled'] ?? false),
+            'validate_timestamps' => (bool) ini_get('opcache.validate_timestamps'),
+            'revalidate_freq' => (int) ini_get('opcache.revalidate_freq'),
+        ]);
+    }
+
     public function storageLink()
     {
         if (is_link(public_path('storage')) || is_dir(public_path('storage'))) {
@@ -136,6 +173,12 @@ class MaintenanceController extends Controller
         $limit = min(max((int) $request->query('limit', 50), 1), 300);
         $level = strtoupper((string) $request->query('level', ''));
         $q = (string) $request->query('q', '');
+        $since = null;
+        if ($request->filled('since')) {
+            try { $since = \Carbon\Carbon::parse((string) $request->query('since')); } catch (\Throwable $e) {
+                return response()->json(['error' => 'since invalido (use ISO 8601, ex.: 2026-10-15T10:00:00Z)'], 422);
+            }
+        }
 
         $file = $this->latestLogFile();
         if (!$file) return response()->json(['file' => null, 'entries' => []]);
@@ -143,6 +186,9 @@ class MaintenanceController extends Controller
         $entries = collect($this->parseEntries($this->tail($file, 4000)))
             ->when($level !== '', fn ($c) => $c->filter(fn ($e) => $e['level'] === $level))
             ->when($q !== '', fn ($c) => $c->filter(fn ($e) => stripos($e['message'], $q) !== false))
+            ->when($since, fn ($c) => $c->filter(function ($e) use ($since) {
+                try { return \Carbon\Carbon::parse($e['time'], config('app.timezone'))->greaterThanOrEqualTo($since); } catch (\Throwable $x) { return true; }
+            }))
             ->take(-$limit)
             ->map(fn ($e) => [...$e, 'message' => $this->redact(mb_substr($e['message'], 0, 4000))])
             ->values();

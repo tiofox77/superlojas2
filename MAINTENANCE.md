@@ -47,11 +47,12 @@ Todas com `Authorization: Bearer mt_…`.
 |---|---|---|---|
 | GET | `/api/maintenance/status` | read | App, base de dados (latência), cache, storage (link, escrita, espaço em disco), fila, migrações pendentes, contadores do negócio, último erro |
 | GET | `/api/maintenance/migrations` | read | Migrações corridas e pendentes, último lote |
-| GET | `/api/maintenance/logs?limit=50&level=error&q=texto` | read | Últimas entradas do log do Laravel. Tokens, passwords, chaves e e-mails vêm mascarados |
+| GET | `/api/maintenance/logs?limit=50&level=error&q=texto&since=2026-10-15T10:00:00Z` | read | Últimas entradas do log do Laravel. Tokens, passwords, chaves e e-mails vêm mascarados |
 | GET | `/api/maintenance/demand?days=30` | read | Ranking de procura do marketplace e pesquisas mais feitas |
 | GET | `/api/maintenance/audit?limit=50` | read | Chamadas feitas com tokens de manutenção |
-| POST | `/api/maintenance/migrate` | write | `php artisan migrate --force` |
+| POST | `/api/maintenance/migrate` `{"file":"AAAA_MM_DD_HHMMSS_nome.php"}` ou `{"all":true}` | write | Corre uma migração (o normal) ou todas as pendentes |
 | POST | `/api/maintenance/cache/clear` `{"scope":"app\|views\|config\|all"}` | write | Limpa caches |
 | POST | `/api/maintenance/storage-link` | write | Cria `public/storage` se faltar |
+| POST | `/api/maintenance/opcache-reset` | write | Limpa o OPcache da web, para as classes acabadas de enviar entrarem em vigor |
 
-Atalho local: `bash tools/maint.sh status` (lê o token do ficheiro acima).
+Atalho local: `bash scripts/manutencao.sh status` (lê o token do ficheiro acima e nunca o mostra). O procedimento de deploy completo está em `DEPLOY.md`.

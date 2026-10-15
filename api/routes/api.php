@@ -620,4 +620,5 @@ Route::middleware('throttle:60,1')->prefix('maintenance')->group(function () {
     Route::post('/migrate', [$c, 'migrate'])->middleware($write);
     Route::post('/cache/clear', [$c, 'clearCache'])->middleware($write);
     Route::post('/storage-link', [$c, 'storageLink'])->middleware($write);
+    Route::post('/opcache-reset', [$c, 'opcacheReset'])->middleware($write);
 });
