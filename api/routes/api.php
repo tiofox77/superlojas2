@@ -590,6 +590,11 @@ Route::middleware(['auth:sanctum', 'super_admin'])->prefix('admin')->group(funct
         return response()->json(['output' => \Illuminate\Support\Facades\Artisan::output()]);
     });
 
+    // Tokens for the maintenance API (/api/maintenance/*) — see MAINTENANCE.md
+    Route::get('/maintenance-tokens', [\App\Http\Controllers\Api\Admin\MaintenanceTokenController::class, 'index']);
+    Route::post('/maintenance-tokens', [\App\Http\Controllers\Api\Admin\MaintenanceTokenController::class, 'store']);
+    Route::delete('/maintenance-tokens/{id}', [\App\Http\Controllers\Api\Admin\MaintenanceTokenController::class, 'destroy'])->whereNumber('id');
+
     // Email Logs
     Route::get('/email-logs', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'index']);
     Route::get('/email-logs/stats', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'stats']);
@@ -598,4 +603,21 @@ Route::middleware(['auth:sanctum', 'super_admin'])->prefix('admin')->group(funct
     Route::post('/email-logs/send-test', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'sendTest']);
     Route::post('/email-logs/{emailLog}/retry', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'retry']);
     Route::delete('/email-logs/cleanup', [\App\Http\Controllers\Api\Admin\EmailLogController::class, 'cleanup']);
+});
+
+// ─── Maintenance API (token created by a super admin — see MAINTENANCE.md) ──
+// A closed list of upkeep operations; no arbitrary commands, SQL or file writes.
+Route::middleware('throttle:60,1')->prefix('maintenance')->group(function () {
+    $read = \App\Http\Middleware\MaintenanceTokenAuth::class . ':read';
+    $write = \App\Http\Middleware\MaintenanceTokenAuth::class . ':write';
+    $c = \App\Http\Controllers\Api\MaintenanceController::class;
+
+    Route::get('/status', [$c, 'status'])->middleware($read);
+    Route::get('/migrations', [$c, 'migrations'])->middleware($read);
+    Route::get('/logs', [$c, 'logs'])->middleware($read);
+    Route::get('/demand', [$c, 'demand'])->middleware($read);
+    Route::get('/audit', [$c, 'audit'])->middleware($read);
+    Route::post('/migrate', [$c, 'migrate'])->middleware($write);
+    Route::post('/cache/clear', [$c, 'clearCache'])->middleware($write);
+    Route::post('/storage-link', [$c, 'storageLink'])->middleware($write);
 });
