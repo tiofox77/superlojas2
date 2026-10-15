@@ -9,11 +9,11 @@ import {
   Star, MapPin, MessageCircle, Clock, Heart, Phone, Mail, Calendar,
   ChevronLeft, ChevronRight, Zap, Grid3X3, List, Package, Store, Tag, Sparkles,
   CheckCircle2, Truck, ShieldCheck, RotateCcw, Search, SlidersHorizontal, X,
-  Instagram, Facebook, Globe,
+  Instagram, Facebook, Globe, Loader2,
   CreditCard, Smartphone, Building2, Wallet, HandCoins, Banknote, QrCode
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { logoSrc, bannerSrc, productImgSrc, onImgError } from "@/lib/imageHelpers";
 import StoreSeoHead from "@/components/StoreSeoHead";
@@ -312,6 +312,21 @@ const StoreDetail = () => {
     return [...list].sort(compare);
   }, [scoped, priceRange, onlyPromo, onlyNew, search, sortBy]);
 
+  // Infinite scroll: render the next page when the sentinel below the grid gets close to the viewport.
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el || sorted.length <= visibleCount) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) setVisibleCount((count) => count + PAGE_SIZE);
+      },
+      { rootMargin: "600px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [sorted.length, visibleCount]);
+
   // ── Early returns (all hooks above) ──────────────────────────────────────
   if (isLoading) {
     return (
@@ -548,27 +563,36 @@ const StoreDetail = () => {
         metaKeywords={store.metaKeywords}
       />
 
-      {/* ─── Banner + identity ─── */}
-      <div className="relative">
-        <div className="h-48 sm:h-60 overflow-hidden">
-          <img src={bannerSrc(store.banner)} alt={`Banner da loja ${store.name}`} className="w-full h-full object-cover" onError={onImgError("banner")} />
-          <div className="absolute inset-0" style={{ background: theme.bannerGradient }} />
+      {/* ─── Cover + identity ─── */}
+      <section className="bg-card border-b border-border">
+        {/* Cover (3:1, recommended 1800×600). Shown whole — never cropped: any other
+            ratio is letterboxed over a blurred copy of itself. Nothing is drawn on top. */}
+        <div className="container px-0 sm:px-4">
+          <div className="relative aspect-[3/1] w-full overflow-hidden bg-secondary sm:mt-4 sm:rounded-2xl">
+            {store.banner && (
+              <img src={bannerSrc(store.banner)} alt="" aria-hidden="true"
+                className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl" />
+            )}
+            <img src={bannerSrc(store.banner)} alt={`Capa da loja ${store.name}`}
+              className="relative h-full w-full object-contain" onError={onImgError("banner")} />
+          </div>
         </div>
-        <div className="container relative -mt-24 z-10 pb-6">
-          <div className="flex flex-col sm:flex-row items-start gap-4">
+        <div className="container pb-5">
+          <div className="flex items-start gap-3 sm:gap-5">
             <img src={logoSrc(store.logo, store.name)} alt={store.name}
-              className="h-24 w-24 rounded-2xl border-4 border-card shadow-lg bg-card" onError={onImgError("logo", store.name)} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-2xl font-extrabold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{store.name}</h1>
+              className="relative z-10 mt-3 h-16 w-16 shrink-0 rounded-2xl border-4 border-card bg-card object-cover shadow-lg sm:-mt-14 sm:h-28 sm:w-28"
+              onError={onImgError("logo", store.name)} />
+            <div className="flex-1 min-w-0 pt-3">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-foreground">{store.name}</h1>
                 {store.isOfficial && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/90 text-white text-[10px] font-bold shadow-lg backdrop-blur-sm" title="Loja Oficial SuperLoja">
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-bold" title="Loja Oficial SuperLoja">
                     <CheckCircle2 className="h-3.5 w-3.5" /> Oficial
                   </span>
                 )}
               </div>
-              <p className="text-sm text-white/90 max-w-2xl line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">{store.description}</p>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-xs text-white/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+              <p className="text-sm text-muted-foreground max-w-3xl line-clamp-2">{store.description}</p>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{store.province}, {store.city}</span>
                 <span className="flex items-center gap-1">
                   <Star className="h-3.5 w-3.5 fill-warning text-warning" />
@@ -639,7 +663,7 @@ const StoreDetail = () => {
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ─── Store navigation ─── */}
       <div className="sticky top-16 z-40 bg-card border-b border-border">
@@ -794,14 +818,15 @@ const StoreDetail = () => {
                 </div>
               )}
 
-              {sorted.length > visibleCount && (
-                <div className="text-center mt-6">
-                  <p className="text-xs text-muted-foreground mb-2">A mostrar {visibleCount} de {sorted.length} produtos</p>
-                  <button type="button" onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
-                    className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-medium hover:bg-secondary">
-                    Carregar mais produtos
-                  </button>
+              {sorted.length > visibleCount ? (
+                <div ref={loadMoreRef} className="flex flex-col items-center gap-2 py-8 text-xs text-muted-foreground" aria-live="polite">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  A mostrar {visibleCount} de {sorted.length} produtos
                 </div>
+              ) : (
+                sorted.length > PAGE_SIZE && (
+                  <p className="py-8 text-center text-xs text-muted-foreground">Estes são todos os {sorted.length} produtos.</p>
+                )
               )}
             </div>
           </div>
