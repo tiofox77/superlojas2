@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Tag, Plus, Trash2, Edit3, Loader2, Search, ChevronDown, ChevronRight, FolderTree } from "lucide-react";
 import { useToastNotification } from "@/contexts/ToastContext";
+import { plural } from "@/lib/utils";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
@@ -77,13 +78,13 @@ export default function AdminCategories() {
     : EMOJI_GROUPS[emojiTab]?.emojis || [];
 
   const saveCat = async () => {
-    if (!form.name || !form.slug || !form.icon) { setFormError("Todos os campos sao obrigatorios."); return; }
+    if (!form.name || !form.slug || !form.icon) { setFormError("Todos os campos sao obrigatórios."); return; }
     setSaving(true); setFormError("");
     const url = editCat ? `${API}/admin/categories/${editCat.id}` : `${API}/admin/categories`;
     try {
       const res = await fetch(url, { method: editCat ? "PUT" : "POST", headers: { Authorization: `Bearer ${token}`, Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(form) });
       const data = await res.json();
-      if (!res.ok) { setFormError(data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.message || "Erro"); toast.error("Erro", "Nao foi possivel guardar a categoria."); }
+      if (!res.ok) { setFormError(data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.message || "Erro"); toast.error("Erro", "Não foi possível guardar a categoria."); }
       else { setModalOpen(false); fetchCategories(); toast.success(editCat ? "Categoria actualizada" : "Categoria criada", `"${form.name}" guardada com sucesso.`); }
     } finally { setSaving(false); }
   };
@@ -95,7 +96,7 @@ export default function AdminCategories() {
     const res = await fetch(`${API}/admin/categories/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null); fetchCategories();
     if (res.ok) toast.success("Categoria eliminada", `"${name}" foi removida.`);
-    else toast.error("Erro", "Nao foi possivel eliminar a categoria.");
+    else toast.error("Erro", "Não foi possível eliminar a categoria.");
     setConfirmDelete(null);
   };
 
@@ -104,7 +105,7 @@ export default function AdminCategories() {
   const openEditSub = (sub: SubcategoryItem) => { setEditSub(sub); setSubForm({ name: sub.name, slug: sub.slug }); setSubFormError(""); setSubModalCatId(sub.category_id); setSubModalOpen(true); };
 
   const saveSub = async () => {
-    if (!subForm.name || !subForm.slug) { setSubFormError("Nome e slug sao obrigatorios."); return; }
+    if (!subForm.name || !subForm.slug) { setSubFormError("Nome e slug sao obrigatórios."); return; }
     setSavingSub(true); setSubFormError("");
     const url = editSub ? `${API}/admin/subcategories/${editSub.id}` : `${API}/admin/subcategories`;
     const body = editSub ? { name: subForm.name, slug: subForm.slug } : { category_id: subModalCatId, name: subForm.name, slug: subForm.slug };
@@ -121,7 +122,7 @@ export default function AdminCategories() {
     const res = await fetch(`${API}/admin/subcategories/${sub.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null); fetchCategories();
     if (res.ok) toast.success("Subcategoria eliminada");
-    else toast.error("Erro", "Nao foi possivel eliminar.");
+    else toast.error("Erro", "Não foi possível eliminar.");
     setConfirmDelete(null);
   };
 
@@ -130,7 +131,7 @@ export default function AdminCategories() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className={`text-lg font-bold ${s.textPrimary}`}>Gestao de Categorias</h2>
-          <p className={`text-xs ${s.textMuted}`}>{categories.length} categorias</p>
+          <p className={`text-xs ${s.textMuted}`}>{plural(categories.length, "categoria", "categorias")}</p>
         </div>
         <button onClick={openCreate} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl ${s.btnPrimary} text-xs font-semibold shadow-sm`}>
           <Plus className="h-4 w-4" /> Nova Categoria
@@ -160,7 +161,7 @@ export default function AdminCategories() {
                       <span className="text-2xl">{cat.icon}</span>
                       <div>
                         <p className={`text-sm font-semibold ${s.textPrimary}`}>{cat.name}</p>
-                        <p className={`text-[10px] ${s.textMuted}`}>/{cat.slug} — {cat.product_count} produtos — {subs.length} subcategorias</p>
+                        <p className={`text-[10px] ${s.textMuted}`}>/{cat.slug} — {plural(cat.product_count, "produto", "produtos")} — {plural(subs.length, "subcategoria", "subcategorias")}</p>
                       </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -185,7 +186,7 @@ export default function AdminCategories() {
                       <div key={sub.id} className={`flex items-center justify-between px-3 py-2 rounded-xl ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"} group/sub`}>
                         <div>
                           <p className={`text-xs font-medium ${s.textPrimary}`}>{sub.name}</p>
-                          <p className={`text-[10px] ${s.textMuted}`}>/{sub.slug} — {sub.product_count} produtos</p>
+                          <p className={`text-[10px] ${s.textMuted}`}>/{sub.slug} — {plural(sub.product_count, "produto", "produtos")}</p>
                         </div>
                         <div className="flex gap-1 opacity-0 group-hover/sub:opacity-100 transition-opacity">
                           <button onClick={() => openEditSub(sub)} className={`p-1 rounded-lg ${s.textMuted} hover:text-orange-500 transition-colors`}><Edit3 className="h-3 w-3" /></button>

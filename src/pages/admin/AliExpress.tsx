@@ -161,7 +161,7 @@ export default function AdminAliExpress() {
         method: "PUT", headers: hdrs, body: JSON.stringify(cfg),
       });
       if (!res.ok) throw new Error();
-      toast.success("Configuracoes guardadas");
+      toast.success("Configurações guardadas");
       setCfg((c) => ({ ...c, aliexpress_app_secret: "", aliexpress_access_token: "", ai_api_key: "", hermes_webhook_secret: "" }));
       loadStatus(); loadConfig();
     } catch { toast.error("Erro ao guardar"); }
@@ -463,7 +463,7 @@ export default function AdminAliExpress() {
             </div>
             {draft.description && (
               <div>
-                <div className={`text-xs ${s.textMuted}`}>Descricao</div>
+                <div className={`text-xs ${s.textMuted}`}>Descrição</div>
                 <div className={`text-sm ${s.textSecondary} whitespace-pre-line line-clamp-6`}>{draft.description}</div>
               </div>
             )}

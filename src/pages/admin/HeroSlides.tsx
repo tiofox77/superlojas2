@@ -70,7 +70,7 @@ export default function AdminHeroSlides() {
   };
 
   const saveSlide = async () => {
-    if (!form.title) { setFormError("O titulo e obrigatorio."); return; }
+    if (!form.title) { setFormError("O título e obrigatório."); return; }
     setSaving(true); setFormError("");
 
     const fd = new FormData();
@@ -88,7 +88,7 @@ export default function AdminHeroSlides() {
     try {
       const res = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }, body: fd });
       const data = await res.json();
-      if (!res.ok) { setFormError(data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.message || "Erro"); toast.error("Erro", "Nao foi possivel guardar o slide."); }
+      if (!res.ok) { setFormError(data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.message || "Erro"); toast.error("Erro", "Não foi possível guardar o slide."); }
       else { setModalOpen(false); fetchSlides(); toast.success(editSlide ? "Slide actualizado" : "Slide criado", `"${form.title}" guardado com sucesso.`); }
     } finally { setSaving(false); }
   };
@@ -100,7 +100,7 @@ export default function AdminHeroSlides() {
     const res = await fetch(`${API}/admin/hero-slides/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null); fetchSlides();
     if (res.ok) toast.success("Slide eliminado");
-    else toast.error("Erro", "Nao foi possivel eliminar o slide.");
+    else toast.error("Erro", "Não foi possível eliminar o slide.");
     setConfirmDelete(null);
   };
 
@@ -197,7 +197,7 @@ export default function AdminHeroSlides() {
               </div>
               <div className={`text-xs ${s.textMuted} pt-1`}>
                 <p>Imagem de fundo do slide</p>
-                <p>JPG, PNG ate 4MB</p>
+                <p>JPG, PNG até 4MB</p>
                 <p className="mt-1">A imagem sera sobreposta ao gradiente</p>
               </div>
               <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
@@ -225,8 +225,8 @@ export default function AdminHeroSlides() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { l: "Titulo", k: "title", p: "Descubra as Melhores Ofertas", req: true },
-              { l: "Subtitulo", k: "subtitle", p: "Ate 50% de desconto em tudo" },
+              { l: "Título", k: "title", p: "Descubra as Melhores Ofertas", req: true },
+              { l: "Subtitulo", k: "subtitle", p: "Até 50% de desconto em tudo" },
               { l: "Texto do Botao", k: "cta", p: "Ver Ofertas" },
               { l: "Link do Botao", k: "cta_link", p: "/ofertas" },
               { l: "Loja (slug, vazio = global)", k: "store_slug", p: "techzone-angola" },
@@ -247,7 +247,7 @@ export default function AdminHeroSlides() {
                 <img src={imagePreview} alt="" className={`absolute inset-0 w-full h-full object-cover ${isNoneGradient(form.bg_color) ? "" : "mix-blend-overlay opacity-60"}`} />
               )}
               <div className="relative z-10 p-5 flex flex-col justify-end h-full">
-                <p className="text-sm font-bold text-white drop-shadow">{form.title || "Titulo do Slide..."}</p>
+                <p className="text-sm font-bold text-white drop-shadow">{form.title || "Título do Slide..."}</p>
                 {form.subtitle && <p className="text-xs text-white/80 drop-shadow">{form.subtitle}</p>}
                 {form.cta && <span className="inline-block mt-2 px-4 py-1.5 rounded-lg bg-white/25 backdrop-blur-sm text-[11px] text-white font-semibold w-fit">{form.cta}</span>}
               </div>

@@ -29,9 +29,6 @@ function slugify(text: string): string {
   return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
 }
 
-function titleCase(text: string): string {
-  return text.replace(/\b\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-}
 
 type FieldErrors = Record<string, string>;
 
@@ -63,6 +60,7 @@ export default function AdminProducts() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false); // trava síncrona: um duplo clique não cria o produto duas vezes
   const [formError, setFormError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [detailProd, setDetailProd] = useState<ProductItem | null>(null);
@@ -109,7 +107,7 @@ export default function AdminProducts() {
       if (res.ok) {
         setPendingFeatured(prev => prev.filter(x => x.id !== p.id));
         toast.success("Destaque Aprovado", `"${p.name}" agora e produto em destaque.`);
-      } else toast.error("Erro", "Nao foi possivel aprovar.");
+      } else toast.error("Erro", "Não foi possível aprovar.");
     } finally { setFeaturedLoading(null); }
   };
 
@@ -120,7 +118,7 @@ export default function AdminProducts() {
       if (res.ok) {
         setPendingFeatured(prev => prev.filter(x => x.id !== p.id));
         toast.success("Destaque Rejeitado", `Pedido de destaque de "${p.name}" foi rejeitado.`);
-      } else toast.error("Erro", "Nao foi possivel rejeitar.");
+      } else toast.error("Erro", "Não foi possível rejeitar.");
     } finally { setFeaturedLoading(null); }
   };
 
@@ -146,7 +144,7 @@ export default function AdminProducts() {
       if (res.ok) {
         setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, is_active: data.is_active } : pr));
         toast.success(data.is_active ? "Produto Activado" : "Produto Desactivado", data.message);
-      } else toast.error("Erro", "Nao foi possivel alterar estado.");
+      } else toast.error("Erro", "Não foi possível alterar estado.");
     } finally { setActionLoading(null); }
   };
 
@@ -165,7 +163,8 @@ export default function AdminProducts() {
   };
 
   const handleNameChange = (raw: string) => {
-    const name = titleCase(raw);
+    // Nome tal como o vendedor o escreve (o title-case partia "PRODUTO QA" e acentos: "PortáTil").
+    const name = raw;
     const updated = { ...form, name };
     if (!slugManual) updated.slug = slugify(name);
     setForm(updated);
@@ -237,16 +236,17 @@ export default function AdminProducts() {
   };
 
   const saveProduct = async () => {
+    if (savingRef.current) return;
     const errs: FieldErrors = {};
-    if (!form.name) errs.name = "Nome e obrigatorio.";
-    if (!form.slug) errs.slug = "Slug e obrigatorio.";
-    else if (slugStatus === "taken") errs.slug = "Este slug ja esta em uso.";
-    if (!form.price) errs.price = "Preco e obrigatorio.";
+    if (!form.name) errs.name = "Nome é obrigatório.";
+    if (!form.slug) errs.slug = "Slug é obrigatório.";
+    else if (slugStatus === "taken") errs.slug = "Este slug já está em uso.";
+    if (!form.price) errs.price = "Preço e obrigatório.";
     if (!form.category && !form.category_id) errs.category_id = "Seleccione uma categoria.";
     if (!editProd && !form.store_id) errs.store_id = "Seleccione uma loja.";
-    if (!editProd && imageFiles.length === 0) errs.images = "Pelo menos uma imagem e obrigatoria.";
+    if (!editProd && imageFiles.length === 0) errs.images = "Pelo menos uma imagem é obrigatória.";
     if (Object.keys(errs).length > 0) { setFieldErrors(errs); setFormError(""); return; }
-    setSaving(true); setFormError(""); setFieldErrors({});
+    savingRef.current = true; setSaving(true); setFormError(""); setFieldErrors({});
 
     const fd = new FormData();
     fd.append("name", form.name);
@@ -280,10 +280,10 @@ export default function AdminProducts() {
           for (const [key, msgs] of Object.entries(data.errors)) mapped[key] = (msgs as string[]).join(" ");
           setFieldErrors(mapped);
         } else { setFormError(data.message || "Erro ao guardar."); }
-        toast.error("Erro", "Nao foi possivel guardar o produto.");
+        toast.error("Erro", "Não foi possível guardar o produto.");
       }
       else { setModalOpen(false); fetchProducts(); toast.success(editProd ? "Produto actualizado" : "Produto criado", `"${form.name}" guardado com sucesso.`); }
-    } finally { setSaving(false); }
+    } finally { savingRef.current = false; setSaving(false); }
   };
 
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
@@ -293,7 +293,7 @@ export default function AdminProducts() {
     const res = await fetch(`${API}/admin/products/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null); fetchProducts();
     if (res.ok) toast.success("Produto eliminado", `"${name}" foi removido.`);
-    else toast.error("Erro", "Nao foi possivel eliminar o produto.");
+    else toast.error("Erro", "Não foi possível eliminar o produto.");
     setConfirmDelete(null);
   };
 
@@ -372,12 +372,12 @@ export default function AdminProducts() {
               </select>
             </div>
             <div>
-              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Preco Min</label>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Preço Min</label>
               <input type="number" value={filterMinPrice} onChange={(e) => { setFilterMinPrice(e.target.value); setPage(1); }} placeholder="0"
                 className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20`} />
             </div>
             <div>
-              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Preco Max</label>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Preço Max</label>
               <input type="number" value={filterMaxPrice} onChange={(e) => { setFilterMaxPrice(e.target.value); setPage(1); }} placeholder="999999"
                 className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20`} />
             </div>
@@ -427,7 +427,7 @@ export default function AdminProducts() {
           <table className="w-full">
             <thead>
               <tr className={`border-b ${s.borderLight}`}>
-                {["Produto", "Loja", "Preco", "Categoria", "Stock", "Rating", "Accoes"].map((h, i) => (
+                {["Produto", "Loja", "Preço", "Categoria", "Stock", "Rating", "Acções"].map((h, i) => (
                   <th key={h} className={`text-left text-[10px] font-semibold ${s.thText} uppercase tracking-wider px-5 py-3 ${i === 1 ? "hidden md:table-cell" : ""} ${i >= 3 && i <= 5 ? "hidden lg:table-cell" : ""} ${i === 6 ? "text-right" : ""}`}>{h}</th>
                 ))}
               </tr>
@@ -485,10 +485,10 @@ export default function AdminProducts() {
         </div>
         {totalPages > 1 && (
           <div className={`flex items-center justify-between px-5 py-3 border-t ${s.borderLight}`}>
-            <p className={`text-[11px] ${s.textMuted}`}>Pagina {page} de {totalPages}</p>
+            <p className={`text-[11px] ${s.textMuted}`}>Página {page} de {totalPages}</p>
             <div className="flex gap-1">
               <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1} className={`px-3 py-1.5 rounded-lg text-xs ${s.btnSecondary} disabled:opacity-30`}>Anterior</button>
-              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className={`px-3 py-1.5 rounded-lg text-xs ${s.btnSecondary} disabled:opacity-30`}>Proximo</button>
+              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className={`px-3 py-1.5 rounded-lg text-xs ${s.btnSecondary} disabled:opacity-30`}>Próximo</button>
             </div>
           </div>
         )}
@@ -560,7 +560,7 @@ export default function AdminProducts() {
                     <p className={`text-xs font-semibold mt-0.5 ${detailProd.stock > 0 ? "text-green-500" : "text-red-500"}`}>{detailProd.stock > 0 ? `${detailProd.stock} unidades` : "Esgotado"}</p>
                   </div>
                   <div className={`rounded-xl p-3 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
-                    <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider`}>Avaliacao</p>
+                    <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider`}>Avaliação</p>
                     <p className={`text-xs font-semibold ${s.textPrimary} mt-0.5 flex items-center gap-1`}><Star className="h-3 w-3 text-amber-400 fill-amber-400" /> {parseFloat(detailProd.rating).toFixed(1)} ({detailProd.review_count})</p>
                   </div>
                   <div className={`rounded-xl p-3 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
@@ -579,7 +579,7 @@ export default function AdminProducts() {
             {/* Description */}
             {detailProd.description && (
               <div className={`rounded-xl p-4 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
-                <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider mb-1.5`}>Descricao</p>
+                <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider mb-1.5`}>Descrição</p>
                 <p className={`text-sm ${s.textSecondary} whitespace-pre-line`}>{detailProd.description}</p>
               </div>
             )}
@@ -636,7 +636,7 @@ export default function AdminProducts() {
               </button>
               <input ref={imgRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageAdd} />
             </div>
-            <p className={`text-[10px] ${s.textMuted} mt-1`}>JPG, PNG ate 4MB cada</p>
+            <p className={`text-[10px] ${s.textMuted} mt-1`}>JPG, PNG até 4MB cada</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -665,12 +665,12 @@ export default function AdminProducts() {
                   Este slug ja esta em uso.{slugSuggestion && <> Sugestao: <button type="button" className="underline font-semibold hover:text-red-700" onClick={() => { setForm(f => ({ ...f, slug: slugSuggestion })); setSlugManual(true); setSlugSuggestion(null); }}>{slugSuggestion}</button></>}
                 </p>
               )}
-              {slugStatus === "available" && <p className="text-[11px] text-green-500 mt-1">Slug disponivel!</p>}
+              {slugStatus === "available" && <p className="text-[11px] text-green-500 mt-1">Slug disponível!</p>}
             </div>
             {/* Preco, Original, Stock */}
             {[
-              { l: "Preco (Kz)", k: "price", p: "15000", req: true, type: "number" },
-              { l: "Preco Original (Kz)", k: "original_price", p: "20000", type: "number" },
+              { l: "Preço (Kz)", k: "price", p: "15000", req: true, type: "number" },
+              { l: "Preço Original (Kz)", k: "original_price", p: "20000", type: "number" },
               { l: "Stock", k: "stock", p: "100", type: "number" },
             ].map((f) => (
               <div key={f.k}>
@@ -727,15 +727,15 @@ export default function AdminProducts() {
             </div>
           </div>
           <div>
-            <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Descricao</label>
-            <textarea value={form.description} onChange={(e) => { setForm({ ...form, description: e.target.value }); setFieldErrors(prev => { const n = { ...prev }; delete n.description; return n; }); }} rows={3} placeholder="Descricao do produto..."
+            <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Descrição</label>
+            <textarea value={form.description} onChange={(e) => { setForm({ ...form, description: e.target.value }); setFieldErrors(prev => { const n = { ...prev }; delete n.description; return n; }); }} rows={3} placeholder="Descrição do produto..."
               className={`w-full ${s.input} border ${fieldErrors.description ? "border-red-400" : ""} rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 resize-none`} />
             {fieldErrors.description && <p className="text-[11px] text-red-500 mt-1">{fieldErrors.description}</p>}
           </div>
           <div className={`flex justify-end gap-2 pt-2 border-t ${s.borderLight}`}>
-            <button onClick={() => setModalOpen(false)} className={`px-4 py-2.5 rounded-xl text-xs font-medium ${s.btnSecondary}`}>Cancelar</button>
+            <button onClick={() => setModalOpen(false)} disabled={saving} className={`px-4 py-2.5 rounded-xl text-xs font-medium ${s.btnSecondary} disabled:opacity-50`}>Cancelar</button>
             <button onClick={saveProduct} disabled={saving} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold ${s.btnPrimary} disabled:opacity-50 shadow-sm`}>
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />} {editProd ? "Guardar" : "Criar Produto"}
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />} {saving ? (editProd ? "A guardar..." : "A criar produto...") : editProd ? "Guardar" : "Criar Produto"}
             </button>
           </div>
         </div>

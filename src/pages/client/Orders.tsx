@@ -180,7 +180,7 @@ export default function ClientOrders() {
         {/* Pagination */}
         {lastPage > 1 && (
           <div className={`flex items-center justify-between px-4 py-3 border-t ${s.borderLight}`}>
-            <p className={`text-[11px] ${s.textMuted}`}>Pagina {page} de {lastPage}</p>
+            <p className={`text-[11px] ${s.textMuted}`}>Página {page} de {lastPage}</p>
             <div className="flex gap-1.5">
               <button onClick={() => fetchOrders(page - 1)} disabled={page <= 1} className={`p-1.5 rounded-lg ${s.btnSecondary} disabled:opacity-30`}><ChevronLeft className="h-3.5 w-3.5" /></button>
               <button onClick={() => fetchOrders(page + 1)} disabled={page >= lastPage} className={`p-1.5 rounded-lg ${s.btnSecondary} disabled:opacity-30`}><ChevronRight className="h-3.5 w-3.5" /></button>
@@ -267,7 +267,7 @@ export default function ClientOrders() {
               {/* Timeline */}
               {(selected.confirmed_at || selected.shipped_at || selected.delivered_at || selected.cancelled_at) && (
                 <div className={`rounded-xl p-3 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"} space-y-2`}>
-                  <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider`}>Historico</p>
+                  <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider`}>Histórico</p>
                   <div className="space-y-1.5">
                     <p className={`text-[11px] ${s.textSecondary}`}>Criado: {formatDate(selected.created_at)}</p>
                     {selected.confirmed_at && <p className={`text-[11px] text-blue-500`}>Confirmado: {formatDate(selected.confirmed_at)}</p>}

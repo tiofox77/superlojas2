@@ -27,7 +27,7 @@ export default function AgeGate({ onConfirm, onCancel }: AgeGateProps) {
         <div className="h-16 w-16 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mx-auto mb-4">
           <ShieldAlert className="h-8 w-8 text-red-500" />
         </div>
-        <h2 className="text-lg font-bold mb-2">Conteudo para Adultos</h2>
+        <h2 className="text-lg font-bold mb-2">Conteúdo para Adultos</h2>
         <p className="text-sm text-muted-foreground mb-1">
           Esta seccao contem produtos destinados exclusivamente a <strong>maiores de 18 anos</strong>.
         </p>

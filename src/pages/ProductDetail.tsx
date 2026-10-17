@@ -13,6 +13,7 @@ import ProductSeoHead from "@/components/ProductSeoHead";
 import { useSubdomainStore } from "@/contexts/SubdomainStoreContext";
 import { initPixel, pixelTrack } from "@/lib/facebookPixel";
 import { trackInterest } from "@/lib/demand";
+import { plural } from "@/lib/utils";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -65,7 +66,7 @@ const ProductDetail = () => {
   const submitPreOrder = async () => {
     if (!product) return;
     if (!preOrderForm.name || !preOrderForm.email || !preOrderForm.phone || !preOrderForm.province) {
-      setPreOrderError("Preencha todos os campos obrigatorios."); return;
+      setPreOrderError("Preencha todos os campos obrigatórios."); return;
     }
     setPreOrderSending(true); setPreOrderError("");
     try {
@@ -87,7 +88,7 @@ const ProductDetail = () => {
       } else {
         setPreOrderError(data.message || data.error || "Erro ao enviar encomenda.");
       }
-    } catch { setPreOrderError("Erro de conexao. Tente novamente."); }
+    } catch { setPreOrderError("Erro de ligação. Tente novamente."); }
     finally { setPreOrderSending(false); }
   };
 
@@ -196,11 +197,11 @@ const ProductDetail = () => {
             <div className="flex items-center gap-1">
               <Star className="h-4 w-4 fill-warning text-warning" />
               <span className="text-sm font-medium">{product.rating}</span>
-              <span className="text-sm text-muted-foreground">({product.reviewCount} avaliações)</span>
+              <span className="text-sm text-muted-foreground">({plural(product.reviewCount, "avaliação", "avaliações")})</span>
             </div>
             {product.store?.showStock !== false && (
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${product.stock > 0 ? (product.stock <= 5 ? "bg-warning/10 text-warning" : "bg-success/10 text-success") : "bg-destructive/10 text-destructive"}`}>
-                {product.stock > 0 ? (product.stock <= 5 ? `Ultimas ${product.stock} unidades!` : `${product.stock} em estoque`) : "Esgotado"}
+                {product.stock > 0 ? (product.stock <= 5 ? `Últimas ${product.stock} unidades!` : `${product.stock} em estoque`) : "Esgotado"}
               </span>
             )}
             {product.store?.showStock === false && product.stock <= 0 && (
@@ -274,7 +275,7 @@ const ProductDetail = () => {
                 <span className="px-4 py-2 text-sm font-medium border-x border-border">{quantity}</span>
                 <button onClick={() => {
                   if (product.stock > 0 && quantity >= product.stock) {
-                    setStockAlert(`Apenas ${product.stock} unidades disponiveis.`);
+                    setStockAlert((product.stock === 1 ? "Apenas 1 unidade disponível." : `Apenas ${product.stock} unidades disponíveis.`));
                     return;
                   }
                   setQuantity(quantity + 1);
@@ -308,7 +309,7 @@ const ProductDetail = () => {
                 onClick={() => {
                   const missing = product.variants.filter(v => !selectedVariants[v.type]).map(v => v.type);
                   if (missing.length > 0) { setVariantAlert(`Selecione: ${missing.join(", ")}`); return; }
-                  if (quantity > product.stock) { setStockAlert(`Apenas ${product.stock} unidades disponiveis.`); setQuantity(product.stock); return; }
+                  if (quantity > product.stock) { setStockAlert((product.stock === 1 ? "Apenas 1 unidade disponível." : `Apenas ${product.stock} unidades disponíveis.`)); setQuantity(product.stock); return; }
                   addItem(product, quantity, selectedVariants);
                   pixelTrack(storePixelId, "AddToCart", {
                     content_ids: [`SL-${product.id}`],
@@ -424,7 +425,7 @@ const ProductDetail = () => {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Este produto esta esgotado. Preencha os seus dados para registar uma encomenda. A loja entrara em contacto consigo quando estiver disponivel.
+                Este produto esta esgotado. Preencha os seus dados para registar uma encomenda. A loja entrara em contacto consigo quando estiver disponível.
               </p>
 
               {preOrderError && (
@@ -449,10 +450,10 @@ const ProductDetail = () => {
                   <PhoneInput value={preOrderForm.phone} onChange={(v) => setPreOrderForm(f => ({ ...f, phone: v }))} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Provincia <span className="text-destructive">*</span></label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Província <span className="text-destructive">*</span></label>
                   <select value={preOrderForm.province} onChange={(e) => setPreOrderForm(f => ({ ...f, province: e.target.value }))}
                     className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20">
-                    <option value="">Selecionar provincia...</option>
+                    <option value="">Seleccionar província...</option>
                     {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>

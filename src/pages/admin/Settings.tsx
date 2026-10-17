@@ -251,9 +251,9 @@ export default function AdminSettings() {
         headers: { Authorization: `Bearer ${token}`, Accept: "application/json", "Content-Type": "application/json" },
         body: JSON.stringify({ settings }),
       });
-      if (res.ok) toast.success("Configuracoes guardadas");
-      else { const d = await res.json(); toast.error("Erro", d.message || "Nao foi possivel guardar."); }
-    } catch { toast.error("Erro de conexao"); }
+      if (res.ok) toast.success("Configurações guardadas");
+      else { const d = await res.json(); toast.error("Erro", d.message || "Não foi possível guardar."); }
+    } catch { toast.error("Erro de ligação"); }
     finally { setSaving(false); }
   };
 
@@ -322,7 +322,7 @@ export default function AdminSettings() {
         else setSiteFavicon(d.url);
         toast.success(type === "site_logo" ? "Logo carregado" : "Favicon carregado");
       } else toast.error("Erro", d.message || "Erro ao carregar ficheiro.");
-    } catch { toast.error("Erro de conexao"); }
+    } catch { toast.error("Erro de ligação"); }
     finally { setUploading(""); }
   };
 
@@ -355,7 +355,7 @@ export default function AdminSettings() {
         else setPwaIcon512(d.url);
         toast.success(type === "pwa_icon_192" ? "Icone 192x192 carregado" : "Icone 512x512 carregado");
       } else toast.error("Erro", d.message || "Erro ao carregar icone.");
-    } catch { toast.error("Erro de conexao"); }
+    } catch { toast.error("Erro de ligação"); }
     finally { setUploading(""); }
   };
 
@@ -371,7 +371,7 @@ export default function AdminSettings() {
       const d = await res.json();
       if (res.ok) toast.success("Email enviado", d.message || `Teste enviado para ${testEmail}`);
       else toast.error("Erro SMTP", d.message || "Erro ao enviar.");
-    } catch { toast.error("Erro de conexao"); }
+    } catch { toast.error("Erro de ligação"); }
     finally { setTesting(false); }
   };
 
@@ -383,9 +383,9 @@ export default function AdminSettings() {
         headers: { Authorization: `Bearer ${token}`, Accept: "application/json", "Content-Type": "application/json" },
       });
       const d = await res.json();
-      if (res.ok) toast.success("Conexao OK", d.message || "Ligacao SMTP estabelecida.");
-      else toast.error("Falha na conexao", d.message || "Nao foi possivel ligar ao servidor SMTP.");
-    } catch { toast.error("Erro de conexao"); }
+      if (res.ok) toast.success("Ligação OK", d.message || "Ligação SMTP estabelecida.");
+      else toast.error("Falha na ligação", d.message || "Não foi possível ligar ao servidor SMTP.");
+    } catch { toast.error("Erro de ligação"); }
     finally { setTestingConn(false); }
   };
 
@@ -408,8 +408,8 @@ export default function AdminSettings() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h2 className={`text-lg font-bold ${s.textPrimary}`}>Configuracoes da Plataforma</h2>
-        <p className={`text-xs ${s.textMuted}`}>Gerir todas as configuracoes do SuperLoja</p>
+        <h2 className={`text-lg font-bold ${s.textPrimary}`}>Configurações da Plataforma</h2>
+        <p className={`text-xs ${s.textMuted}`}>Gerir todas as configurações do SuperLoja</p>
       </div>
 
       {/* Tabs */}
@@ -427,7 +427,7 @@ export default function AdminSettings() {
       {/* ═══════════ TAB: GERAL ═══════════ */}
       {tab === "general" && (
         <div className={cardCls}>
-          <SectionHeaderStable icon={Settings} color="text-purple-500" title="Configuracoes Gerais" desc="Identidade, marca e regras basicas da plataforma" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
+          <SectionHeaderStable icon={Settings} color="text-purple-500" title="Configurações Gerais" desc="Identidade, marca e regras básicas da plataforma" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
 
           {/* Logo + Favicon uploads */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -446,7 +446,7 @@ export default function AdminSettings() {
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${s.btnSecondary} disabled:opacity-50`}>
                     {uploading === "site_logo" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Carregar Logo
                   </button>
-                  <p className={`text-[10px] ${s.textMuted}`}>PNG, JPG ate 2MB. Recomendado: 200x60px</p>
+                  <p className={`text-[10px] ${s.textMuted}`}>PNG, JPG até 2MB. Recomendado: 200x60px</p>
                   <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f, "site_logo"); e.target.value = ""; }} />
                 </div>
               </div>
@@ -467,7 +467,7 @@ export default function AdminSettings() {
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${s.btnSecondary} disabled:opacity-50`}>
                     {uploading === "site_favicon" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Carregar Favicon
                   </button>
-                  <p className={`text-[10px] ${s.textMuted}`}>PNG, ICO ate 512KB. Recomendado: 32x32 ou 64x64px</p>
+                  <p className={`text-[10px] ${s.textMuted}`}>PNG, ICO até 512KB. Recomendado: 32x32 ou 64x64px</p>
                   <input ref={faviconRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f, "site_favicon"); e.target.value = ""; }} />
                 </div>
               </div>
@@ -518,7 +518,7 @@ export default function AdminSettings() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <InputFieldStable label="Nome do Site" value={siteName} onChange={setSiteName} placeholder="SuperLoja" required inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
             <div className="sm:col-span-2">
-              <label className={labelCls}>Descricao do Site</label>
+              <label className={labelCls}>Descrição do Site</label>
               <textarea value={siteDescription} onChange={(e) => setSiteDescription(e.target.value)} rows={3} placeholder="O maior marketplace de Angola..."
                 className={`${inputCls} resize-none`} />
             </div>
@@ -532,8 +532,8 @@ export default function AdminSettings() {
                   <Store className="h-4 w-4 text-emerald-500" />
                 </div>
                 <div>
-                  <p className={`text-sm font-semibold ${s.textPrimary}`}>Aprovacao Automatica de Lojas</p>
-                  <p className={`text-[11px] ${s.textMuted}`}>{storeAutoApprove ? "Aprovacao imediata" : "Aprovacao manual"}</p>
+                  <p className={`text-sm font-semibold ${s.textPrimary}`}>Aprovação Automática de Lojas</p>
+                  <p className={`text-[11px] ${s.textMuted}`}>{storeAutoApprove ? "Aprovação imediata" : "Aprovação manual"}</p>
                 </div>
               </div>
               <ToggleBtnStable val={storeAutoApprove} onChange={setStoreAutoApprove} label={storeAutoApprove ? "Activo" : "Manual"} textMuted={s.textMuted} />
@@ -549,7 +549,7 @@ export default function AdminSettings() {
                 </div>
                 <div>
                   <p className={`text-sm font-semibold ${s.textPrimary}`}>Temas por Categoria nas Lojas</p>
-                  <p className={`text-[11px] ${s.textMuted}`}>{categoryThemesEnabled ? "Cada loja tem cores baseadas na sua categoria" : "Todas as lojas usam o tema padrao"}</p>
+                  <p className={`text-[11px] ${s.textMuted}`}>{categoryThemesEnabled ? "Cada loja tem cores baseadas na sua categoria" : "Todas as lojas usam o tema padrão"}</p>
                 </div>
               </div>
               <ToggleBtnStable val={categoryThemesEnabled} onChange={setCategoryThemesEnabled} label={categoryThemesEnabled ? "Activo" : "Desligado"} textMuted={s.textMuted} />
@@ -572,16 +572,16 @@ export default function AdminSettings() {
                 <label className={labelCls}>Titulo SEO (Title Tag)</label>
                 <input value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="SuperLoja — O Maior Marketplace de Angola" className={inputCls} maxLength={70} />
                 <div className="flex justify-between mt-1">
-                  <p className={`text-[10px] ${s.textMuted}`}>Aparece como titulo nos resultados do Google. Max 60-70 caracteres.</p>
+                  <p className={`text-[10px] ${s.textMuted}`}>Aparece como título nos resultados do Google. Max 60-70 caracteres.</p>
                   <span className={`text-[10px] font-medium ${seoTitle.length > 60 ? "text-amber-500" : s.textMuted}`}>{seoTitle.length}/70</span>
                 </div>
               </div>
 
               <div>
-                <label className={labelCls}>Meta Descricao</label>
-                <textarea value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} rows={3} placeholder="O maior marketplace de Angola. Compre e venda produtos de lojas locais com entrega rapida." className={`${inputCls} resize-none`} maxLength={160} />
+                <label className={labelCls}>Meta Descrição</label>
+                <textarea value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} rows={3} placeholder="O maior marketplace de Angola. Compre e venda produtos de lojas locais com entrega rápida." className={`${inputCls} resize-none`} maxLength={160} />
                 <div className="flex justify-between mt-1">
-                  <p className={`text-[10px] ${s.textMuted}`}>Descricao que aparece nos resultados do Google. Max 150-160 caracteres.</p>
+                  <p className={`text-[10px] ${s.textMuted}`}>Descrição que aparece nos resultados do Google. Max 150-160 caracteres.</p>
                   <span className={`text-[10px] font-medium ${seoDescription.length > 150 ? "text-amber-500" : s.textMuted}`}>{seoDescription.length}/160</span>
                 </div>
               </div>
@@ -647,7 +647,7 @@ export default function AdminSettings() {
 
           {/* Analytics */}
           <div className={cardCls}>
-            <SectionHeaderStable icon={BarChart3} color="text-orange-500" title="Analytics & Tracking" desc="Codigos de rastreamento para analise de trafego" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
+            <SectionHeaderStable icon={BarChart3} color="text-orange-500" title="Analytics & Tracking" desc="Códigos de rastreamento para análise de trafego" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <InputFieldStable label="Google Analytics (GA4)" value={seoGaId} onChange={setSeoGaId} placeholder="G-XXXXXXXXXX" hint="ID de medicao do Google Analytics 4" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
@@ -658,12 +658,12 @@ export default function AdminSettings() {
 
           {/* Custom head scripts */}
           <div className={cardCls}>
-            <SectionHeaderStable icon={Code} color="text-violet-500" title="Scripts Personalizados" desc="Codigo HTML/JS adicionado ao head de todas as paginas" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
+            <SectionHeaderStable icon={Code} color="text-violet-500" title="Scripts Personalizados" desc="Código HTML/JS adicionado ao head de todas as páginas" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
 
             <div>
               <label className={labelCls}>Scripts no Head</label>
               <textarea value={seoHeadScripts} onChange={(e) => setSeoHeadScripts(e.target.value)} rows={5} placeholder="<!-- Exemplo: schema.org, chat widgets, etc. -->" className={`${inputCls} resize-none font-mono text-xs`} />
-              <p className={`text-[10px] ${s.textMuted} mt-1`}>Cuidado: codigo invalido pode quebrar o site. Use para schema.org, chat widgets, etc.</p>
+              <p className={`text-[10px] ${s.textMuted} mt-1`}>Cuidado: código inválido pode quebrar o site. Use para schema.org, chat widgets, etc.</p>
             </div>
           </div>
 
@@ -734,10 +734,10 @@ export default function AdminSettings() {
       {/* ═══════════ TAB: CONTACTOS ═══════════ */}
       {tab === "contact" && (
         <div className={cardCls}>
-          <SectionHeaderStable icon={Phone} color="text-blue-500" title="Informacoes de Contacto" desc="Dados que aparecem na pagina de contacto e no rodape" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
+          <SectionHeaderStable icon={Phone} color="text-blue-500" title="Informações de Contacto" desc="Dados que aparecem na página de contacto e no rodape" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <InputFieldStable label="Email" value={contactEmail} onChange={setContactEmail} placeholder="info@superloja.vip" hint="Aparece na pagina de contacto e rodape" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
+            <InputFieldStable label="Email" value={contactEmail} onChange={setContactEmail} placeholder="info@superloja.vip" hint="Aparece na página de contacto e rodape" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
             <div>
               <label className={labelCls}>Telefone</label>
               <PhoneInput value={contactPhone} onChange={setContactPhone} className={inputCls} />
@@ -745,11 +745,11 @@ export default function AdminSettings() {
             <div>
               <label className={labelCls}>WhatsApp</label>
               <PhoneInput value={contactWhatsapp} onChange={setContactWhatsapp} className={inputCls} />
-              <p className={`text-[10px] ${s.textMuted} mt-1`}>Numero com codigo do pais</p>
+              <p className={`text-[10px] ${s.textMuted} mt-1`}>Número com código do pais</p>
             </div>
             <InputFieldStable label="Cidade" value={contactCity} onChange={setContactCity} placeholder="Luanda, Angola" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
             <div className="sm:col-span-2">
-              <InputFieldStable label="Endereco Completo" value={contactAddress} onChange={setContactAddress} placeholder="Talatona, Luanda Sul, Angola" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
+              <InputFieldStable label="Endereço Completo" value={contactAddress} onChange={setContactAddress} placeholder="Talatona, Luanda Sul, Angola" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
             </div>
           </div>
 
@@ -784,7 +784,7 @@ export default function AdminSettings() {
       {/* ═══════════ TAB: REDES SOCIAIS ═══════════ */}
       {tab === "social" && (
         <div className={cardCls}>
-          <SectionHeaderStable icon={Globe} color="text-pink-500" title="Redes Sociais" desc="Links que aparecem no rodape e pagina de contacto" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
+          <SectionHeaderStable icon={Globe} color="text-pink-500" title="Redes Sociais" desc="Links que aparecem no rodape e página de contacto" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
 
           <div className="space-y-4">
             {[
@@ -889,7 +889,7 @@ export default function AdminSettings() {
       {/* ═══════════ TAB: SMTP ═══════════ */}
       {tab === "smtp" && (
         <div className={cardCls}>
-          <SectionHeaderStable icon={Mail} color="text-cyan-500" title="Configuracao SMTP" desc="Servidor de envio de emails" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
+          <SectionHeaderStable icon={Mail} color="text-cyan-500" title="Configuração SMTP" desc="Servidor de envio de emails" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
 
           {/* Servidor principal */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -941,7 +941,7 @@ export default function AdminSettings() {
           <div className={`rounded-xl p-4 border ${s.borderLight} space-y-4`}>
             <div className="flex items-center gap-2">
               <Settings className="h-4 w-4 text-violet-500" />
-              <span className={`text-xs font-semibold ${s.textPrimary}`}>Opcoes Avancadas</span>
+              <span className={`text-xs font-semibold ${s.textPrimary}`}>Opções Avancadas</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <InputFieldStable label="Timeout (segundos)" value={smtp.timeout} onChange={(v) => setSmtp({ ...smtp, timeout: v })} type="number" placeholder="30" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} />
@@ -949,7 +949,7 @@ export default function AdminSettings() {
                 <label className={labelCls}>Verificar Certificado SSL</label>
                 <select value={smtp.verify_peer} onChange={(e) => setSmtp({ ...smtp, verify_peer: e.target.value })} className={inputCls}>
                   <option value="true">Sim (recomendado)</option>
-                  <option value="false">Nao (servidores sem certificado valido)</option>
+                  <option value="false">Não (servidores sem certificado válido)</option>
                 </select>
               </div>
             </div>
@@ -963,7 +963,7 @@ export default function AdminSettings() {
             <div className="flex items-center gap-3">
               <button onClick={testConn} disabled={testingConn}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold ${s.isDark ? "bg-violet-500/20 text-violet-400 hover:bg-violet-500/30" : "bg-violet-50 text-violet-600 hover:bg-violet-100"} transition-colors disabled:opacity-50`}>
-                {testingConn ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />} Testar Conexao
+                {testingConn ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />} Testar Ligação
               </button>
               <span className={`text-[10px] ${s.textMuted}`}>Verifica se a ligacao e autenticacao SMTP funcionam (sem enviar email).</span>
             </div>
@@ -987,7 +987,7 @@ export default function AdminSettings() {
       {/* ═══════════ TAB: SMS ═══════════ */}
       {tab === "sms" && (
         <div className={cardCls}>
-          <SectionHeaderStable icon={MessageSquare} color="text-emerald-500" title="Configuracao SMS" desc="Provedor de SMS para notificacoes" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
+          <SectionHeaderStable icon={MessageSquare} color="text-emerald-500" title="Configuração SMS" desc="Provedor de SMS para notificações" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -1023,7 +1023,7 @@ export default function AdminSettings() {
       {/* ═══════════ TAB: PWA ═══════════ */}
       {tab === "pwa" && (
         <div className={cardCls}>
-          <SectionHeaderStable icon={Smartphone} color="text-indigo-500" title="Progressive Web App (PWA)" desc="Permita que os utilizadores instalem o site como aplicacao no telemovel" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
+          <SectionHeaderStable icon={Smartphone} color="text-indigo-500" title="Progressive Web App (PWA)" desc="Permita que os utilizadores instalem o site como aplicacao no telemóvel" isDark={s.isDark} textPrimary={s.textPrimary} textMuted={s.textMuted} />
 
           {/* Enable toggle */}
           <div className={`rounded-xl p-4 border ${s.borderLight}`}>
@@ -1058,7 +1058,7 @@ export default function AdminSettings() {
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${s.btnSecondary} disabled:opacity-50`}>
                     {uploading === "pwa_icon_192" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Carregar
                   </button>
-                  <p className={`text-[10px] ${s.textMuted}`}>PNG 192x192px. Usado no ecra inicial.</p>
+                  <p className={`text-[10px] ${s.textMuted}`}>PNG 192x192px. Usado no ecrã inicial.</p>
                   <input ref={pwaIcon192Ref} type="file" accept="image/png" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPwaIcon(f, "pwa_icon_192"); e.target.value = ""; }} />
                 </div>
               </div>
@@ -1089,9 +1089,9 @@ export default function AdminSettings() {
           {/* App info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <InputFieldStable label="Nome da App" value={pwaName} onChange={setPwaName} placeholder="SuperLoja — Marketplace" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} hint="Nome completo exibido na instalacao" />
-            <InputFieldStable label="Nome Curto" value={pwaShortName} onChange={setPwaShortName} placeholder="SuperLoja" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} hint="Exibido no ecra inicial (max 12 caracteres)" />
+            <InputFieldStable label="Nome Curto" value={pwaShortName} onChange={setPwaShortName} placeholder="SuperLoja" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} hint="Exibido no ecrã inicial (max 12 caracteres)" />
             <div className="sm:col-span-2">
-              <label className={labelCls}>Descricao</label>
+              <label className={labelCls}>Descrição</label>
               <textarea value={pwaDescription} onChange={(e) => setPwaDescription(e.target.value)} rows={2} placeholder="O maior marketplace de Angola..." className={`${inputCls} resize-none`} />
             </div>
           </div>
@@ -1126,7 +1126,7 @@ export default function AdminSettings() {
             </div>
           </div>
 
-          <InputFieldStable label="URL Inicial" value={pwaStartUrl} onChange={setPwaStartUrl} placeholder="/" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} hint="Pagina que abre ao iniciar a app (ex: / ou /lojas)" />
+          <InputFieldStable label="URL Inicial" value={pwaStartUrl} onChange={setPwaStartUrl} placeholder="/" inputCls={inputCls} labelCls={labelCls} textMuted={s.textMuted} hint="Página que abre ao iniciar a app (ex: / ou /lojas)" />
 
           {/* Preview */}
           <div className={`rounded-xl p-4 border ${s.borderLight}`}>

@@ -76,7 +76,7 @@ export default function StoreApiSettings() {
         fetchSettings();
         toast.success("Credenciais geradas", "Guarde o secret num local seguro!");
       } else {
-        toast.error("Erro", d.error || "Nao foi possivel gerar credenciais.");
+        toast.error("Erro", d.error || "Não foi possível gerar credenciais.");
       }
     } finally { setGenerating(false); setConfirmAction(null); }
   };
@@ -91,7 +91,7 @@ export default function StoreApiSettings() {
       });
       const d = await res.json();
       if (res.ok) {
-        toast.success("Guardado", "Configuracoes de API actualizadas.");
+        toast.success("Guardado", "Configurações de API actualizadas.");
         fetchSettings();
       } else {
         toast.error("Erro", d.message || "Erro ao guardar.");
@@ -116,7 +116,7 @@ export default function StoreApiSettings() {
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copiado", `${label} copiado para a area de transferencia.`);
+    toast.success("Copiado", `${label} copiado para a area de transferência.`);
   };
 
   const togglePermission = (perm: string) => {
@@ -145,9 +145,9 @@ export default function StoreApiSettings() {
           <div className="h-16 w-16 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-4">
             <Lock className="h-8 w-8 text-orange-500" />
           </div>
-          <h3 className={`text-base font-bold ${s.textPrimary} mb-2`}>API nao disponivel no plano actual</h3>
+          <h3 className={`text-base font-bold ${s.textPrimary} mb-2`}>API não disponível no plano actual</h3>
           <p className={`text-sm ${s.textMuted} mb-1`}>
-            O seu plano <strong>{data.plan_name || "actual"}</strong> nao inclui acesso a API.
+            O seu plano <strong>{data.plan_name || "actual"}</strong> não inclui acesso a API.
           </p>
           <p className={`text-xs ${s.textMuted} mb-6`}>
             Faca upgrade para o plano <strong>Premium</strong> ou <strong>Empresarial</strong> para usar a API.
@@ -184,7 +184,7 @@ export default function StoreApiSettings() {
             <div>
               <p className={`text-sm font-bold ${s.textPrimary}`}>Novas credenciais geradas!</p>
               <p className={`text-xs ${s.textMuted} mt-1`}>
-                Guarde o <strong>API Secret</strong> num local seguro. Ele nao sera exibido novamente depois de fechar esta secao.
+                Guarde o <strong>API Secret</strong> num local seguro. Ele não sera exibido novamente depois de fechar esta secao.
               </p>
             </div>
           </div>
@@ -228,7 +228,7 @@ export default function StoreApiSettings() {
           </div>
           <h3 className={`text-base font-bold ${s.textPrimary} mb-2`}>Nenhuma credencial configurada</h3>
           <p className={`text-sm ${s.textMuted} mb-6`}>
-            Gere as suas credenciais para comecar a usar a API da loja.
+            Gere as suas credenciais para começar a usar a API da loja.
           </p>
           <button onClick={() => setConfirmAction("generate")} disabled={generating}
             className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold ${s.btnPrimary} disabled:opacity-50 shadow-md`}>
@@ -303,7 +303,7 @@ export default function StoreApiSettings() {
             {/* Settings */}
             <div className={`rounded-2xl border ${s.card} p-5 space-y-4`}>
               <h3 className={`text-sm font-bold ${s.textPrimary} flex items-center gap-2`}>
-                <Zap className="h-4 w-4 text-orange-500" /> Configuracoes
+                <Zap className="h-4 w-4 text-orange-500" /> Configurações
               </h3>
 
               {/* Enable/Disable */}
@@ -312,7 +312,7 @@ export default function StoreApiSettings() {
                 {enabled ? <ToggleRight className="h-5 w-5 text-emerald-500" /> : <ToggleLeft className="h-5 w-5 text-gray-400" />}
                 <div className="text-left flex-1">
                   <p className={`text-xs font-semibold ${s.textPrimary}`}>API {enabled ? "Activa" : "Desactivada"}</p>
-                  <p className={`text-[10px] ${s.textMuted}`}>Quando desactivada, todos os pedidos a API serao rejeitados</p>
+                  <p className={`text-[10px] ${s.textMuted}`}>Quando desactivada, todos os pedidos a API serão rejeitados</p>
                 </div>
               </button>
 
@@ -323,7 +323,7 @@ export default function StoreApiSettings() {
                   {[
                     { key: "read", label: "Leitura", desc: "Listar e ver produtos", icon: BookOpen, color: "blue" },
                     { key: "write", label: "Escrita", desc: "Criar e editar produtos", icon: Code, color: "emerald" },
-                    { key: "delete", label: "Eliminacao", desc: "Eliminar produtos", icon: Trash2, color: "red" },
+                    { key: "delete", label: "Eliminação", desc: "Eliminar produtos", icon: Trash2, color: "red" },
                   ].map((p) => {
                     const active = permissions.includes(p.key);
                     return (
@@ -434,7 +434,7 @@ Content-Type: application/json
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
                   <p className={`text-[10px] ${s.isDark ? "text-amber-300" : "text-amber-700"} leading-relaxed`}>
-                    Nunca exponha o API Secret em codigo frontend ou repositorios publicos. Use variaveis de ambiente no servidor.
+                    Nunca exponha o API Secret em código frontend ou repositorios publicos. Use variaveis de ambiente no servidor.
                   </p>
                 </div>
               </div>
@@ -451,7 +451,7 @@ Content-Type: application/json
         open={confirmAction !== null}
         title={confirmAction === "generate" ? "Gerar novas credenciais" : "Revogar credenciais"}
         message={confirmAction === "generate"
-          ? "Gerar novas credenciais de API? As credenciais anteriores serao substituidas."
+          ? "Gerar novas credenciais de API? As credenciais anteriores serão substituidas."
           : "Revogar todas as credenciais? A API da loja sera desactivada."
         }
         variant="warning"

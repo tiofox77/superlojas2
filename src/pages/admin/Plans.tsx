@@ -10,6 +10,7 @@ import {
   Store, ToggleLeft, ToggleRight, Users
 } from "lucide-react";
 import { useToastNotification } from "@/contexts/ToastContext";
+import { plural } from "@/lib/utils";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
@@ -102,7 +103,7 @@ export default function AdminPlans() {
   };
 
   const savePlan = async () => {
-    if (!form.name) { setFormError("Nome e obrigatorio."); return; }
+    if (!form.name) { setFormError("Nome e obrigatório."); return; }
     setSaving(true); setFormError("");
 
     const body = {
@@ -137,7 +138,7 @@ export default function AdminPlans() {
       const data = await res.json();
       if (!res.ok) {
         setFormError(data.errors ? Object.values(data.errors).flat().join(", ") : data.message || "Erro");
-        toast.error("Erro", "Nao foi possivel guardar o plano.");
+        toast.error("Erro", "Não foi possível guardar o plano.");
       } else {
         setModalOpen(false); fetchPlans();
         toast.success(editPlan ? "Plano actualizado" : "Plano criado", `"${form.name}" guardado.`);
@@ -155,7 +156,7 @@ export default function AdminPlans() {
       });
       const data = await res.json();
       if (res.ok) { fetchPlans(); toast.success("Plano eliminado"); }
-      else toast.error("Erro", data.message || "Nao foi possivel eliminar.");
+      else toast.error("Erro", data.message || "Não foi possível eliminar.");
     } finally { setActionLoading(null); setConfirmDelete(null); }
   };
 
@@ -181,7 +182,7 @@ export default function AdminPlans() {
 
   const formatPrice = (price: string | number) => {
     const n = typeof price === "string" ? parseFloat(price) : price;
-    if (n === 0) return "Gratis";
+    if (n === 0) return "Grátis";
     return new Intl.NumberFormat("pt-AO", { style: "decimal", minimumFractionDigits: 0 }).format(n) + " Kz";
   };
 
@@ -292,7 +293,7 @@ export default function AdminPlans() {
                 {/* Footer */}
                 <div className={`px-5 py-3 border-t ${s.borderLight} flex items-center justify-between`}>
                   <span className={`inline-flex items-center gap-1 text-[10px] ${s.textMuted}`}>
-                    <Users className="h-3 w-3" /> {plan.stores_count || 0} lojas
+                    <Users className="h-3 w-3" /> {plural(plan.stores_count, "loja", "lojas")}
                   </span>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => openEdit(plan)} className={`p-1.5 rounded-lg ${s.textMuted} hover:text-orange-500 transition-colors`}>
@@ -339,9 +340,9 @@ export default function AdminPlans() {
               <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} placeholder="1" className={inputCls} />
             </div>
             <div className="sm:col-span-2">
-              <label className={labelCls}>Descricao</label>
+              <label className={labelCls}>Descrição</label>
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2}
-                placeholder="Descricao breve do plano..." className={`${inputCls} resize-none`} />
+                placeholder="Descrição breve do plano..." className={`${inputCls} resize-none`} />
             </div>
           </div>
 

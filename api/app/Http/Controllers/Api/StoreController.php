@@ -147,7 +147,7 @@ class StoreController extends Controller
             if ($userStoreCount >= $maxStores) {
                 $planName = $userPlan->name ?? 'actual';
                 return response()->json([
-                    'error' => "O seu plano {$planName} permite no maximo {$maxStores} loja(s). Faca upgrade para o plano Empresarial para ter ate 3 lojas.",
+                    'error' => "O seu plano {$planName} permite no máximo {$maxStores} loja(s). Faça upgrade para o plano Empresarial para ter até 3 lojas.",
                 ], 422);
             }
         }
@@ -188,6 +188,7 @@ class StoreController extends Controller
             'whatsapp' => $request->whatsapp,
             'categories' => [$request->category],
             'status' => $autoApprove ? 'approved' : 'pending',
+            'payment_methods' => $this->registrationPaymentMethods($request->input('payment_methods')),
         ];
 
         // Criar loja primeiro para obter o ID
@@ -263,30 +264,31 @@ class StoreController extends Controller
         }
 
         $message = $autoApprove
-            ? 'Loja registada e aprovada automaticamente! Ja pode comecar a vender.'
-            : 'Loja registada com sucesso! Sera analisada e aprovada em breve.';
+            ? 'Loja registada e aprovada automaticamente! Já pode começar a vender.'
+            : 'Loja registada com sucesso! Será analisada e aprovada em breve.';
 
-        // Send store registration email (non-blocking)
-        try {
-            (new MailService())->sendStoreRegistered($user->email, $user->name, $store->name, $autoApprove);
-        } catch (\Throwable $e) {}
+        // E-mails (SMTP) e notificações depois da resposta: não fazem o vendedor esperar.
+        $category = $request->category ?? '';
+        \Illuminate\Support\defer(function () use ($user, $store, $autoApprove, $category) {
+            try {
+                (new MailService())->sendStoreRegistered($user->email, $user->name, $store->name, $autoApprove);
+            } catch (\Throwable $e) {}
 
-        // Notify admin about new store
-        try {
-            $notifType = $autoApprove ? 'store_approved' : 'store_pending';
-            $notifTitle = $autoApprove ? 'Nova loja aprovada automaticamente' : 'Nova loja pendente de aprovacao';
-            $notifBody = "A loja \"{$store->name}\" foi registada por {$user->name}.";
-            \App\Models\Notification::notifyAdmin($notifType, $notifTitle, $notifBody, 'store', 'orange', '/admin/lojas');
-        } catch (\Throwable $e) {}
+            try {
+                $notifType = $autoApprove ? 'store_approved' : 'store_pending';
+                $notifTitle = $autoApprove ? 'Nova loja aprovada automaticamente' : 'Nova loja pendente de aprovação';
+                $notifBody = "A loja \"{$store->name}\" foi registada por {$user->name}.";
+                \App\Models\Notification::notifyAdmin($notifType, $notifTitle, $notifBody, 'store', 'orange', '/admin/lojas');
+            } catch (\Throwable $e) {}
 
-        // Email alert to admin about new store (non-blocking)
-        try {
-            (new MailService())->sendAdminNewStore(
-                $store->name, $user->name, $user->email,
-                $store->province ?? '', $request->category ?? '',
-                $store->whatsapp ?? '', $autoApprove
-            );
-        } catch (\Throwable $e) {}
+            try {
+                (new MailService())->sendAdminNewStore(
+                    $store->name, $user->name, $user->email,
+                    $store->province ?? '', $category,
+                    $store->whatsapp ?? '', $autoApprove
+                );
+            } catch (\Throwable $e) {}
+        });
 
         $response = [
             'message' => $message,
@@ -302,5 +304,50 @@ class StoreController extends Controller
         }
 
         return response()->json($response, 201);
+    }
+
+    /**
+     * Formas de pagamento escolhidas no registo (JSON no FormData). Sem nenhuma válida, a loja
+     * fica com "Pagamento na Entrega" — uma loja nova sem métodos não conseguia vender (QA 17-Out).
+     */
+    private function registrationPaymentMethods($raw): array
+    {
+        $labels = [
+            'cash_delivery' => 'Pagamento na Entrega',
+            'cash_pickup' => 'Pagamento na Recolha',
+            'multicaixa_express' => 'Multicaixa Express',
+            'transfer' => 'Transferência Bancária',
+            'deposit' => 'Depósito Bancário',
+            'qr_code' => 'Pagamento por QR Code',
+            'other' => 'Outro',
+        ];
+        // Estes só servem ao cliente com o número/IBAN para onde pagar.
+        $needsAccount = ['multicaixa_express', 'transfer', 'deposit'];
+
+        $input = is_string($raw) ? json_decode($raw, true) : $raw;
+        $methods = [];
+        foreach (is_array($input) ? $input : [] as $m) {
+            $type = is_array($m) ? ($m['type'] ?? null) : null;
+            if (!is_string($type) || !isset($labels[$type]) || isset($methods[$type])) continue;
+            $account = trim(mb_substr((string) ($m['account'] ?? ''), 0, 100));
+            if (in_array($type, $needsAccount, true) && $account === '') continue;
+            $label = trim(mb_substr((string) ($m['label'] ?? ''), 0, 100));
+            $methods[$type] = [
+                'type' => $type,
+                'label' => $label !== '' ? $label : $labels[$type],
+                'details' => trim(mb_substr((string) ($m['details'] ?? ''), 0, 500)),
+                'account' => $account,
+                'is_active' => true,
+            ];
+        }
+
+        if (!$methods) {
+            $methods['cash_delivery'] = [
+                'type' => 'cash_delivery', 'label' => $labels['cash_delivery'],
+                'details' => '', 'account' => '', 'is_active' => true,
+            ];
+        }
+
+        return array_values($methods);
     }
 }

@@ -125,9 +125,9 @@ export default function AdminSubscriptions() {
     try {
       const res = await fetch(`${API}/admin/subscriptions/check-expiry`, { method: "POST", headers });
       const d = await res.json();
-      toast.success("Verificacao concluida", d.message);
+      toast.success("Verificação concluida", d.message);
       fetchSubs(); fetchStats(); fetchExpiryStatus();
-    } catch { toast.error("Erro", "Falha ao verificar subscricoes."); }
+    } catch { toast.error("Erro", "Falha ao verificar subscrições."); }
     finally { setCheckingExpiry(false); }
   };
 
@@ -136,7 +136,7 @@ export default function AdminSubscriptions() {
 
   const formatPrice = (p: string | number) => {
     const n = typeof p === "string" ? parseFloat(p) : p;
-    if (n === 0) return "Gratis";
+    if (n === 0) return "Grátis";
     return new Intl.NumberFormat("pt-AO", { minimumFractionDigits: 0 }).format(n) + " Kz";
   };
   const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString("pt-PT") : "—";
@@ -157,7 +157,7 @@ export default function AdminSubscriptions() {
       });
       const d = await res.json();
       if (res.ok) {
-        toast.success("Subscricao criada"); setCreateOpen(false);
+        toast.success("Subscrição criada"); setCreateOpen(false);
         fetchSubs(); fetchStats();
       } else toast.error("Erro", d.message || JSON.stringify(d.errors));
     } finally { setCreating(false); }
@@ -202,12 +202,12 @@ export default function AdminSubscriptions() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className={`text-lg font-bold ${s.textPrimary}`}>Subscricoes</h2>
+          <h2 className={`text-lg font-bold ${s.textPrimary}`}>Subscrições</h2>
           <p className={`text-xs ${s.textMuted}`}>{total} subscricoes no total</p>
         </div>
         <button onClick={() => { setCreateOpen(true); setCStore(""); setCPlan(""); setCPayMethod(""); setCPayRef(""); setCAmount(""); setCNotes(""); setCStatus("active"); setCDuration(""); }}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl ${s.btnPrimary} text-xs font-semibold shadow-sm`}>
-          <CreditCard className="h-4 w-4" /> Nova Subscricao
+          <CreditCard className="h-4 w-4" /> Nova Subscrição
         </button>
       </div>
 
@@ -247,7 +247,7 @@ export default function AdminSubscriptions() {
         <div className="flex items-center gap-3">
           {expiryStatus && (
             <div className={`text-[9px] ${s.textMuted} text-right leading-tight`}>
-              <p>Ultima verificacao: {expiryStatus.last_run ? new Date(expiryStatus.last_run).toLocaleString("pt-PT") : "Nunca"}</p>
+              <p>Última verificação: {expiryStatus.last_run ? new Date(expiryStatus.last_run).toLocaleString("pt-PT") : "Nunca"}</p>
               <p>{expiryStatus.next_auto_check}</p>
             </div>
           )}
@@ -265,7 +265,7 @@ export default function AdminSubscriptions() {
       ) : subs.length === 0 ? (
         <div className={`rounded-2xl border ${s.card} py-16 text-center`}>
           <CreditCard className={`h-10 w-10 ${s.empty} mx-auto mb-3`} />
-          <p className={`text-sm ${s.textMuted}`}>Nenhuma subscricao encontrada.</p>
+          <p className={`text-sm ${s.textMuted}`}>Nenhuma subscrição encontrada.</p>
         </div>
       ) : (
         <div className={`rounded-2xl border ${s.card} overflow-hidden`}>
@@ -276,10 +276,10 @@ export default function AdminSubscriptions() {
                   <th className={`text-left px-4 py-3 font-semibold ${s.textMuted} uppercase tracking-wider text-[10px]`}>Loja</th>
                   <th className={`text-left px-4 py-3 font-semibold ${s.textMuted} uppercase tracking-wider text-[10px]`}>Plano</th>
                   <th className={`text-left px-4 py-3 font-semibold ${s.textMuted} uppercase tracking-wider text-[10px]`}>Status</th>
-                  <th className={`text-left px-4 py-3 font-semibold ${s.textMuted} uppercase tracking-wider text-[10px]`}>Periodo</th>
+                  <th className={`text-left px-4 py-3 font-semibold ${s.textMuted} uppercase tracking-wider text-[10px]`}>Período</th>
                   <th className={`text-left px-4 py-3 font-semibold ${s.textMuted} uppercase tracking-wider text-[10px]`}>Valor</th>
                   <th className={`text-left px-4 py-3 font-semibold ${s.textMuted} uppercase tracking-wider text-[10px]`}>Pagamento</th>
-                  <th className={`text-right px-4 py-3 font-semibold ${s.textMuted} uppercase tracking-wider text-[10px]`}>Accoes</th>
+                  <th className={`text-right px-4 py-3 font-semibold ${s.textMuted} uppercase tracking-wider text-[10px]`}>Acções</th>
                 </tr>
               </thead>
               <tbody className={`divide-y ${s.borderLight}`}>
@@ -354,7 +354,7 @@ export default function AdminSubscriptions() {
           {/* Pagination */}
           {lastPage > 1 && (
             <div className={`flex items-center justify-between px-4 py-3 border-t ${s.borderLight}`}>
-              <span className={`text-[10px] ${s.textMuted}`}>Pagina {page} de {lastPage}</span>
+              <span className={`text-[10px] ${s.textMuted}`}>Página {page} de {lastPage}</span>
               <div className="flex gap-1">
                 <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}
                   className={`p-1.5 rounded-lg ${s.textMuted} hover:text-orange-500 disabled:opacity-30`}><ChevronLeft className="h-4 w-4" /></button>
@@ -367,7 +367,7 @@ export default function AdminSubscriptions() {
       )}
 
       {/* ─── CREATE MODAL ─── */}
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Nova Subscricao" size="md">
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Nova Subscrição" size="md">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -408,7 +408,7 @@ export default function AdminSubscriptions() {
               <input type="number" value={cAmount} onChange={(e) => setCAmount(e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>Metodo Pagamento</label>
+              <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>Método Pagamento</label>
               <select value={cPayMethod} onChange={(e) => setCPayMethod(e.target.value)} className={inputCls}>
                 <option value="">—</option>
                 <option value="transferencia">Transferencia</option>
@@ -430,7 +430,7 @@ export default function AdminSubscriptions() {
             <button onClick={() => setCreateOpen(false)} className={`px-4 py-2.5 rounded-xl text-xs font-medium ${s.btnSecondary}`}>Cancelar</button>
             <button onClick={createSubscription} disabled={creating}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold ${s.btnPrimary} disabled:opacity-50`}>
-              {creating && <Loader2 className="h-4 w-4 animate-spin" />} Criar Subscricao
+              {creating && <Loader2 className="h-4 w-4 animate-spin" />} Criar Subscrição
             </button>
           </div>
         </div>
@@ -438,7 +438,7 @@ export default function AdminSubscriptions() {
 
       {/* ─── ACTION MODAL ─── */}
       <Modal open={!!actionSub && actionType !== "view"} onClose={() => setActionSub(null)}
-        title={actionType === "activate" ? "Activar Subscricao" : actionType === "cancel" ? "Cancelar Subscricao" : "Renovar Subscricao"} size="md">
+        title={actionType === "activate" ? "Activar Subscrição" : actionType === "cancel" ? "Cancelar Subscrição" : "Renovar Subscrição"} size="md">
         {actionSub && (
           <div className="space-y-4">
             <div className={`rounded-xl p-3 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"} space-y-1`}>
@@ -451,7 +451,7 @@ export default function AdminSubscriptions() {
               <div className={`rounded-xl p-3 border ${s.isDark ? "border-emerald-500/20 bg-emerald-900/10" : "border-emerald-200 bg-emerald-50"}`}>
                 <p className={`text-[10px] font-bold ${s.isDark ? "text-emerald-300" : "text-emerald-700"} uppercase tracking-wider mb-2`}>Dados enviados pelo lojista</p>
                 <div className={`text-xs space-y-1 ${s.isDark ? "text-emerald-200" : "text-emerald-800"}`}>
-                  {actionSub.payment_method && <p><strong>Metodo:</strong> {actionSub.payment_method}</p>}
+                  {actionSub.payment_method && <p><strong>Método:</strong> {actionSub.payment_method}</p>}
                   {actionSub.payment_reference && <p><strong>Referencia:</strong> {actionSub.payment_reference}</p>}
                   {actionSub.amount_paid && <p><strong>Valor:</strong> {formatPrice(actionSub.amount_paid)} {actionSub.currency}</p>}
                   {actionSub.notes && <p><strong>Notas:</strong> {actionSub.notes}</p>}
@@ -478,13 +478,13 @@ export default function AdminSubscriptions() {
             {actionType === "cancel" ? (
               <div className={`rounded-xl p-3 border ${s.isDark ? "border-red-500/20 bg-red-900/10" : "border-red-200 bg-red-50"}`}>
                 <p className={`text-xs ${s.isDark ? "text-red-300" : "text-red-700"}`}>
-                  A loja sera revertida para o plano gratuito apos o cancelamento.
+                  A loja sera revertida para o plano gratuito após o cancelamento.
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>Metodo Pagamento</label>
+                  <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>Método Pagamento</label>
                   <select value={actionPayMethod} onChange={(e) => setActionPayMethod(e.target.value)} className={inputCls}>
                     <option value="">—</option>
                     <option value="transferencia">Transferencia</option>

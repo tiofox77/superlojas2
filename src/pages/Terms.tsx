@@ -4,7 +4,7 @@ import { FileText, ArrowLeft } from "lucide-react";
 const sections = [
   {
     title: "1. Aceitacao dos Termos",
-    content: `Ao aceder e utilizar a plataforma SuperLoja ("Plataforma"), o utilizador aceita e concorda com os presentes Termos de Uso. Se nao concordar com algum dos termos aqui estabelecidos, nao devera utilizar a Plataforma.
+    content: `Ao aceder e utilizar a plataforma SuperLoja ("Plataforma"), o utilizador aceita e concorda com os presentes Termos de Uso. Se não concordar com algum dos termos aqui estabelecidos, não deverá utilizar a Plataforma.
 
 A SuperLoja reserva-se o direito de actualizar ou modificar estes Termos a qualquer momento, sem aviso previo. O uso continuado da Plataforma apos quaisquer alteracoes constitui aceitacao dos novos termos.`,
   },
@@ -16,7 +16,7 @@ A SuperLoja NAO e responsavel pela transaccao comercial entre comprador e vended
   },
   {
     title: "3. Registo e Conta",
-    content: `Para utilizar determinadas funcionalidades da Plataforma, o utilizador devera criar uma conta fornecendo informacoes verdadeiras, completas e actualizadas.
+    content: `Para utilizar determinadas funcionalidades da Plataforma, o utilizador deverá criar uma conta fornecendo informações verdadeiras, completas e actualizadas.
 
 O utilizador e responsavel por:
 • Manter a confidencialidade da sua senha e dados de acesso
@@ -47,13 +47,13 @@ A comunicacao e transaccao entre comprador e vendedor e feita directamente (via 
   },
   {
     title: "6. Propriedade Intelectual",
-    content: `Todo o conteudo da Plataforma, incluindo mas nao limitado a textos, graficos, logotipos, icones, imagens, software e codigo, e propriedade da SuperLoja ou dos seus licenciadores e esta protegido pelas leis de propriedade intelectual.
+    content: `Todo o conteúdo da Plataforma, incluindo mas não limitado a textos, gráficos, logotipos, icones, imagens, software e código, e propriedade da SuperLoja ou dos seus licenciadores e esta protegido pelas leis de propriedade intelectual.
 
 Os vendedores sao responsaveis pelo conteudo que publicam e declaram ter os direitos necessarios sobre as imagens e descricoes dos seus produtos.`,
   },
   {
     title: "7. Limitacao de Responsabilidade",
-    content: `A SuperLoja nao se responsabiliza por:
+    content: `A SuperLoja não se responsabiliza por:
 • Qualidade, seguranca ou legalidade dos produtos anunciados
 • Veracidade das informacoes fornecidas pelos vendedores
 • Capacidade dos vendedores em concluir transaccoes
@@ -64,7 +64,7 @@ A Plataforma e fornecida "tal como esta" e "conforme disponivel", sem garantias 
   },
   {
     title: "8. Resolucao de Conflitos",
-    content: `Em caso de disputa entre comprador e vendedor, as partes devem tentar resolver o conflito directamente entre si. A SuperLoja pode, a seu criterio, mediar conflitos mas nao e obrigada a faze-lo.
+    content: `Em caso de disputa entre comprador e vendedor, as partes devem tentar resolver o conflito directamente entre si. A SuperLoja pode, a seu criterio, mediar conflitos mas não e obrigada a faze-lo.
 
 Qualquer disputa relacionada com estes Termos sera regida pelas leis da Republica de Angola e submetida aos tribunais competentes de Luanda.`,
   },
@@ -89,9 +89,9 @@ export default function Terms() {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary-foreground">Termos de Uso</h1>
           </div>
           <p className="text-primary-foreground/80 text-sm max-w-lg mx-auto">
-            Leia atentamente os termos e condicoes de utilizacao da plataforma SuperLoja.
+            Leia atentamente os termos e condições de utilizacao da plataforma SuperLoja.
           </p>
-          <p className="text-primary-foreground/60 text-xs mt-2">Ultima actualizacao: Marco 2026</p>
+          <p className="text-primary-foreground/60 text-xs mt-2">Última actualização: Marco 2026</p>
         </div>
       </div>
 
@@ -107,7 +107,7 @@ export default function Terms() {
 
         <div className="mt-8 text-center">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Voltar ao inicio
+            <ArrowLeft className="h-4 w-4" /> Voltar ao início
           </Link>
         </div>
       </div>

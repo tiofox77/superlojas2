@@ -74,10 +74,10 @@ export function SubdomainStoreProvider({ children }: { children: ReactNode }) {
           setNeedsUpgrade(true);
           setError(data.error);
         } else {
-          setError(data.error || "Loja nao encontrada");
+          setError(data.error || "Loja não encontrada");
         }
       })
-      .catch(() => setError("Erro de conexao"))
+      .catch(() => setError("Erro de ligação"))
       .finally(() => setLoading(false));
   }, [storeSlug]);
 

@@ -10,6 +10,7 @@ import { logoSrc, productImgSrc, onImgError } from "@/lib/imageHelpers";
 import { useSubdomainStore } from "@/contexts/SubdomainStoreContext";
 import { pixelTrack } from "@/lib/facebookPixel";
 import { isValidEmail, isAngolanPhone } from "@/lib/validators";
+import { DELIVERY_FEE_PER_STORE } from "@/lib/delivery";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
@@ -22,6 +23,13 @@ interface SavedAddress {
 
 const TRANSFER_TYPES = ["transfer", "transferencia", "deposit", "deposito"];
 const isTransferType = (type: string) => TRANSFER_TYPES.some(t => type.toLowerCase().includes(t));
+
+type PaymentMethod = { type: string; label: string; details: string; account: string; is_active: boolean };
+// Loja que ainda não configurou pagamentos: o cliente pode sempre pagar na entrega (QA 17-Out — antes ficava sem opções).
+const FALLBACK_METHOD: PaymentMethod = {
+  type: "cash_delivery", label: "Pagamento na Entrega", account: "", is_active: true,
+  details: "Paga quando receber a encomenda. A loja contacta-o para combinar a entrega.",
+};
 
 const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
@@ -61,7 +69,8 @@ const Checkout = () => {
   const [storeReceipts, setStoreReceipts] = useState<Record<string, File>>({});
   const [receiptPreviews, setReceiptPreviews] = useState<Record<string, string>>({});
   // Fresh payment methods fetched from API (not from stale cart)
-  const [freshPaymentMethods, setFreshPaymentMethods] = useState<Record<string, { type: string; label: string; details: string; account: string; is_active: boolean }[]>>({});
+  const [freshPaymentMethods, setFreshPaymentMethods] = useState<Record<string, PaymentMethod[]>>({});
+  const [methodsLoaded, setMethodsLoaded] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/provinces`).then(r => r.json()).then(d => setProvinces(Array.isArray(d) ? d : [])).catch(() => {});
@@ -133,7 +142,14 @@ const Checkout = () => {
   }, {} as Record<string, { store: typeof items[0]["product"]["store"]; items: typeof items }>);
 
   // "Recolha na loja" (cash_pickup) has no delivery fee
-  const deliveryFee = Object.keys(byStore).reduce((sum, sid) => sum + (storePayments[sid] === "cash_pickup" ? 0 : 2500), 0);
+  const deliveryFee = Object.keys(byStore).reduce((sum, sid) => sum + (storePayments[sid] === "cash_pickup" ? 0 : DELIVERY_FEE_PER_STORE), 0);
+  const itemCount = items.reduce((a, i) => a + i.quantity, 0);
+
+  // Active methods of a store; falls back to "Pagamento na Entrega" when the store has none.
+  const activeMethods = (methods: PaymentMethod[] | undefined) => {
+    const active = (methods || []).filter(m => m.is_active);
+    return active.length > 0 ? active : [FALLBACK_METHOD];
+  };
 
   // Fetch fresh payment methods from API for all stores in cart
   useEffect(() => {
@@ -145,40 +161,35 @@ const Checkout = () => {
       body: JSON.stringify({ store_ids: storeIds.map(Number) }),
     })
       .then(r => r.json())
-      .then((data: Record<string, { type: string; label: string; details: string; account: string; is_active: boolean }[]>) => {
-        setFreshPaymentMethods(data);
+      .then((data: Record<string, PaymentMethod[]>) => {
+        setFreshPaymentMethods(data && typeof data === "object" ? data : {});
         // Auto-select first method for stores that don't have a selection yet
         const defaults: Record<string, string> = {};
-        Object.entries(data).forEach(([apiSid, methods]) => {
-          const sid = String(apiSid);
-          const active = methods.filter(m => m.is_active);
-          if (!storePayments[sid] && active.length > 0) {
-            defaults[sid] = active[0].type;
-          }
+        storeIds.forEach((sid) => {
+          if (!storePayments[sid]) defaults[sid] = activeMethods(data?.[sid])[0].type;
         });
         if (Object.keys(defaults).length > 0) {
           setStorePayments(prev => ({ ...defaults, ...prev }));
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setMethodsLoaded(true));
   }, [items.length]);
 
-  const getStoreMethods = (store: typeof items[0]["product"]["store"]) => {
-    const fresh = freshPaymentMethods[store.id];
-    if (fresh && fresh.length > 0) return fresh.filter(m => m.is_active);
-    return (store.paymentMethods || []).filter(m => m.is_active);
-  };
+  const getStoreMethods = (store: typeof items[0]["product"]["store"]) =>
+    activeMethods(freshPaymentMethods[store.id] ?? (store.paymentMethods as PaymentMethod[] | undefined));
 
-  // Validation
+  // Validation — each missing item is listed so the customer knows why "Continuar" is disabled.
   const allStoresHavePayment = Object.keys(byStore).every(sid => !!storePayments[sid]);
-  const canContinue =
-    !!form.name.trim() &&
-    isValidEmail(form.email) &&
-    isAngolanPhone(form.phone) &&
-    !!form.address.trim() &&
-    !!form.province &&
-    !!form.city &&
-    allStoresHavePayment;
+  const missing: string[] = [];
+  if (!form.name.trim()) missing.push("o nome");
+  if (!isValidEmail(form.email)) missing.push("um email válido");
+  if (!isAngolanPhone(form.phone)) missing.push("um telefone angolano (9 dígitos, ou +244)");
+  if (!form.province) missing.push("a província");
+  if (!form.city) missing.push("o município");
+  if (!form.address.trim()) missing.push("o endereço");
+  if (!allStoresHavePayment) missing.push("a forma de pagamento");
+  const canContinue = missing.length === 0;
 
   if (items.length === 0 && step !== "done") {
     return (
@@ -204,8 +215,8 @@ const Checkout = () => {
               ))}
             </div>
           )}
-          <p className="text-sm text-muted-foreground mb-6">Recebera um email com os detalhes. A loja entrara em contacto para confirmar a entrega.</p>
-          <Link to="/"><Button>Voltar ao Inicio</Button></Link>
+          <p className="text-sm text-muted-foreground mb-6">Receberá um email com os detalhes. A loja entrará em contacto para confirmar a entrega.</p>
+          <Link to="/"><Button>Voltar ao Início</Button></Link>
         </div>
       </main>
     );
@@ -245,7 +256,7 @@ const Checkout = () => {
                 {/* Saved Addresses */}
                 {savedAddresses.length > 0 && !useManualAddr && (
                   <div className="rounded-2xl border border-border bg-card p-6">
-                    <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><BookmarkCheck className="h-5 w-5 text-primary" /> Enderecos Guardados</h2>
+                    <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><BookmarkCheck className="h-5 w-5 text-primary" /> Endereços Guardados</h2>
                     <div className="space-y-2">
                       {savedAddresses.map((addr, i) => (
                         <button key={i} onClick={() => selectSavedAddr(i)}
@@ -257,7 +268,7 @@ const Checkout = () => {
                           <div className="flex items-center justify-between">
                             <div>
                               <span className="text-sm font-semibold">{addr.label}</span>
-                              {addr.is_default && <span className="ml-2 text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">Padrao</span>}
+                              {addr.is_default && <span className="ml-2 text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">Padrão</span>}
                             </div>
                             {selectedAddrIdx === i && <CheckCircle2 className="h-4 w-4 text-primary" />}
                           </div>
@@ -267,7 +278,7 @@ const Checkout = () => {
                       ))}
                     </div>
                     <button onClick={switchToManual} className="mt-3 flex items-center gap-1.5 text-xs text-primary hover:underline">
-                      <PenLine className="h-3.5 w-3.5" /> Usar outro endereco
+                      <PenLine className="h-3.5 w-3.5" /> Usar outro endereço
                     </button>
                   </div>
                 )}
@@ -277,7 +288,7 @@ const Checkout = () => {
                   {savedAddresses.length > 0 && useManualAddr && (
                     <button onClick={() => { setUseManualAddr(false); if (savedAddresses.length > 0) selectSavedAddr(selectedAddrIdx ?? 0); }}
                       className="mb-3 flex items-center gap-1.5 text-xs text-primary hover:underline">
-                      <BookmarkCheck className="h-3.5 w-3.5" /> Usar endereco guardado
+                      <BookmarkCheck className="h-3.5 w-3.5" /> Usar endereço guardado
                     </button>
                   )}
                   <h2 className="font-bold text-lg mb-4 flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" /> Dados de Entrega</h2>
@@ -303,32 +314,32 @@ const Checkout = () => {
                       <PhoneInput value={form.phone} onChange={(v) => handleUpdate("phone", v)} className={inputCls} />
                     </div>
                     <div>
-                      <label className="text-sm font-medium mb-1.5 block">Provincia *</label>
+                      <label className="text-sm font-medium mb-1.5 block">Província *</label>
                       <select value={form.province} onChange={(e) => { handleUpdate("province", e.target.value); handleUpdate("city", ""); }} className={inputCls}>
-                        <option value="">Seleccionar provincia...</option>
+                        <option value="">Seleccionar província...</option>
                         {provinces.map((p) => (
                           <option key={p.name} value={p.name}>{p.name}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="text-sm font-medium mb-1.5 block">Municipio *</label>
+                      <label className="text-sm font-medium mb-1.5 block">Município *</label>
                       <select value={form.city} onChange={(e) => handleUpdate("city", e.target.value)} className={inputCls} disabled={!form.province}>
-                        <option value="">{form.province ? "Seleccionar municipio..." : "Seleccione provincia primeiro"}</option>
+                        <option value="">{form.province ? "Seleccionar município..." : "Seleccione a província primeiro"}</option>
                         {currentMunicipalities.map((m) => (
                           <option key={m} value={m}>{m}</option>
                         ))}
                       </select>
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="text-sm font-medium mb-1.5 block">Endereco Completo *</label>
+                      <label className="text-sm font-medium mb-1.5 block">Endereço Completo *</label>
                       <input type="text" value={form.address} onChange={(e) => handleUpdate("address", e.target.value)}
-                        placeholder="Rua, numero, bairro..." className={inputCls} />
+                        placeholder="Rua, número, bairro..." className={inputCls} />
                     </div>
                     <div className="sm:col-span-2">
                       <label className="text-sm font-medium mb-1.5 block">Notas (opcional)</label>
                       <textarea value={form.notes} onChange={(e) => handleUpdate("notes", e.target.value)}
-                        placeholder="Instrucoes de entrega..." rows={2}
+                        placeholder="Instruções de entrega..." rows={2}
                         className={`${inputCls} resize-none`} />
                     </div>
                   </div>
@@ -346,10 +357,13 @@ const Checkout = () => {
                           <div className="flex items-center gap-2">
                             <img src={logoSrc(store.logo, store.name)} alt="" className="h-6 w-6 rounded-lg" onError={onImgError("logo", store.name)} />
                             <span className="text-sm font-semibold">{store.name}</span>
-                            <span className="ml-auto text-xs font-medium text-muted-foreground">{formatPrice(storeSubtotal + (storePayments[sid] === "cash_pickup" ? 0 : 2500))} Kz</span>
+                            <span className="ml-auto text-xs font-medium text-muted-foreground">{formatPrice(storeSubtotal + (storePayments[sid] === "cash_pickup" ? 0 : DELIVERY_FEE_PER_STORE))} Kz</span>
                           </div>
+                          {!methodsLoaded && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Loader2 className="h-3.5 w-3.5 animate-spin" /> A carregar formas de pagamento…</p>
+                          )}
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {methods.map((m) => (
+                            {methodsLoaded && methods.map((m) => (
                               <button key={m.type} onClick={() => setStorePayments(prev => ({ ...prev, [sid]: m.type }))}
                                 className={`p-2.5 rounded-xl border text-xs font-medium transition-colors ${
                                   storePayments[sid] === m.type
@@ -360,6 +374,17 @@ const Checkout = () => {
                               </button>
                             ))}
                           </div>
+                          {methodsLoaded && (() => {
+                            const chosen = methods.find(m => m.type === storePayments[sid]);
+                            if (!chosen || isTransferType(chosen.type) || !chosen.details) return null;
+                            return <p className="text-xs text-muted-foreground">{chosen.details}</p>;
+                          })()}
+                          <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                            <Truck className="h-3.5 w-3.5" />
+                            {storePayments[sid] === "cash_pickup"
+                              ? "Recolha na loja — sem taxa de entrega."
+                              : `Taxa de entrega: ${formatPrice(DELIVERY_FEE_PER_STORE)} Kz (grátis se escolher Pagamento na Recolha, quando a loja o aceita).`}
+                          </p>
 
                           {/* Bank details + receipt upload for transfer-type payments */}
                           {(() => {
@@ -371,7 +396,7 @@ const Checkout = () => {
                                 {hasDetails && (
                                   <div>
                                     <p className="text-xs font-semibold text-blue-700 flex items-center gap-1.5 mb-2">
-                                      <Building2 className="h-3.5 w-3.5" /> Coordenadas Bancarias
+                                      <Building2 className="h-3.5 w-3.5" /> Coordenadas Bancárias
                                     </p>
                                     {chosenMethod.account && (
                                       <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-blue-100">
@@ -391,7 +416,7 @@ const Checkout = () => {
                                   </div>
                                 )}
                                 {!hasDetails && (
-                                  <p className="text-xs text-blue-600">A loja ira fornecer as coordenadas bancarias apos o pedido.</p>
+                                  <p className="text-xs text-blue-600">A loja irá fornecer as coordenadas bancárias após o pedido.</p>
                                 )}
 
                                 {/* Receipt upload */}
@@ -445,8 +470,8 @@ const Checkout = () => {
                 </div>
 
                 {!canContinue && (
-                  <p className="text-sm text-muted-foreground" role="status">
-                    Preencha todos os campos, um email válido e um telefone angolano com 9 dígitos (ou +244), e seleccione o pagamento.
+                  <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2" role="status">
+                    Para continuar, falta indicar {missing.length > 1 ? `${missing.slice(0, -1).join(", ")} e ${missing[missing.length - 1]}` : missing[0]}.
                   </p>
                 )}
 
@@ -469,7 +494,7 @@ const Checkout = () => {
                     <div><span className="text-muted-foreground">Nome:</span> <span className="font-medium">{form.name}</span></div>
                     <div><span className="text-muted-foreground">Telefone:</span> <span className="font-medium">{form.phone}</span></div>
                     <div><span className="text-muted-foreground">Email:</span> <span className="font-medium">{form.email}</span></div>
-                    <div className="col-span-2"><span className="text-muted-foreground">Endereco:</span> <span className="font-medium">{form.address}, {form.city}, {form.province}</span></div>
+                    <div className="col-span-2"><span className="text-muted-foreground">Endereço:</span> <span className="font-medium">{form.address}, {form.city}, {form.province}</span></div>
                   </div>
                 </div>
 
@@ -567,7 +592,7 @@ const Checkout = () => {
                             : [d.error || d.message || "Erro ao processar pedido."])
                       );
                     }
-                  } catch { setStockErrors(["Erro de conexao. Tente novamente."]); }
+                  } catch { setStockErrors(["Erro de ligação. Tente novamente."]); }
                   finally { setProcessing(false); }
                 }} disabled={processing || !canContinue}
                   className="w-full bg-hero-gradient text-primary-foreground hover:opacity-90 rounded-xl gap-2 disabled:opacity-60">
@@ -583,7 +608,7 @@ const Checkout = () => {
             <div className="rounded-2xl border border-border bg-card p-6 sticky top-24">
               <h3 className="font-bold mb-4">Resumo do Pedido</h3>
               <div className="space-y-2 text-sm mb-4">
-                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal ({items.reduce((a, i) => a + i.quantity, 0)} itens)</span><span>{formatPrice(totalPrice)} Kz</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal ({itemCount} {itemCount === 1 ? "item" : "itens"})</span><span>{formatPrice(totalPrice)} Kz</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Entrega ({Object.keys(byStore).length} loja{Object.keys(byStore).length > 1 ? "s" : ""})</span><span>{formatPrice(deliveryFee)} Kz</span></div>
               </div>
               <div className="border-t border-border pt-3">

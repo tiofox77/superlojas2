@@ -19,16 +19,16 @@ const sidebarNav = [
   { label: "Categorias", to: "/admin/categorias", icon: Tag, color: "text-pink-500" },
   { label: "Hero Slides", to: "/admin/slides", icon: Image, color: "text-cyan-500" },
   { label: "Planos", to: "/admin/planos", icon: CreditCard, color: "text-indigo-500" },
-  { label: "Subscricoes", to: "/admin/subscricoes", icon: Crown, color: "text-purple-500" },
-  { label: "Metodos Pagamento", to: "/admin/metodos-pagamento", icon: CreditCard, color: "text-teal-500" },
-  { label: "Notificacoes", to: "/admin/notificacoes", icon: Megaphone, color: "text-amber-500" },
+  { label: "Subscrições", to: "/admin/subscricoes", icon: Crown, color: "text-purple-500" },
+  { label: "Métodos Pagamento", to: "/admin/metodos-pagamento", icon: CreditCard, color: "text-teal-500" },
+  { label: "Notificações", to: "/admin/notificacoes", icon: Megaphone, color: "text-amber-500" },
   { label: "Emails", to: "/admin/emails", icon: Mail, color: "text-cyan-500" },
   { label: "Analytics", to: "/admin/analytics", icon: BarChart3, color: "text-rose-500" },
-  { label: "Relatorios", to: "/admin/relatorios", icon: FileText, color: "text-sky-500" },
+  { label: "Relatórios", to: "/admin/relatorios", icon: FileText, color: "text-sky-500" },
   { label: "AliExpress", to: "/admin/aliexpress", icon: ShoppingCart, color: "text-orange-500" },
   { label: "Facebook", to: "/admin/facebook", icon: Facebook, color: "text-blue-600" },
-  { label: "Configuracoes", to: "/admin/configuracoes", icon: Settings, color: "text-gray-500" },
-  { label: "Actualizacoes", to: "/admin/actualizacoes", icon: Download, color: "text-teal-500" },
+  { label: "Configurações", to: "/admin/configuracoes", icon: Settings, color: "text-gray-500" },
+  { label: "Actualizações", to: "/admin/actualizacoes", icon: Download, color: "text-teal-500" },
 ];
 
 function AdminLayoutInner() {
@@ -136,7 +136,7 @@ function AdminLayoutInner() {
           </div>
           {sidebarOpen && (
             <button onClick={() => logout()} className={`flex items-center gap-2 w-full mt-2 px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors`}>
-              <LogOut className="h-3.5 w-3.5" /> Terminar Sessao
+              <LogOut className="h-3.5 w-3.5" /> Terminar Sessão
             </button>
           )}
         </div>

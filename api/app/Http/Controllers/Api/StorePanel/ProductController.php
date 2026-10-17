@@ -213,6 +213,16 @@ class ProductController extends Controller
 
         $product = Product::create($data);
 
+        // Pushes go out after the response: broadcast() encrypts and posts one request per subscriber,
+        // which kept the seller waiting 8–10 s with no feedback (QA 17-Out) — enough to click twice.
+        \Illuminate\Support\defer(fn () => $this->broadcastNewProduct($product, $storeModel, $data, $imagePaths));
+
+        return response()->json($product, 201);
+    }
+
+    /** Push notifications for a new product (and its flash sale). Runs after the response is sent. */
+    private function broadcastNewProduct(Product $product, $storeModel, array $data, array $imagePaths): void
+    {
         // Push notification for new product
         try {
             \App\Services\WebPushService::broadcast(
@@ -244,8 +254,6 @@ class ProductController extends Controller
                 \Log::warning('Push notification failed for flash sale', ['error' => $e->getMessage()]);
             }
         }
-
-        return response()->json($product, 201);
     }
 
     public function update(Request $request, string $slug, Product $product)

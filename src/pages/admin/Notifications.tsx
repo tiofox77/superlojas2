@@ -44,7 +44,7 @@ export default function AdminNotifications() {
   }, [token, pushSuccess]);
 
   const sendPushNotification = async () => {
-    if (!pushTitle || !pushBody) { setPushError("Titulo e mensagem sao obrigatorios."); return; }
+    if (!pushTitle || !pushBody) { setPushError("Título e mensagem sao obrigatórios."); return; }
     setPushSending(true); setPushError(""); setPushSuccess(false); setPushResult(null);
     try {
       const res = await fetch(`${API}/admin/push/send`, {
@@ -61,12 +61,12 @@ export default function AdminNotifications() {
       } else {
         setPushError(data.message || "Erro ao enviar push.");
       }
-    } catch { setPushError("Erro de conexao."); }
+    } catch { setPushError("Erro de ligação."); }
     finally { setPushSending(false); }
   };
 
   const sendNotification = async () => {
-    if (!subject || !message) { setError("Assunto e mensagem sao obrigatorios."); return; }
+    if (!subject || !message) { setError("Assunto e mensagem sao obrigatórios."); return; }
     if (audience === "specific" && !specificEmails.trim()) { setError("Insira pelo menos um email."); return; }
     setSending(true); setError(""); setSuccess(false);
     try {
@@ -88,9 +88,9 @@ export default function AdminNotifications() {
         setTimeout(() => setSuccess(false), 5000);
       } else {
         const data = await res.json();
-        setError(data.message || "Erro ao enviar notificacao.");
+        setError(data.message || "Erro ao enviar notificação.");
       }
-    } catch { setError("Erro de conexao."); }
+    } catch { setError("Erro de ligação."); }
     finally { setSending(false); }
   };
 
@@ -112,7 +112,7 @@ export default function AdminNotifications() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h2 className={`text-lg font-bold ${s.textPrimary}`}>Enviar Notificacoes</h2>
+        <h2 className={`text-lg font-bold ${s.textPrimary}`}>Enviar Notificações</h2>
         <p className={`text-xs ${s.textMuted}`}>Notificar clientes, lojistas ou utilizadores especificos</p>
       </div>
 
@@ -172,17 +172,17 @@ export default function AdminNotifications() {
           <div className={`rounded-2xl border ${s.card} p-5 space-y-4`}>
             <div className="flex items-center gap-2 mb-1">
               <Bell className="h-4 w-4 text-orange-500" />
-              <h3 className={`text-sm font-semibold ${s.textPrimary}`}>Notificacao Push</h3>
+              <h3 className={`text-sm font-semibold ${s.textPrimary}`}>Notificação Push</h3>
             </div>
             <div>
-              <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Titulo <span className="text-red-500">*</span></label>
-              <input value={pushTitle} onChange={(e) => setPushTitle(e.target.value)} placeholder="Ex: Nova coleccao disponivel!"
+              <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Título <span className="text-red-500">*</span></label>
+              <input value={pushTitle} onChange={(e) => setPushTitle(e.target.value)} placeholder="Ex: Nova coleccao disponível!"
                 className={inputCls} maxLength={100} />
             </div>
             <div>
               <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Mensagem <span className="text-red-500">*</span></label>
               <textarea value={pushBody} onChange={(e) => setPushBody(e.target.value)} rows={3}
-                placeholder="Ex: Confira os novos produtos com ate 50% de desconto..."
+                placeholder="Ex: Confira os novos produtos com até 50% de desconto..."
                 className={`${inputCls} resize-none`} maxLength={500} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -211,7 +211,7 @@ export default function AdminNotifications() {
                 <Bell className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-bold ${s.textPrimary} truncate`}>{pushTitle || "Titulo da notificacao"}</p>
+                <p className={`text-sm font-bold ${s.textPrimary} truncate`}>{pushTitle || "Título da notificação"}</p>
                 <p className={`text-xs ${s.textMuted} line-clamp-2 mt-0.5`}>{pushBody || "Corpo da mensagem..."}</p>
                 {pushUrl && pushUrl !== "/" && (
                   <p className="text-[10px] text-blue-500 mt-1 truncate">{pushUrl}</p>
@@ -240,7 +240,7 @@ export default function AdminNotifications() {
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
               className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm">
               <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-              <span>Notificacao enviada com sucesso!</span>
+              <span>Notificação enviada com sucesso!</span>
             </motion.div>
           )}
 
@@ -298,7 +298,7 @@ export default function AdminNotifications() {
             <h3 className={`text-sm font-semibold ${s.textPrimary}`}>Mensagem</h3>
             <div>
               <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Assunto <span className="text-red-500">*</span></label>
-              <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Assunto da notificacao..."
+              <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Assunto da notificação..."
                 className={inputCls} />
             </div>
             <div>

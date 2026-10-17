@@ -27,7 +27,7 @@ export default function ClientSecurity() {
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error("Erro", "As palavras-passe nao coincidem.");
+      toast.error("Erro", "As palavras-passe não coincidem.");
       return;
     }
 
@@ -49,9 +49,9 @@ export default function ClientSecurity() {
         setNewPassword("");
         setConfirmPassword("");
       } else {
-        toast.error("Erro", d.message || "Nao foi possivel alterar.");
+        toast.error("Erro", d.message || "Não foi possível alterar.");
       }
-    } catch { toast.error("Erro de conexao"); }
+    } catch { toast.error("Erro de ligação"); }
     finally { setSaving(false); }
   };
 
@@ -62,7 +62,7 @@ export default function ClientSecurity() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h2 className={`text-lg font-bold ${s.textPrimary}`}>Seguranca</h2>
+        <h2 className={`text-lg font-bold ${s.textPrimary}`}>Segurança</h2>
         <p className={`text-xs ${s.textMuted}`}>Alterar a sua palavra-passe</p>
       </div>
 
@@ -73,7 +73,7 @@ export default function ClientSecurity() {
           </div>
           <div>
             <h3 className={`text-sm font-bold ${s.textPrimary}`}>Alterar Palavra-Passe</h3>
-            <p className={`text-[11px] ${s.textMuted}`}>Recomendamos alterar periodicamente por seguranca</p>
+            <p className={`text-[11px] ${s.textMuted}`}>Recomendamos alterar periodicamente por segurança</p>
           </div>
         </div>
 
@@ -104,7 +104,7 @@ export default function ClientSecurity() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className={`${inputCls} pl-10 pr-10`}
-                placeholder="Minimo 6 caracteres"
+                placeholder="Mínimo 6 caracteres"
               />
               <button type="button" onClick={() => setShowNew(!showNew)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${s.textMuted}`}>
                 {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

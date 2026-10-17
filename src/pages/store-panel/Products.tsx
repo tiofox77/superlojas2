@@ -31,9 +31,6 @@ function slugify(text: string): string {
   return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
 }
 
-function titleCase(text: string): string {
-  return text.replace(/\b\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-}
 
 type FieldErrors = Record<string, string>;
 
@@ -55,6 +52,7 @@ export default function StorePanelProducts() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false); // trava síncrona: um duplo clique não cria o produto duas vezes
   const [formError, setFormError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [actionLoading, setActionLoading] = useState<number | null>(null);
@@ -136,7 +134,7 @@ export default function StorePanelProducts() {
 
   const openCreate = () => {
     if (isAtProductLimit) {
-      toast.error("Limite atingido", `O seu plano (${plan?.name}) permite no maximo ${maxProducts} produto(s). Faca upgrade para adicionar mais.`);
+      toast.error("Limite atingido", `O seu plano (${plan?.name}) permite no máximo ${maxProducts} produto(s). Faca upgrade para adicionar mais.`);
       return;
     }
     setEditProd(null); setForm(emptyForm); setImageFiles([]); setImagePreviews([]); setExistingImages([]); setFormError(""); setFieldErrors({}); setSlugManual(false); setSlugStatus("idle"); setSlugSuggestion(null); setVariants([]); setNewVariantType(""); setNewOptionInputs({}); setFlashSaleStart(""); setFlashSaleEnd(""); setModalOpen(true);
@@ -151,7 +149,8 @@ export default function StorePanelProducts() {
   };
 
   const handleNameChange = (raw: string) => {
-    const name = titleCase(raw);
+    // Nome tal como o vendedor o escreve (o title-case partia "PRODUTO QA" e acentos: "PortáTil").
+    const name = raw;
     const updated = { ...form, name };
     if (!slugManual) updated.slug = slugify(name);
     setForm(updated);
@@ -188,13 +187,13 @@ export default function StorePanelProducts() {
     const currentTotal = existingImages.length + imagePreviews.length;
     const allowed = maxImages > 0 ? Math.max(0, maxImages - currentTotal) : files.length;
     if (allowed === 0) {
-      toast.error("Limite de imagens", `O seu plano permite no maximo ${maxImages} imagem(ns) por produto.`);
+      toast.error("Limite de imagens", `O seu plano permite no máximo ${maxImages} imagem(ns) por produto.`);
       if (imgRef.current) imgRef.current.value = "";
       return;
     }
     const toAdd = files.slice(0, allowed);
     if (toAdd.length < files.length) {
-      toast.error("Limite de imagens", `Apenas ${allowed} imagem(ns) podem ser adicionadas. Maximo: ${maxImages}.`);
+      toast.error("Limite de imagens", `Apenas ${allowed} imagem(ns) podem ser adicionadas. Máximo: ${maxImages}.`);
     }
     setImageFiles((prev) => [...prev, ...toAdd]);
     setImagePreviews((prev) => [...prev, ...toAdd.map((f) => URL.createObjectURL(f))]);
@@ -223,10 +222,11 @@ export default function StorePanelProducts() {
   };
 
   const saveProduct = async () => {
+    if (savingRef.current) return;
     const errs: FieldErrors = {};
-    if (!form.name) errs.name = "Nome e obrigatorio.";
-    if (!form.slug) errs.slug = "Slug e obrigatorio.";
-    else if (slugStatus === "taken") errs.slug = "Este slug ja esta em uso.";
+    if (!form.name) errs.name = "Nome é obrigatório.";
+    if (!form.slug) errs.slug = "Slug é obrigatório.";
+    else if (slugStatus === "taken") errs.slug = "Este slug já está em uso.";
     if (!form.price || !Number.isFinite(Number(form.price)) || Number(form.price) <= 0) errs.price = "Informe um preço maior que zero.";
     if (!Number.isInteger(Number(form.stock || "0")) || Number(form.stock) < 0) errs.stock = "Stock deve ser um inteiro igual ou maior que zero.";
     if (form.original_price && (!Number.isFinite(Number(form.original_price)) || Number(form.original_price) < Number(form.price))) {
@@ -236,9 +236,9 @@ export default function StorePanelProducts() {
       errs.images = "Use imagens JPG, PNG, WEBP ou GIF até 4 MB.";
     }
     if (!form.category && !form.category_id) errs.category_id = "Seleccione uma categoria.";
-    if (!editProd && imageFiles.length === 0) errs.images = "Pelo menos uma imagem e obrigatoria.";
+    if (!editProd && imageFiles.length === 0) errs.images = "Pelo menos uma imagem é obrigatória.";
     if (Object.keys(errs).length > 0) { setFieldErrors(errs); setFormError(""); return; }
-    setSaving(true); setFormError(""); setFieldErrors({});
+    savingRef.current = true; setSaving(true); setFormError(""); setFieldErrors({});
 
     const fd = new FormData();
     fd.append("name", form.name);
@@ -276,7 +276,7 @@ export default function StorePanelProducts() {
           for (const [key, msgs] of Object.entries(data.errors)) mapped[key] = (msgs as string[]).join(" ");
           setFieldErrors(mapped);
         } else { setFormError(data.message || "Erro ao guardar."); }
-        toast.error("Erro", "Nao foi possivel guardar o produto.");
+        toast.error("Erro", "Não foi possível guardar o produto.");
       }
       else {
         setModalOpen(false);
@@ -292,7 +292,7 @@ export default function StorePanelProducts() {
     } catch {
       // The request may have reached the server — avoid a blind retry creating a duplicate.
       setFormError("Falha de ligação. Verifique a lista de produtos antes de tentar novamente.");
-    } finally { setSaving(false); }
+    } finally { savingRef.current = false; setSaving(false); }
   };
 
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
@@ -306,7 +306,7 @@ export default function StorePanelProducts() {
       setTotalProducts(prev => prev - 1);
       fetchProducts(true);
       toast.success("Produto eliminado", `"${name}" foi removido.`);
-    } else toast.error("Erro", "Nao foi possivel eliminar o produto.");
+    } else toast.error("Erro", "Não foi possível eliminar o produto.");
     setConfirmDelete(null);
   };
 
@@ -322,9 +322,9 @@ export default function StorePanelProducts() {
         setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, is_featured: data.is_featured, featured_status: data.featured_status } : pr));
         toast.success(data.is_featured ? "Destaque solicitado" : "Destaque removido", data.message);
       } else {
-        toast.error("Erro", data.message || "Nao foi possivel alterar destaque.");
+        toast.error("Erro", data.message || "Não foi possível alterar destaque.");
       }
-    } catch { toast.error("Erro", "Erro de conexao."); }
+    } catch { toast.error("Erro", "Erro de ligação."); }
     finally { setActionLoading(null); }
   };
 
@@ -336,7 +336,7 @@ export default function StorePanelProducts() {
       if (res.ok) {
         setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, is_active: data.is_active } : pr));
         toast.success(data.is_active ? "Produto Activado" : "Produto Desactivado", data.message);
-      } else toast.error("Erro", "Nao foi possivel alterar estado.");
+      } else toast.error("Erro", "Não foi possível alterar estado.");
     } finally { setActionLoading(null); }
   };
 
@@ -372,11 +372,11 @@ export default function StorePanelProducts() {
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success("Accao em massa", data.message);
+        toast.success("Acção em massa", data.message);
         setSelectedIds(new Set());
         fetchProducts();
-      } else toast.error("Erro", data.message || "Erro na accao em massa.");
-    } catch { toast.error("Erro", "Erro de conexao."); }
+      } else toast.error("Erro", data.message || "Erro na acção em massa.");
+    } catch { toast.error("Erro", "Erro de ligação."); }
     finally { setBulkLoading(false); }
   };
 
@@ -475,12 +475,12 @@ export default function StorePanelProducts() {
               </select>
             </div>
             <div>
-              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Preco Min</label>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Preço Min</label>
               <input type="number" value={filterMinPrice} onChange={(e) => { setFilterMinPrice(e.target.value); setPage(1); }} placeholder="0"
                 className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20`} />
             </div>
             <div>
-              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Preco Max</label>
+              <label className={`block text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5`}>Preço Max</label>
               <input type="number" value={filterMaxPrice} onChange={(e) => { setFilterMaxPrice(e.target.value); setPage(1); }} placeholder="999999"
                 className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20`} />
             </div>
@@ -498,7 +498,7 @@ export default function StorePanelProducts() {
                     {allOnPageSelected ? <CheckSquare className="h-4 w-4 text-emerald-500" /> : someOnPageSelected ? <Minus className="h-4 w-4 text-emerald-400" /> : <Square className="h-4 w-4" />}
                   </button>
                 </th>
-                {["Produto", "Preco", "Categoria", "Stock", "Accoes"].map((h, i) => (
+                {["Produto", "Preço", "Categoria", "Stock", "Acções"].map((h, i) => (
                   <th key={h} className={`text-left text-[10px] font-semibold ${s.thText} uppercase tracking-wider px-5 py-3 ${i >= 2 && i <= 3 ? "hidden lg:table-cell" : ""} ${i === 4 ? "text-right" : ""}`}>{h}</th>
                 ))}
               </tr>
@@ -544,7 +544,7 @@ export default function StorePanelProducts() {
                         <Power className="h-4 w-4" />
                       </button>
                       <button onClick={() => toggleFeatured(p)} disabled={actionLoading === p.id}
-                        title={p.is_featured ? (p.featured_status === 'approved' ? 'Destaque aprovado' : p.featured_status === 'pending' ? 'Aguardando aprovacao' : 'Marcar destaque') : 'Marcar como destaque'}
+                        title={p.is_featured ? (p.featured_status === 'approved' ? 'Destaque aprovado' : p.featured_status === 'pending' ? 'Aguardando aprovação' : 'Marcar destaque') : 'Marcar como destaque'}
                         className={`p-1.5 rounded-lg transition-colors ${p.is_featured ? (p.featured_status === 'approved' ? 'text-amber-500' : 'text-amber-400 animate-pulse') : `${s.textMuted} hover:text-amber-500`}`}>
                         <Award className="h-4 w-4" />
                       </button>
@@ -579,7 +579,7 @@ export default function StorePanelProducts() {
                 {bulkLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />} Eliminar
               </button>
               <button onClick={() => setSelectedIds(new Set())} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${s.textMuted} hover:text-foreground transition-colors`}>
-                Limpar seleccao
+                Limpar selecção
               </button>
             </div>
           </div>
@@ -598,8 +598,8 @@ export default function StorePanelProducts() {
                       page === pg ? "bg-emerald-500 text-white shadow-sm" : `${s.btnSecondary} hover:bg-emerald-500/10`
                     }`}>{pg}</button>
               ))}
-              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className={`p-1.5 rounded-lg ${s.btnSecondary} disabled:opacity-30`} title="Proximo"><ChevronRight className="h-3.5 w-3.5" /></button>
-              <button onClick={() => setPage(totalPages)} disabled={page >= totalPages} className={`p-1.5 rounded-lg ${s.btnSecondary} disabled:opacity-30`} title="Ultima"><ChevronsRight className="h-3.5 w-3.5" /></button>
+              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className={`p-1.5 rounded-lg ${s.btnSecondary} disabled:opacity-30`} title="Próximo"><ChevronRight className="h-3.5 w-3.5" /></button>
+              <button onClick={() => setPage(totalPages)} disabled={page >= totalPages} className={`p-1.5 rounded-lg ${s.btnSecondary} disabled:opacity-30`} title="Última"><ChevronsRight className="h-3.5 w-3.5" /></button>
             </div>
           </div>
         )}
@@ -643,7 +643,7 @@ export default function StorePanelProducts() {
               </button>
               <input ref={imgRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageAdd} />
             </div>
-            <p className={`text-[10px] ${s.textMuted} mt-1`}>JPG, PNG ate 4MB cada{maxImages > 0 ? ` — Max ${maxImages} imagem(ns)` : ""}</p>
+            <p className={`text-[10px] ${s.textMuted} mt-1`}>JPG, PNG até 4MB cada{maxImages > 0 ? ` — Max ${maxImages} imagem(ns)` : ""}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Nome */}
@@ -671,12 +671,12 @@ export default function StorePanelProducts() {
                   Este slug ja esta em uso.{slugSuggestion && <> Sugestao: <button type="button" className="underline font-semibold hover:text-red-700" onClick={() => { setForm(f => ({ ...f, slug: slugSuggestion })); setSlugManual(true); setSlugSuggestion(null); }}>{slugSuggestion}</button></>}
                 </p>
               )}
-              {slugStatus === "available" && <p className="text-[11px] text-green-500 mt-1">Slug disponivel!</p>}
+              {slugStatus === "available" && <p className="text-[11px] text-green-500 mt-1">Slug disponível!</p>}
             </div>
             {/* Preco, Original, Stock */}
             {[
-              { l: "Preco (Kz)", k: "price", p: "15000", req: true, type: "number" },
-              { l: "Preco Original", k: "original_price", p: "20000", type: "number" },
+              { l: "Preço (Kz)", k: "price", p: "15000", req: true, type: "number" },
+              { l: "Preço Original", k: "original_price", p: "20000", type: "number" },
               { l: "Stock", k: "stock", p: "100", type: "number" },
             ].map((f) => (
               <div key={f.k}>
@@ -723,8 +723,8 @@ export default function StorePanelProducts() {
             </div>
           </div>
           <div>
-            <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Descricao</label>
-            <textarea value={form.description} onChange={(e) => { setForm({ ...form, description: e.target.value }); setFieldErrors(prev => { const n = { ...prev }; delete n.description; return n; }); }} rows={3} placeholder="Descricao do produto..."
+            <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Descrição</label>
+            <textarea value={form.description} onChange={(e) => { setForm({ ...form, description: e.target.value }); setFieldErrors(prev => { const n = { ...prev }; delete n.description; return n; }); }} rows={3} placeholder="Descrição do produto..."
               className={`w-full ${s.input} border ${fieldErrors.description ? "border-red-400" : ""} rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none`} />
             {fieldErrors.description && <p className="text-[11px] text-red-500 mt-1">{fieldErrors.description}</p>}
           </div>
@@ -758,7 +758,7 @@ export default function StorePanelProducts() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter") { e.preventDefault(); const val = (newOptionInputs[vi] || "").trim(); if (val && !v.options.includes(val)) { setVariants(prev => prev.map((vr, i) => i === vi ? { ...vr, options: [...vr.options, val] } : vr)); setNewOptionInputs(prev => ({ ...prev, [vi]: "" })); } }
                     }}
-                    placeholder={`Adicionar opcao a ${v.type}...`}
+                    placeholder={`Adicionar opção a ${v.type}...`}
                     className={`flex-1 ${s.input} border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20`} />
                   <button type="button" onClick={() => { const val = (newOptionInputs[vi] || "").trim(); if (val && !v.options.includes(val)) { setVariants(prev => prev.map((vr, i) => i === vi ? { ...vr, options: [...vr.options, val] } : vr)); setNewOptionInputs(prev => ({ ...prev, [vi]: "" })); } }}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium ${s.isDark ? "bg-purple-500/15 text-purple-400 hover:bg-purple-500/25" : "bg-purple-50 text-purple-600 hover:bg-purple-100"}`}>
@@ -790,10 +790,10 @@ export default function StorePanelProducts() {
                 <Clock className="h-4 w-4 text-red-500" />
                 <span className={`text-xs font-semibold ${s.textPrimary}`}>Temporizador Flash Sale</span>
               </div>
-              <p className={`text-[10px] ${s.textMuted}`}>Defina o periodo da promocao. O produto sera removido da Flash Sale automaticamente apos o fim.</p>
+              <p className={`text-[10px] ${s.textMuted}`}>Defina o período da promoção. O produto sera removido da Flash Sale automaticamente após o fim.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className={`block text-[10px] font-medium ${s.textSecondary} mb-1`}>Inicio</label>
+                  <label className={`block text-[10px] font-medium ${s.textSecondary} mb-1`}>Início</label>
                   <input type="datetime-local" value={flashSaleStart} onChange={(e) => setFlashSaleStart(e.target.value)}
                     className={`w-full ${s.input} border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-500/20`} />
                 </div>
@@ -808,9 +808,9 @@ export default function StorePanelProducts() {
           )}
 
           <div className={`flex justify-end gap-2 pt-2 border-t ${s.borderLight}`}>
-            <button onClick={() => setModalOpen(false)} className={`px-4 py-2.5 rounded-xl text-xs font-medium ${s.btnSecondary}`}>Cancelar</button>
+            <button onClick={() => setModalOpen(false)} disabled={saving} className={`px-4 py-2.5 rounded-xl text-xs font-medium ${s.btnSecondary} disabled:opacity-50`}>Cancelar</button>
             <button onClick={saveProduct} disabled={saving} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold ${s.btnPrimary} disabled:opacity-50 shadow-sm`}>
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />} {editProd ? "Guardar" : "Criar Produto"}
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />} {saving ? (editProd ? "A guardar..." : "A criar produto...") : editProd ? "Guardar" : "Criar Produto"}
             </button>
           </div>
         </div>

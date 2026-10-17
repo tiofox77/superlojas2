@@ -7,16 +7,16 @@ const steps = [
     icon: Search,
     color: "from-blue-500 to-cyan-500",
     title: "Pesquise o Produto",
-    desc: "Use a barra de pesquisa ou navegue pelas categorias para encontrar o que procura. Pode filtrar por preco, categoria, avaliacao e localizacao.",
-    tips: ["Use palavras-chave especificas", "Filtre por provincia para encontrar lojas perto de si", "Veja as avaliacoes de outros clientes"],
+    desc: "Use a barra de pesquisa ou navegue pelas categorias para encontrar o que procura. Pode filtrar por preço, categoria, avaliação e localização.",
+    tips: ["Use palavras-chave especificas", "Filtre por província para encontrar lojas perto de si", "Veja as avaliações de outros clientes"],
   },
   {
     num: 2,
     icon: Store,
     color: "from-emerald-500 to-teal-500",
     title: "Escolha a Loja",
-    desc: "Cada produto pertence a uma loja verificada. Visite a pagina da loja para ver todos os produtos, avaliacoes e informacoes de contacto.",
-    tips: ["Verifique a avaliacao da loja", "Veja ha quanto tempo a loja esta activa", "Confira se a loja esta na sua provincia"],
+    desc: "Cada produto pertence a uma loja verificada. Visite a página da loja para ver todos os produtos, avaliações e informações de contacto.",
+    tips: ["Verifique a avaliação da loja", "Veja ha quanto tempo a loja esta activa", "Confira se a loja esta na sua província"],
   },
   {
     num: 3,
@@ -24,14 +24,14 @@ const steps = [
     color: "from-orange-500 to-pink-500",
     title: "Adicione ao Carrinho",
     desc: "Clique em 'Adicionar ao Carrinho' no produto desejado. Pode adicionar produtos de varias lojas ao mesmo tempo.",
-    tips: ["Verifique o stock disponivel", "Compare precos entre lojas diferentes", "Aproveite produtos em promocao"],
+    tips: ["Verifique o stock disponível", "Compare preços entre lojas diferentes", "Aproveite produtos em promoção"],
   },
   {
     num: 4,
     icon: MessageCircle,
     color: "from-green-500 to-emerald-500",
     title: "Contacte o Vendedor",
-    desc: "Clique no botao de WhatsApp para falar directamente com o vendedor. Combine os detalhes da entrega, forma de pagamento e tire todas as suas duvidas.",
+    desc: "Clique no botao de WhatsApp para falar directamente com o vendedor. Combine os detalhes da entrega, forma de pagamento e tire todas as suas dúvidas.",
     tips: ["Confirme a disponibilidade do produto", "Combine o local e hora de entrega", "Pergunte sobre garantias"],
   },
   {
@@ -39,8 +39,8 @@ const steps = [
     icon: CreditCard,
     color: "from-violet-500 to-purple-500",
     title: "Pagamento",
-    desc: "O pagamento e combinado directamente com o vendedor. As formas mais comuns em Angola sao: transferencia bancaria (Multicaixa Express), pagamento na entrega ou deposito.",
-    tips: ["Multicaixa Express e o mais rapido", "Pagamento na entrega e o mais seguro", "Guarde sempre o comprovativo"],
+    desc: "O pagamento e combinado directamente com o vendedor. As formas mais comuns em Angola sao: transferência bancária (Multicaixa Express), pagamento na entrega ou depósito.",
+    tips: ["Multicaixa Express e o mais rápido", "Pagamento na entrega e o mais seguro", "Guarde sempre o comprovativo"],
   },
   {
     num: 6,
@@ -48,7 +48,7 @@ const steps = [
     color: "from-amber-500 to-orange-500",
     title: "Receba o Produto",
     desc: "A entrega e combinada directamente com o vendedor. Pode ser entrega ao domicilio, recolha na loja ou envio por transportadora.",
-    tips: ["Confirme o endereco de entrega", "Verifique o produto ao receber", "Avalie a loja depois da compra"],
+    tips: ["Confirme o endereço de entrega", "Verifique o produto ao receber", "Avalie a loja depois da compra"],
   },
 ];
 
@@ -65,7 +65,7 @@ export default function HowToBuy() {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary-foreground">Como Comprar</h1>
           </div>
           <p className="text-primary-foreground/80 text-sm max-w-lg mx-auto">
-            Comprar no SuperLoja e simples, seguro e rapido. Siga os passos abaixo para fazer a sua primeira compra.
+            Comprar no SuperLoja e simples, seguro e rápido. Siga os passos abaixo para fazer a sua primeira compra.
           </p>
         </div>
       </div>
@@ -124,7 +124,7 @@ export default function HowToBuy() {
 
         {/* CTA */}
         <div className="mt-8 text-center space-y-3">
-          <p className="text-sm text-muted-foreground">Pronto para comecar?</p>
+          <p className="text-sm text-muted-foreground">Pronto para começar?</p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Link to="/lojas" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-hero-gradient text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity">
               <Store className="h-4 w-4" /> Explorar Lojas <ArrowRight className="h-4 w-4" />

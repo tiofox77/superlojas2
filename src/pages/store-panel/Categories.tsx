@@ -71,7 +71,7 @@ export default function StorePanelCategories() {
     setSelected((prev) => {
       if (prev.includes(id)) return prev.filter((c) => c !== id);
       if (data.max_categories > 0 && prev.length >= data.max_categories) {
-        setMsg({ type: "error", text: `O seu plano (${data.plan_name}) permite no maximo ${data.max_categories} categoria(s).` });
+        setMsg({ type: "error", text: `O seu plano (${data.plan_name}) permite no máximo ${data.max_categories} categoria(s).` });
         setTimeout(() => setMsg(null), 4000);
         return prev;
       }
@@ -180,7 +180,7 @@ export default function StorePanelCategories() {
           className={`rounded-2xl border ${s.isDark ? "border-amber-500/20 bg-amber-500/5" : "border-amber-200 bg-amber-50"} p-4 flex items-start gap-3`}>
           <Clock className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-amber-600">Periodo de espera activo</p>
+            <p className="text-sm font-semibold text-amber-600">Período de espera activo</p>
             <p className={`text-xs ${s.isDark ? "text-amber-400/70" : "text-amber-600/70"} mt-0.5`}>
               Pode trocar de categorias novamente em <strong>{data.days_remaining} dia(s)</strong>
               {data.cooldown_until && (
@@ -198,7 +198,7 @@ export default function StorePanelCategories() {
         <div className={`text-xs ${s.isDark ? "text-blue-400/80" : "text-blue-600/80"}`}>
           <p>As categorias determinam onde a sua loja aparece no marketplace.</p>
           {data.cooldown_days > 0 && (
-            <p className="mt-1">Apos alterar categorias, tera de aguardar <strong>{data.cooldown_days} dias</strong> para poder trocar novamente.</p>
+            <p className="mt-1">Após alterar categorias, terá de aguardar <strong>{data.cooldown_days} dias</strong> para poder trocar novamente.</p>
           )}
           {data.max_categories === 1 && (
             <p className="mt-1">O seu plano permite apenas <strong>1 categoria</strong>. Faca upgrade para selecionar mais categorias.</p>

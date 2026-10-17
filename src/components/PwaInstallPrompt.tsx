@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { X, Download, Smartphone, Share } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -9,6 +10,9 @@ interface BeforeInstallPromptEvent extends Event {
 
 const DISMISS_KEY = "pwa-install-dismissed";
 const DISMISS_DAYS = 7;
+const SHOW_DELAY_MS = 8000;
+// Páginas com formulários: o cartão fixo no fundo tapava campos e botões (QA 17-Out — registo).
+const FORM_ROUTES = [/^\/entrar/, /^\/cadastro-loja/, /^\/checkout/, /^\/carrinho/, /^\/loja\/[^/]+\/painel/, /^\/admin/, /^\/minha-conta/];
 
 function isIos() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
@@ -23,6 +27,7 @@ export default function PwaInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [showIosGuide, setShowIosGuide] = useState(false);
   const { data: settings } = useSiteSettings();
+  const { pathname } = useLocation();
 
   useEffect(() => {
     // Already installed
@@ -37,7 +42,7 @@ export default function PwaInstallPrompt() {
 
     // iOS — show custom guide after delay
     if (isIos()) {
-      const timer = setTimeout(() => setShowIosGuide(true), 3000);
+      const timer = setTimeout(() => setShowIosGuide(true), SHOW_DELAY_MS);
       return () => clearTimeout(timer);
     }
 
@@ -46,7 +51,7 @@ export default function PwaInstallPrompt() {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       // Show after a short delay so user sees the page first
-      setTimeout(() => setShowPrompt(true), 3000);
+      setTimeout(() => setShowPrompt(true), SHOW_DELAY_MS);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
@@ -72,6 +77,8 @@ export default function PwaInstallPrompt() {
   const siteName = settings?.site_name || "SuperLoja";
   const siteLogo = settings?.site_logo || "";
 
+  if (FORM_ROUTES.some((r) => r.test(pathname))) return null;
+
   // Android/Desktop prompt
   if (showPrompt) {
     return (
@@ -90,7 +97,7 @@ export default function PwaInstallPrompt() {
                 )}
                 <div>
                   <h3 className="font-bold text-sm">Instalar {siteName}</h3>
-                  <p className="text-white/80 text-[11px] mt-0.5">Tenha acesso rapido no seu telemovel</p>
+                  <p className="text-white/80 text-[11px] mt-0.5">Tenha acesso rápido no seu telemóvel</p>
                 </div>
               </div>
               <button onClick={handleDismiss} className="p-1 hover:bg-white/20 rounded-lg transition-colors">
@@ -105,7 +112,7 @@ export default function PwaInstallPrompt() {
               <div className="space-y-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <span className="h-5 w-5 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center text-[10px] font-bold">1</span>
-                  Acesso rapido a partir do ecra inicial
+                  Acesso rápido a partir do ecrã principal
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="h-5 w-5 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center text-[10px] font-bold">2</span>
@@ -113,7 +120,7 @@ export default function PwaInstallPrompt() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="h-5 w-5 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center text-[10px] font-bold">3</span>
-                  Experiencia de app nativa
+                  Experiência de app nativa
                 </div>
               </div>
             </div>
@@ -125,7 +132,7 @@ export default function PwaInstallPrompt() {
               </button>
               <button onClick={handleDismiss}
                 className="px-4 py-2.5 rounded-xl border border-border text-xs font-medium text-muted-foreground hover:bg-secondary transition-colors">
-                Agora nao
+                Agora não
               </button>
             </div>
           </div>
@@ -164,11 +171,11 @@ export default function PwaInstallPrompt() {
             <div className="space-y-2.5 text-xs text-muted-foreground">
               <div className="flex items-center gap-2">
                 <span className="h-5 w-5 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px] font-bold">1</span>
-                Toque no botao <Share className="inline h-3.5 w-3.5 mx-0.5 text-blue-500" /> Partilhar
+                Toque no botão <Share className="inline h-3.5 w-3.5 mx-0.5 text-blue-500" /> Partilhar
               </div>
               <div className="flex items-center gap-2">
                 <span className="h-5 w-5 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px] font-bold">2</span>
-                Selecione "Adicionar ao Ecra Inicial"
+                Seleccione "Adicionar ao ecrã principal"
               </div>
               <div className="flex items-center gap-2">
                 <span className="h-5 w-5 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px] font-bold">3</span>

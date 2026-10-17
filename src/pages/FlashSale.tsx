@@ -3,6 +3,7 @@ import { Zap, Search, ChevronDown, SlidersHorizontal, X, Grid3X3, List } from "l
 import { useFlashSaleProducts } from "@/hooks/useApi";
 import { ProductCard } from "@/components/ProductCard";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 function useCountdown(targetDate: Date) {
   const [timeLeft, setTimeLeft] = useState(getTimeLeft(targetDate));
@@ -31,19 +32,21 @@ const FlashSale = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [viewGrid, setViewGrid] = useState(true);
 
-  const { data: allPromo = [] } = useFlashSaleProducts();
+  const { data: allPromo = [], isLoading } = useFlashSaleProducts();
+  const noOffers = !isLoading && allPromo.length === 0;
 
-  // Use the nearest flash_sale_end from products, fallback to end of day
-  const targetDate = useMemo(() => {
+  // Nearest real flash_sale_end. Without one there is no countdown — a fake "ends at midnight"
+  // timer ran even with 0 offers (QA 17-Out).
+  const nearestEnd = useMemo(() => {
     const ends = allPromo
       .filter(p => p.flashSaleEnd)
       .map(p => new Date(p.flashSaleEnd!).getTime())
       .filter(t => t > Date.now())
       .sort((a, b) => a - b);
-    if (ends.length > 0) return new Date(ends[0]);
-    const d = new Date(); d.setHours(23, 59, 59, 999); return d;
+    return ends.length > 0 ? new Date(ends[0]) : null;
   }, [allPromo]);
-  const { hours, minutes, seconds } = useCountdown(targetDate);
+  const fallbackEnd = useMemo(() => new Date(0), []);
+  const { hours, minutes, seconds } = useCountdown(nearestEnd ?? fallbackEnd);
 
   const categories = useMemo(() => [...new Set(allPromo.map((p) => p.category))].sort(), [allPromo]);
 
@@ -96,9 +99,12 @@ const FlashSale = () => {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary-foreground">Ofertas Relâmpago</h1>
           </div>
           <p className="text-primary-foreground/80 text-sm mb-6 max-w-md mx-auto">
-            Descontos imperdíveis por tempo limitado! Aproveite antes que acabe.
+            {noOffers
+              ? "De momento não há ofertas activas. Volte em breve — as lojas publicam novas promoções todas as semanas."
+              : "Descontos imperdíveis por tempo limitado! Aproveite antes que acabe."}
           </p>
-          {/* Countdown */}
+          {/* Countdown — only when an offer has a real end date */}
+          {nearestEnd && (
           <div className="flex items-center justify-center gap-3">
             <span className="text-primary-foreground/70 text-sm font-medium">Termina em</span>
             {[
@@ -114,7 +120,9 @@ const FlashSale = () => {
               </div>
             ))}
           </div>
+          )}
           {/* Search bar in hero */}
+          {!noOffers && (
           <div className="max-w-xl mx-auto mt-6 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -130,10 +138,23 @@ const FlashSale = () => {
               </button>
             )}
           </div>
+          )}
         </div>
       </div>
 
       <div className="container py-6">
+        {noOffers ? (
+          <div className="text-center py-16 max-w-md mx-auto">
+            <Zap className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="font-semibold mb-1">Sem ofertas relâmpago neste momento</p>
+            <p className="text-sm text-muted-foreground mb-5">Entretanto, veja os produtos das nossas lojas.</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <Link to="/categorias" className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90">Ver categorias</Link>
+              <Link to="/lojas" className="px-4 py-2 rounded-xl border border-border bg-card text-sm font-medium hover:border-primary/40">Ver lojas</Link>
+            </div>
+          </div>
+        ) : (
+        <>
         {/* Filter bar */}
         <div className="flex flex-col gap-3 mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -244,7 +265,7 @@ const FlashSale = () => {
           ))}
         </div>
 
-        {sorted.length === 0 && (
+        {sorted.length === 0 && !isLoading && (
           <div className="text-center py-16">
             <Zap className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-muted-foreground font-medium">Nenhuma oferta encontrada.</p>
@@ -252,6 +273,8 @@ const FlashSale = () => {
               <button onClick={clearFilters} className="text-sm text-primary hover:underline mt-2">Limpar filtros</button>
             )}
           </div>
+        )}
+        </>
         )}
       </div>
     </main>

@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
@@ -88,6 +88,15 @@ function ScrollToTop() {
 
 const queryClient = new QueryClient();
 
+// Os slides da home apontam para /produtos e /registar-loja, rotas que não existem (davam 404).
+const CATEGORY_ALIASES: Record<string, string> = { electronicos: "/categoria/electronica", moda: "/categorias" };
+const LegacyProductsRedirect = () => {
+  const { search } = useLocation();
+  const category = new URLSearchParams(search).get("category");
+  if (category) return <Navigate to={CATEGORY_ALIASES[category] ?? `/categoria/${category}`} replace />;
+  return <Navigate to="/ofertas" replace />;
+};
+
 const StoreFrontLayout = () => (
   <>
     <Header />
@@ -113,6 +122,8 @@ const StoreFrontLayout = () => (
       <Route path="/contacto" element={<Contact />} />
       <Route path="/api-docs" element={<ApiDocs />} />
       <Route path="/minha-loja" element={<MyStore />} />
+      <Route path="/produtos" element={<LegacyProductsRedirect />} />
+      <Route path="/registar-loja" element={<Navigate to="/cadastro-loja" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes></div>
     <Footer />

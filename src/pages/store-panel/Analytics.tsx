@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import { useCallback, useEffect, useState } from "react";
 import { useOutletContext, Link } from "react-router-dom";
+import { plural } from "@/lib/utils";
 import {
   Eye, Users, Zap, TrendingUp, TrendingDown, Minus,
   RefreshCw, Globe, Monitor, Smartphone, Tablet,
@@ -134,12 +135,12 @@ export default function StoreAnalytics() {
           <div className={`h-20 w-20 rounded-full ${s.isDark ? "bg-purple-500/10" : "bg-purple-50"} flex items-center justify-center mx-auto mb-5`}>
             <Lock className="h-10 w-10 text-purple-500" />
           </div>
-          <h2 className={`text-xl font-bold ${s.textPrimary} mb-2`}>Analytics Indisponivel</h2>
+          <h2 className={`text-xl font-bold ${s.textPrimary} mb-2`}>Analytics Indisponível</h2>
           <p className={`text-sm ${s.textSecondary} mb-1 leading-relaxed`}>
-            O seu plano actual <strong className="text-purple-500">({planName})</strong> nao inclui acesso ao Analytics.
+            O seu plano actual <strong className="text-purple-500">({planName})</strong> não inclui acesso ao Analytics.
           </p>
           <p className={`text-sm ${s.textSecondary} mb-6`}>
-            Faca upgrade para um plano com analytics para ver estatisticas detalhadas da sua loja.
+            Faca upgrade para um plano com analytics para ver estatísticas detalhadas da sua loja.
           </p>
           <Link
             to={`/loja/${slug}/painel/subscricao`}
@@ -191,7 +192,7 @@ export default function StoreAnalytics() {
           <h2 className={`text-lg font-bold ${s.textPrimary} flex items-center gap-2`}>
             <BarChart3 className="h-5 w-5 text-purple-500" /> Analytics da Loja
           </h2>
-          <p className={`text-xs ${s.textMuted}`}>Estatisticas detalhadas de acessos e visitantes</p>
+          <p className={`text-xs ${s.textMuted}`}>Estatísticas detalhadas de acessos e visitantes</p>
         </div>
         <div className="flex items-center gap-2">
           {[7, 14, 30, 90].map(d => (
@@ -214,7 +215,7 @@ export default function StoreAnalytics() {
           { label: "Hoje", val: `${fmt(sum.today_views)} / ${fmt(sum.today_unique)} un.`, icon: Zap, color: "text-amber-500", bg: "bg-amber-500" },
           { label: "Taxa Rejeicao", val: `${sum.bounce_rate}%`, icon: MousePointerClick, color: "text-red-500", bg: "bg-red-500" },
           { label: "Pags/Sessao", val: String(sum.avg_pages), icon: FileText, color: "text-cyan-500", bg: "bg-cyan-500" },
-          { label: "Periodo", val: `${days} dias`, icon: RefreshCw, color: "text-gray-500", bg: "bg-gray-500" },
+          { label: "Período", val: `${days} dias`, icon: RefreshCw, color: "text-gray-500", bg: "bg-gray-500" },
         ].map((c, i) => (
           <div key={i} className={cardCls}>
             <div className="flex items-center justify-between mb-2">
@@ -241,7 +242,7 @@ export default function StoreAnalytics() {
             </div>
           </div>
           {dailyChart.length === 0 ? (
-            <div className={`flex items-center justify-center h-40 ${s.textMuted} text-xs`}>Sem dados neste periodo</div>
+            <div className={`flex items-center justify-center h-40 ${s.textMuted} text-xs`}>Sem dados neste período</div>
           ) : (
             <div className="flex gap-[3px] h-40">
               {dailyChart.map((d, i) => (
@@ -285,7 +286,7 @@ export default function StoreAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top Pages */}
         <div className={cardCls}>
-          <h3 className={`text-sm font-bold ${s.textPrimary} mb-3`}>Paginas Mais Visitadas</h3>
+          <h3 className={`text-sm font-bold ${s.textPrimary} mb-3`}>Páginas Mais Visitadas</h3>
           {topPages.length === 0 ? (
             <p className={`text-xs ${s.textMuted}`}>Sem dados</p>
           ) : (
@@ -324,7 +325,7 @@ export default function StoreAnalytics() {
                   <div key={i} className={`flex-1 p-3 rounded-xl ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
                     <p className={`text-[10px] font-medium ${s.textMuted} mb-1`}>{src.source}</p>
                     <p className={`text-lg font-bold ${s.textPrimary}`}>{pct}%</p>
-                    <p className={`text-[10px] ${s.textMuted}`}>{src.count} visitas</p>
+                    <p className={`text-[10px] ${s.textMuted}`}>{plural(src.count, "visita", "visitas")}</p>
                   </div>
                 );
               })}
@@ -352,7 +353,7 @@ export default function StoreAnalytics() {
         {/* Countries */}
         <div className={cardCls}>
           <h3 className={`text-sm font-bold ${s.textPrimary} mb-3 flex items-center gap-2`}>
-            <Globe className="h-4 w-4 text-blue-500" /> Paises
+            <Globe className="h-4 w-4 text-blue-500" /> Países
           </h3>
           {countries.length === 0 ? (
             <p className={`text-xs ${s.textMuted}`}>Sem dados</p>

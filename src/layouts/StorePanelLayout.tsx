@@ -21,12 +21,12 @@ const sidebarNav = [
   { label: "Pedidos", path: "/pedidos", icon: ShoppingBag, color: "text-amber-500" },
   { label: "Hero Slides", path: "/slides", icon: Image, color: "text-cyan-500" },
   { label: "Pagamentos", path: "/pagamentos", icon: CreditCard, color: "text-orange-500" },
-  { label: "Subscricao", path: "/subscricao", icon: Crown, color: "text-purple-500" },
+  { label: "Subscrição", path: "/subscricao", icon: Crown, color: "text-purple-500" },
   { label: "Analytics", path: "/analytics", icon: BarChart3, color: "text-purple-500" },
   { label: "POS", path: "/pos", icon: Monitor, color: "text-teal-500" },
   { label: "API", path: "/api", icon: Key, color: "text-indigo-500" },
   { label: "Facebook", path: "/facebook", icon: Facebook, color: "text-blue-600" },
-  { label: "Configuracoes", path: "/configuracoes", icon: Settings, color: "text-gray-500" },
+  { label: "Configurações", path: "/configuracoes", icon: Settings, color: "text-gray-500" },
 ];
 
 interface PlanInfo {
@@ -224,7 +224,7 @@ function StorePanelInner() {
           </div>
           {sidebarOpen && (
             <button onClick={() => logout()} className={`flex items-center gap-2 w-full mt-2 px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-red-500 hover:bg-red-50 transition-colors`}>
-              <LogOut className="h-3.5 w-3.5" /> Terminar Sessao
+              <LogOut className="h-3.5 w-3.5" /> Terminar Sessão
             </button>
           )}
         </div>
@@ -313,14 +313,14 @@ function StorePanelInner() {
                     <div className={`h-20 w-20 rounded-full ${isDark ? "bg-amber-500/10" : "bg-amber-50"} flex items-center justify-center mx-auto mb-5`}>
                       <Clock className="h-10 w-10 text-amber-500" />
                     </div>
-                    <h2 className={`text-xl font-bold ${textPrimary} mb-2`}>Loja em Analise</h2>
+                    <h2 className={`text-xl font-bold ${textPrimary} mb-2`}>Loja em Análise</h2>
                     <p className={`text-sm ${textSecondary} mb-4 leading-relaxed`}>
                       A sua loja <strong>{storeInfo.name}</strong> esta a ser analisada pela nossa equipa. 
                       Este processo demora normalmente ate 48 horas. 
                       Sera notificado assim que for aprovada.
                     </p>
                     <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold ${isDark ? "bg-amber-500/10 text-amber-400" : "bg-amber-50 text-amber-700"}`}>
-                      <Clock className="h-3.5 w-3.5" /> Estado: Pendente de aprovacao
+                      <Clock className="h-3.5 w-3.5" /> Estado: Pendente de aprovação
                     </div>
                   </>
                 ) : storeInfo.status === "banned" ? (
@@ -345,7 +345,7 @@ function StorePanelInner() {
                     </div>
                     <h2 className={`text-xl font-bold ${textPrimary} mb-2`}>Loja Rejeitada</h2>
                     <p className={`text-sm ${textSecondary} mb-4 leading-relaxed`}>
-                      Infelizmente a sua loja <strong>{storeInfo.name}</strong> nao foi aprovada. 
+                      Infelizmente a sua loja <strong>{storeInfo.name}</strong> não foi aprovada. 
                       Isto pode acontecer por informacoes incompletas ou incorrectas. 
                       Entre em contacto connosco para mais detalhes.
                     </p>

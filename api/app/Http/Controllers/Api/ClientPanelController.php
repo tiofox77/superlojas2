@@ -25,7 +25,8 @@ class ClientPanelController extends Controller
         $totalOrders = Order::where($userScope)->count();
         $pendingOrders = Order::where($userScope)->where('status', 'pending')->count();
         $deliveredOrders = Order::where($userScope)->where('status', 'delivered')->count();
-        $totalSpent = Order::where($userScope)->whereNotIn('status', ['cancelled'])->sum('total');
+        // Só encomendas que a loja confirmou: as pendentes ainda podem não ser pagas nem entregues.
+        $totalSpent = Order::where($userScope)->whereNotIn('status', ['pending', 'cancelled'])->sum('total');
 
         $recentOrders = Order::where($userScope)
             ->with(['items', 'store:id,name,slug,logo'])
@@ -80,7 +81,7 @@ class ClientPanelController extends Controller
     public function orderShow(Request $request, Order $order)
     {
         if ($order->user_id !== $request->user()->id) {
-            abort(403, 'Sem permissao.');
+            abort(403, 'Sem permissão.');
         }
 
         return response()->json(
@@ -174,6 +175,6 @@ class ClientPanelController extends Controller
         $user->addresses = $request->addresses;
         $user->save();
 
-        return response()->json(['message' => 'Enderecos guardados.', 'addresses' => $user->addresses]);
+        return response()->json(['message' => 'Endereços guardados.', 'addresses' => $user->addresses]);
     }
 }

@@ -326,12 +326,12 @@ function ErrorScreen({ message, needsUpgrade }: { message: string; needsUpgrade:
       <div className="text-center max-w-md">
         <AlertTriangle className="h-12 w-12 text-warning mx-auto mb-4" />
         <h1 className="text-lg font-bold mb-2">
-          {needsUpgrade ? "Subdominio nao disponivel" : "Loja nao encontrada"}
+          {needsUpgrade ? "Subdominio não disponível" : "Loja não encontrada"}
         </h1>
         <p className="text-sm text-muted-foreground mb-6">{message}</p>
         {needsUpgrade && (
           <p className="text-xs text-muted-foreground mb-4">
-            O plano actual desta loja nao inclui subdominio personalizado.
+            O plano actual desta loja não inclui subdominio personalizado.
             E necessario fazer upgrade para o plano Premium ou Empresarial.
           </p>
         )}
@@ -347,7 +347,7 @@ export default function SubdomainStoreLayout() {
   const { store, loading, error, needsUpgrade, storeSlug } = useSubdomainStore();
 
   if (loading) return <LoadingScreen />;
-  if (error || !store) return <ErrorScreen message={error || "Loja nao encontrada"} needsUpgrade={needsUpgrade} />;
+  if (error || !store) return <ErrorScreen message={error || "Loja não encontrada"} needsUpgrade={needsUpgrade} />;
 
   return (
     <div className="min-h-screen flex flex-col">

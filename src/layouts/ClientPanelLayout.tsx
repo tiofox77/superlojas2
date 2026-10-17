@@ -12,9 +12,9 @@ const sidebarNav = [
   { label: "Feed", path: "/feed", icon: Rss, color: "text-orange-500" },
   { label: "Lojas Seguidas", path: "/seguindo", icon: Heart, color: "text-pink-500" },
   { label: "Meus Pedidos", path: "/pedidos", icon: Package, color: "text-amber-500" },
-  { label: "Enderecos", path: "/enderecos", icon: MapPin, color: "text-emerald-500" },
+  { label: "Endereços", path: "/enderecos", icon: MapPin, color: "text-emerald-500" },
   { label: "Perfil", path: "/perfil", icon: User, color: "text-purple-500" },
-  { label: "Seguranca", path: "/seguranca", icon: Lock, color: "text-red-500" },
+  { label: "Segurança", path: "/seguranca", icon: Lock, color: "text-red-500" },
 ];
 
 function ClientPanelInner() {
@@ -117,7 +117,7 @@ function ClientPanelInner() {
         <div className={`${sidebarOpen ? "px-4" : "px-2"} py-3 border-t ${borderColor}`}>
           {sidebarOpen && (
             <button onClick={() => { logout(); navigate("/"); }} className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-red-500 hover:bg-red-50 transition-colors`}>
-              <LogOut className="h-3.5 w-3.5" /> Terminar Sessao
+              <LogOut className="h-3.5 w-3.5" /> Terminar Sessão
             </button>
           )}
         </div>
@@ -155,7 +155,7 @@ function ClientPanelInner() {
                 </Link>
               )}
               <button onClick={() => { logout(); navigate("/"); }} className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs ${textMuted} hover:text-red-500 hover:bg-red-50 transition-colors`}>
-                <LogOut className="h-3.5 w-3.5" /> Terminar Sessao
+                <LogOut className="h-3.5 w-3.5" /> Terminar Sessão
               </button>
             </div>
           </aside>

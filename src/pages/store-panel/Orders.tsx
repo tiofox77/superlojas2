@@ -8,6 +8,7 @@ import {
   ShoppingBag, MapPin, Phone, Mail, CreditCard, FileText, Image, ExternalLink, PackageCheck
 } from "lucide-react";
 import { useToastNotification } from "@/contexts/ToastContext";
+import { plural } from "@/lib/utils";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
@@ -115,7 +116,7 @@ export default function StorePanelOrders() {
         fetchStats();
         setCancelReason("");
       } else toast.error("Erro", d.message);
-    } catch { toast.error("Erro de conexao"); }
+    } catch { toast.error("Erro de ligação"); }
     finally { setUpdating(false); }
   };
 
@@ -228,7 +229,7 @@ export default function StorePanelOrders() {
                       <p className={`font-medium ${s.textPrimary}`}>{o.customer_name}</p>
                       <p className={`text-[10px] ${s.textMuted}`}>{o.customer_phone}</p>
                     </td>
-                    <td className={`py-2.5 px-3 ${s.textMuted}`}>{o.items?.length || 0} itens</td>
+                    <td className={`py-2.5 px-3 ${s.textMuted}`}>{plural(o.items?.length, "item", "itens")}</td>
                     <td className={`py-2.5 px-3 font-semibold ${s.textPrimary}`}>{formatPrice(o.total)} Kz</td>
                     <td className="py-2.5 px-3">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${st.bg} ${st.color}`}>
@@ -249,7 +250,7 @@ export default function StorePanelOrders() {
         {/* Pagination */}
         {lastPage > 1 && (
           <div className="flex items-center justify-between pt-4">
-            <p className={`text-[11px] ${s.textMuted}`}>{total} pedidos — pagina {page}/{lastPage}</p>
+            <p className={`text-[11px] ${s.textMuted}`}>{plural(total, "pedido", "pedidos")} — página {page}/{lastPage}</p>
             <div className="flex gap-1">
               <button onClick={() => fetchOrders(page - 1)} disabled={page <= 1} className={`p-2 rounded-lg ${s.btnSecondary} disabled:opacity-30`}>
                 <ChevronLeft className="h-3.5 w-3.5" />

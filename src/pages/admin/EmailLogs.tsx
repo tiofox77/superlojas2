@@ -127,7 +127,7 @@ export default function AdminEmailLogs() {
       const d = await res.json();
       if (res.ok) { toast.success("Enviado", d.message); fetchLogs(page); fetchStats(); }
       else toast.error("Falha", d.message);
-    } catch { toast.error("Erro de conexao"); }
+    } catch { toast.error("Erro de ligação"); }
     finally { setSending(""); }
   };
 
@@ -195,7 +195,7 @@ export default function AdminEmailLogs() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className={`text-lg font-bold ${s.textPrimary}`}>Email Logs & Templates</h2>
-          <p className={`text-xs ${s.textMuted}`}>Historico de envios e area de teste de templates</p>
+          <p className={`text-xs ${s.textMuted}`}>Histórico de envios e area de teste de templates</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setView("logs")} className={`px-3.5 py-2 rounded-xl text-xs font-medium ${view === "logs" ? "bg-orange-500 text-white" : s.btnSecondary}`}>
@@ -252,7 +252,7 @@ export default function AdminEmailLogs() {
                   <th className={`text-left py-2.5 px-3 ${s.textMuted} font-semibold`}>Status</th>
                   <th className={`text-left py-2.5 px-3 ${s.textMuted} font-semibold`}>Tempo</th>
                   <th className={`text-left py-2.5 px-3 ${s.textMuted} font-semibold`}>Data</th>
-                  <th className={`text-right py-2.5 px-3 ${s.textMuted} font-semibold`}>Accoes</th>
+                  <th className={`text-right py-2.5 px-3 ${s.textMuted} font-semibold`}>Acções</th>
                 </tr>
               </thead>
               <tbody>
@@ -325,7 +325,7 @@ export default function AdminEmailLogs() {
             </div>
             <div className="mt-3">
               <input value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="email@teste.com" className={inputCls} type="email" />
-              <p className={`text-[10px] ${s.textMuted} mt-1`}>Todos os emails de teste serao enviados para este endereco</p>
+              <p className={`text-[10px] ${s.textMuted} mt-1`}>Todos os emails de teste serão enviados para este endereço</p>
             </div>
           </div>
 

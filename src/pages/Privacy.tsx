@@ -4,13 +4,13 @@ import { ShieldCheck, ArrowLeft } from "lucide-react";
 const sections = [
   {
     title: "1. Introducao",
-    content: `A SuperLoja ("nos", "nosso" ou "Plataforma") esta comprometida com a proteccao da privacidade dos seus utilizadores. Esta Politica de Privacidade explica como recolhemos, utilizamos, armazenamos e protegemos as suas informacoes pessoais quando utiliza a nossa plataforma.
+    content: `A SuperLoja ("nos", "nosso" ou "Plataforma") esta comprometida com a proteccao da privacidade dos seus utilizadores. Esta Política de Privacidade explica como recolhemos, utilizamos, armazenamos e protegemos as suas informações pessoais quando utiliza a nossa plataforma.
 
 Ao utilizar a SuperLoja, o utilizador consente com a recolha e tratamento dos seus dados conforme descrito nesta politica.`,
   },
   {
     title: "2. Dados que Recolhemos",
-    content: `Recolhemos os seguintes tipos de informacao:
+    content: `Recolhemos os seguintes tipos de informação:
 
 Dados de Registo:
 • Nome completo
@@ -32,7 +32,7 @@ Dados de Navegacao:
   },
   {
     title: "3. Como Utilizamos os Dados",
-    content: `Utilizamos as informacoes recolhidas para:
+    content: `Utilizamos as informações recolhidas para:
 • Criar e gerir a sua conta na Plataforma
 • Exibir os seus produtos e informacoes da loja (vendedores)
 • Facilitar a comunicacao entre compradores e vendedores
@@ -43,7 +43,7 @@ Dados de Navegacao:
   },
   {
     title: "4. Partilha de Dados",
-    content: `A SuperLoja NAO vende os seus dados pessoais a terceiros.
+    content: `A SuperLoja NÃO vende os seus dados pessoais a terceiros.
 
 Podemos partilhar informacoes nas seguintes situacoes:
 • Informacoes publicas da loja: nome, logo, localizacao, produtos e contacto WhatsApp sao publicamente visiveis na Plataforma
@@ -51,8 +51,8 @@ Podemos partilhar informacoes nas seguintes situacoes:
 • Obrigacoes legais: podemos divulgar informacoes quando exigido por lei ou por autoridades competentes`,
   },
   {
-    title: "5. Armazenamento e Seguranca",
-    content: `Implementamos medidas de seguranca tecnicas e organizacionais para proteger os seus dados, incluindo:
+    title: "5. Armazenamento e Segurança",
+    content: `Implementamos medidas de segurança tecnicas e organizacionais para proteger os seus dados, incluindo:
 • Encriptacao de palavras-passe com algoritmos seguros
 • Comunicacao encriptada via HTTPS
 • Acesso restrito aos dados pessoais
@@ -82,15 +82,15 @@ Para exercer estes direitos, entre em contacto connosco atraves dos canais indic
   },
   {
     title: "8. Retencao de Dados",
-    content: `Mantemos os seus dados pessoais enquanto a sua conta estiver activa ou conforme necessario para fornecer os nossos servicos. Apos o encerramento da conta, podemos manter determinados dados por um periodo razoavel para cumprir obrigacoes legais, resolver disputas e fazer cumprir os nossos termos.`,
+    content: `Mantemos os seus dados pessoais enquanto a sua conta estiver activa ou conforme necessario para fornecer os nossos servicos. Após o encerramento da conta, podemos manter determinados dados por um período razoavel para cumprir obrigacoes legais, resolver disputas e fazer cumprir os nossos termos.`,
   },
   {
     title: "9. Menores de Idade",
-    content: `A Plataforma nao se destina a menores de 18 anos. Nao recolhemos intencionalmente dados de menores. Se tomarmos conhecimento de que recolhemos dados de um menor, tomaremos medidas para eliminar essa informacao.`,
+    content: `A Plataforma não se destina a menores de 18 anos. Não recolhemos intencionalmente dados de menores. Se tomarmos conhecimento de que recolhemos dados de um menor, tomaremos medidas para eliminar essa informação.`,
   },
   {
-    title: "10. Alteracoes a esta Politica",
-    content: `Podemos actualizar esta Politica de Privacidade periodicamente. Quaisquer alteracoes serao publicadas nesta pagina com a data de actualizacao. Recomendamos a revisao periodica desta politica.`,
+    title: "10. Alterações a esta Política",
+    content: `Podemos actualizar esta Política de Privacidade periodicamente. Quaisquer alterações serão publicadas nesta página com a data de actualização. Recomendamos a revisao periodica desta política.`,
   },
   {
     title: "11. Contacto",
@@ -111,19 +111,19 @@ export default function Privacy() {
             <div className="h-11 w-11 rounded-xl bg-card/20 backdrop-blur flex items-center justify-center">
               <ShieldCheck className="h-5 w-5 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-primary-foreground">Politica de Privacidade</h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-primary-foreground">Política de Privacidade</h1>
           </div>
           <p className="text-primary-foreground/80 text-sm max-w-lg mx-auto">
             Saiba como recolhemos, utilizamos e protegemos os seus dados pessoais.
           </p>
-          <p className="text-primary-foreground/60 text-xs mt-2">Ultima actualizacao: Marco 2026</p>
+          <p className="text-primary-foreground/60 text-xs mt-2">Última actualização: Marco 2026</p>
         </div>
       </div>
 
       <div className="container py-10 max-w-3xl">
         {/* TOC */}
         <div className="rounded-2xl bg-card border border-border p-5 mb-6">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Indice</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Índice</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
             {sections.map((s, i) => (
               <a key={i} href={`#priv-${i}`} className="text-xs text-muted-foreground hover:text-foreground transition-colors py-0.5">
@@ -144,7 +144,7 @@ export default function Privacy() {
 
         <div className="mt-8 text-center">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Voltar ao inicio
+            <ArrowLeft className="h-4 w-4" /> Voltar ao início
           </Link>
         </div>
       </div>

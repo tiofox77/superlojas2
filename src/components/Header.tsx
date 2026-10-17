@@ -200,7 +200,7 @@ export function Header() {
                         <Link to="/cadastro-loja" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-secondary transition-colors">
                           <Store className="h-4 w-4 text-emerald-500" />
                           <span>Abrir Minha Loja</span>
-                          <span className="ml-auto text-[9px] font-bold bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded-full">Gratis</span>
+                          <span className="ml-auto text-[9px] font-bold bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded-full">Grátis</span>
                         </Link>
                       </div>
                     )}

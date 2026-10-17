@@ -22,7 +22,7 @@ class PaymentController extends Controller
     public function update(Request $request, string $slug)
     {
         $request->validate([
-            'payment_methods' => 'required|array',
+            'payment_methods' => 'present|array',
             'payment_methods.*.type' => 'required|string',
             'payment_methods.*.label' => 'required|string|max:100',
             'payment_methods.*.details' => 'nullable|string|max:500',
@@ -35,7 +35,7 @@ class PaymentController extends Controller
         $store->save();
 
         return response()->json([
-            'message' => 'Metodos de pagamento actualizados com sucesso.',
+            'message' => 'Métodos de pagamento actualizados com sucesso.',
             'payment_methods' => $store->payment_methods,
         ]);
     }

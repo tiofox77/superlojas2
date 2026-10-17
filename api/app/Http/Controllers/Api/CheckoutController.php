@@ -59,7 +59,7 @@ class CheckoutController extends Controller
                 continue;
             }
             if (!$file->isValid()) {
-                return response()->json(['error' => 'Ficheiro de comprovativo invalido.'], 422);
+                return response()->json(['error' => 'Ficheiro de comprovativo inválido.'], 422);
             }
             $ext = strtolower($file->getClientOriginalExtension());
             $mime = $file->getMimeType();
@@ -69,7 +69,7 @@ class CheckoutController extends Controller
                 ], 422);
             }
             if ($file->getSize() > 5 * 1024 * 1024) {
-                return response()->json(['error' => 'Comprovativo excede o tamanho maximo de 5MB.'], 422);
+                return response()->json(['error' => 'O comprovativo excede o tamanho máximo de 5 MB.'], 422);
             }
             $storeId = str_replace('receipt_', '', $key);
             $receipts[$storeId] = $file;
@@ -80,11 +80,11 @@ class CheckoutController extends Controller
         foreach ($items as $item) {
             $product = Product::with('store')->find($item['product_id']);
             if (!$product) {
-                $errors[] = "Produto #{$item['product_id']} nao encontrado.";
+                $errors[] = "Produto #{$item['product_id']} não encontrado.";
                 continue;
             }
             if ($product->stock < $item['quantity']) {
-                $errors[] = "\"{$product->name}\" — stock insuficiente (disponivel: {$product->stock}, pedido: {$item['quantity']}).";
+                $errors[] = "\"{$product->name}\" — stock insuficiente (disponível: {$product->stock}, pedido: {$item['quantity']}).";
             }
             $products[$item['product_id']] = $product;
         }
@@ -177,7 +177,26 @@ class CheckoutController extends Controller
             return response()->json(['error' => 'Erro ao processar pedido. Tente novamente.'], 500);
         }
 
-        // Send confirmation email to customer (non-blocking)
+        // E-mails (SMTP) e notificações (push) depois de a resposta chegar ao cliente: feitos aqui
+        // atrasavam a confirmação do pedido 5–10 s (QA 17-Out). O LiteSpeed fecha a ligação antes.
+        \Illuminate\Support\defer(function () use ($createdOrders) {
+            $this->sendOrderSideEffects($createdOrders);
+        });
+
+        $orderNumbers = array_map(fn($o) => $o->order_number, $createdOrders);
+
+        return response()->json([
+            'message' => 'Pedido confirmado com sucesso!',
+            'success' => true,
+            'order_numbers' => $orderNumbers,
+            'orders' => $createdOrders,
+        ]);
+    }
+
+    /** Confirmation e-mails and store/admin notifications for new orders (runs after the response). */
+    private function sendOrderSideEffects(array $createdOrders): void
+    {
+        // Send confirmation email to customer
         try {
             $mail = new MailService();
             foreach ($createdOrders as $order) {
@@ -210,15 +229,6 @@ class CheckoutController extends Controller
                 );
             }
         } catch (\Throwable $e) {}
-
-        $orderNumbers = array_map(fn($o) => $o->order_number, $createdOrders);
-
-        return response()->json([
-            'message' => 'Pedido confirmado com sucesso!',
-            'success' => true,
-            'order_numbers' => $orderNumbers,
-            'orders' => $createdOrders,
-        ]);
     }
 
     /**

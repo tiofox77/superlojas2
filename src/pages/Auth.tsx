@@ -218,7 +218,7 @@ const Auth = () => {
           setSuccess("Login efectuado com sucesso!");
           // Redirect based on role
           const dest = result.user?.role === "super_admin" ? "/admin" : "/";
-          setTimeout(() => navigate(dest), 1200);
+          navigate(dest, { replace: true });
         } else {
           setError(result.error || "Erro ao fazer login.");
         }
@@ -232,7 +232,7 @@ const Auth = () => {
         });
         if (result.success) {
           setSuccess("Conta criada com sucesso!");
-          setTimeout(() => navigate("/"), 1200);
+          navigate("/", { replace: true });
         } else {
           setError(result.error || "Erro ao criar conta.");
         }
@@ -410,7 +410,7 @@ const Auth = () => {
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <label className="text-xs font-medium mb-1.5 block">Telemovel</label>
+                    <label className="text-xs font-medium mb-1.5 block">Telemóvel</label>
                     <PhoneInput
                       value={form.phone}
                       onChange={(v) => setForm({ ...form, phone: v })}
@@ -430,7 +430,7 @@ const Auth = () => {
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     onFocus={() => setFocusedField("password")}
                     onBlur={() => setFocusedField(null)}
-                    placeholder="Minimo 6 caracteres"
+                    placeholder="Mínimo 6 caracteres"
                     className={`${inputClass("password")} !pr-10`}
                     required
                     minLength={6}
@@ -523,7 +523,7 @@ const Auth = () => {
                 <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer group">
                   <input type="checkbox" className="rounded border-border mt-0.5 accent-primary" required />
                   <span className="group-hover:text-foreground transition-colors">
-                    Aceito os <a href="/termos" target="_blank" rel="noopener" className="text-primary hover:underline">Termos de Uso</a> e <a href="/privacidade" target="_blank" rel="noopener" className="text-primary hover:underline">Politica de Privacidade</a>
+                    Aceito os <a href="/termos" target="_blank" rel="noopener" className="text-primary hover:underline">Termos de Uso</a> e <a href="/privacidade" target="_blank" rel="noopener" className="text-primary hover:underline">Política de Privacidade</a>
                   </span>
                 </label>
               )}
@@ -564,9 +564,9 @@ const Auth = () => {
           className="text-center text-xs text-muted-foreground mt-6"
         >
           {mode === "login" ? (
-            <>Nao tem conta? <button onClick={() => switchMode("register")} className="text-primary font-semibold hover:underline">Registar-se</button></>
+            <>Não tem conta? <button onClick={() => switchMode("register")} className="text-primary font-semibold hover:underline">Registar-se</button></>
           ) : (
-            <>Ja tem conta? <button onClick={() => switchMode("login")} className="text-primary font-semibold hover:underline">Entrar</button></>
+            <>Já tem conta? <button onClick={() => switchMode("login")} className="text-primary font-semibold hover:underline">Entrar</button></>
           )}
         </motion.p>
       </motion.div>

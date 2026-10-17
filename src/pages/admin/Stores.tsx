@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToastNotification } from "@/contexts/ToastContext";
+import { plural } from "@/lib/utils";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
@@ -78,8 +79,8 @@ export default function AdminStores() {
   };
 
   const saveStore = async () => {
-    if (!form.name || !form.slug) { setFormError("Nome e slug sao obrigatorios."); return; }
-    if (!editStore && !logoFile) { setFormError("Logo e obrigatorio."); return; }
+    if (!form.name || !form.slug) { setFormError("Nome e slug sao obrigatórios."); return; }
+    if (!editStore && !logoFile) { setFormError("Logo e obrigatório."); return; }
     setSaving(true); setFormError("");
 
     const fd = new FormData();
@@ -100,7 +101,7 @@ export default function AdminStores() {
     try {
       const res = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }, body: fd });
       const data = await res.json();
-      if (!res.ok) { setFormError(data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.message || "Erro"); toast.error("Erro", "Nao foi possivel guardar a loja."); }
+      if (!res.ok) { setFormError(data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.message || "Erro"); toast.error("Erro", "Não foi possível guardar a loja."); }
       else { setModalOpen(false); fetchStores(); toast.success(editStore ? "Loja actualizada" : "Loja criada", `"${form.name}" guardada com sucesso.`); }
     } finally { setSaving(false); }
   };
@@ -110,7 +111,7 @@ export default function AdminStores() {
     const res = await fetch(`${API}/admin/stores/${id}/${status === "approved" ? "approve" : "reject"}`, { method: "PATCH", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null); fetchStores();
     if (res.ok) toast.update(status === "approved" ? "Loja aprovada" : "Loja rejeitada");
-    else toast.error("Erro", "Nao foi possivel actualizar o estado.");
+    else toast.error("Erro", "Não foi possível actualizar o estado.");
   };
 
   const banStore = async () => {
@@ -123,7 +124,7 @@ export default function AdminStores() {
         body: JSON.stringify({ reason: banReason }),
       });
       if (res.ok) { toast.success("Loja banida", `"${banModal.name}" foi suspensa.`); setBanModal(null); setBanReason(""); fetchStores(); }
-      else toast.error("Erro", "Nao foi possivel banir a loja.");
+      else toast.error("Erro", "Não foi possível banir a loja.");
     } finally { setBanning(false); }
   };
 
@@ -138,7 +139,7 @@ export default function AdminStores() {
         toast.success(data.is_featured ? "Em Destaque" : "Removido Destaque", data.message);
         fetchStores();
         if (detailStore?.id === st.id) setDetailStore({ ...st, is_featured: data.is_featured });
-      } else toast.error("Erro", "Nao foi possivel alterar destaque.");
+      } else toast.error("Erro", "Não foi possível alterar destaque.");
     } finally { setActionLoading(null); }
   };
 
@@ -153,7 +154,7 @@ export default function AdminStores() {
         toast.success(data.is_official ? "Loja Oficial" : "Removido Oficial", data.message);
         fetchStores();
         if (detailStore?.id === st.id) setDetailStore({ ...st, is_official: data.is_official });
-      } else toast.error("Erro", "Nao foi possivel alterar estado oficial.");
+      } else toast.error("Erro", "Não foi possível alterar estado oficial.");
     } finally { setActionLoading(null); }
   };
 
@@ -164,7 +165,7 @@ export default function AdminStores() {
     const res = await fetch(`${API}/admin/stores/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null); fetchStores();
     if (res.ok) toast.success("Loja eliminada", `"${name}" foi removida.`);
-    else toast.error("Erro", "Nao foi possivel eliminar a loja.");
+    else toast.error("Erro", "Não foi possível eliminar a loja.");
     setConfirmDelete(null);
   };
 
@@ -173,7 +174,7 @@ export default function AdminStores() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h2 className={`text-lg font-bold ${s.textPrimary}`}>Gestao de Lojas</h2>
-          <p className={`text-xs ${s.textMuted}`}>{stores.length} lojas</p>
+          <p className={`text-xs ${s.textMuted}`}>{plural(stores.length, "loja", "lojas")}</p>
         </div>
         <button onClick={openCreate} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl ${s.btnPrimary} text-xs font-semibold shadow-sm`}>
           <Plus className="h-4 w-4" /> Nova Loja
@@ -201,7 +202,7 @@ export default function AdminStores() {
           <table className="w-full">
             <thead>
               <tr className={`border-b ${s.borderLight}`}>
-                {["Loja", "Localizacao", "Dono", "Status", "Produtos", "Accoes"].map((h, i) => (
+                {["Loja", "Localização", "Dono", "Status", "Produtos", "Acções"].map((h, i) => (
                   <th key={h} className={`text-left text-[10px] font-semibold ${s.thText} uppercase tracking-wider px-5 py-3 ${i === 1 ? "hidden md:table-cell" : ""} ${i === 2 || i === 4 ? "hidden lg:table-cell" : ""} ${i === 5 ? "text-right" : ""}`}>{h}</th>
                 ))}
               </tr>
@@ -249,10 +250,10 @@ export default function AdminStores() {
         </div>
         {totalPages > 1 && (
           <div className={`flex items-center justify-between px-5 py-3 border-t ${s.borderLight}`}>
-            <p className={`text-[11px] ${s.textMuted}`}>Pagina {page} de {totalPages}</p>
+            <p className={`text-[11px] ${s.textMuted}`}>Página {page} de {totalPages}</p>
             <div className="flex gap-1">
               <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1} className={`px-3 py-1.5 rounded-lg text-xs ${s.btnSecondary} disabled:opacity-30`}>Anterior</button>
-              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className={`px-3 py-1.5 rounded-lg text-xs ${s.btnSecondary} disabled:opacity-30`}>Proximo</button>
+              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className={`px-3 py-1.5 rounded-lg text-xs ${s.btnSecondary} disabled:opacity-30`}>Próximo</button>
             </div>
           </div>
         )}
@@ -328,11 +329,11 @@ export default function AdminStores() {
                   <p className={`text-sm font-bold ${s.textPrimary} mt-0.5 flex items-center gap-1`}><Package className="h-3.5 w-3.5" /> {detailStore.products_count ?? 0}</p>
                 </div>
                 <div className={`rounded-xl p-3 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
-                  <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider`}>Avaliacao</p>
+                  <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider`}>Avaliação</p>
                   <p className={`text-sm font-bold ${s.textPrimary} mt-0.5 flex items-center gap-1`}><Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" /> {parseFloat(detailStore.rating || "0").toFixed(1)} ({detailStore.review_count})</p>
                 </div>
                 <div className={`rounded-xl p-3 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
-                  <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider`}>Localizacao</p>
+                  <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider`}>Localização</p>
                   <p className={`text-xs font-semibold ${s.textPrimary} mt-0.5 flex items-center gap-1`}><MapPin className="h-3 w-3" /> {detailStore.city}, {detailStore.province}</p>
                 </div>
                 <div className={`rounded-xl p-3 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
@@ -344,7 +345,7 @@ export default function AdminStores() {
               {/* Owner + Meta */}
               <div className="grid grid-cols-2 gap-3 mt-3">
                 <div className={`rounded-xl p-3 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
-                  <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider`}>Proprietario</p>
+                  <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider`}>Proprietário</p>
                   <p className={`text-xs font-semibold ${s.textPrimary} mt-0.5 flex items-center gap-1`}><User className="h-3 w-3" /> {detailStore.user?.name || "\u2014"}</p>
                 </div>
                 <div className={`rounded-xl p-3 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
@@ -360,7 +361,7 @@ export default function AdminStores() {
               {/* Description */}
               {detailStore.description && (
                 <div className={`rounded-xl p-4 mt-3 ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
-                  <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider mb-1.5`}>Descricao</p>
+                  <p className={`text-[10px] ${s.textMuted} uppercase tracking-wider mb-1.5`}>Descrição</p>
                   <p className={`text-sm ${s.textSecondary} whitespace-pre-line`}>{detailStore.description}</p>
                 </div>
               )}
@@ -396,7 +397,7 @@ export default function AdminStores() {
               <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
               <div>
                 <p className={`text-sm font-semibold ${s.textPrimary}`}>Tem a certeza que quer banir esta loja?</p>
-                <p className={`text-xs ${s.textSecondary} mt-0.5`}>A loja <strong>"{banModal.name}"</strong> sera suspensa e o proprietario sera notificado por email.</p>
+                <p className={`text-xs ${s.textSecondary} mt-0.5`}>A loja <strong>"{banModal.name}"</strong> sera suspensa e o proprietário sera notificado por email.</p>
               </div>
             </div>
             <div>
@@ -408,7 +409,7 @@ export default function AdminStores() {
                 placeholder="Descreva o motivo detalhado da suspensao da loja..."
                 className={`w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 resize-none`}
               />
-              <p className={`text-[10px] ${s.textMuted} mt-1`}>Este motivo sera enviado ao proprietario da loja por email.</p>
+              <p className={`text-[10px] ${s.textMuted} mt-1`}>Este motivo sera enviado ao proprietário da loja por email.</p>
             </div>
             <div className={`flex justify-end gap-2 pt-2 border-t ${s.borderLight}`}>
               <button onClick={() => setBanModal(null)} className={`px-4 py-2.5 rounded-xl text-xs font-medium ${s.btnSecondary}`}>Cancelar</button>
@@ -435,7 +436,7 @@ export default function AdminStores() {
               </div>
               <div className={`text-xs ${s.textMuted}`}>
                 <p>Clique para seleccionar</p>
-                <p>JPG, PNG ate 2MB</p>
+                <p>JPG, PNG até 2MB</p>
               </div>
               <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
             </div>
@@ -457,7 +458,7 @@ export default function AdminStores() {
             {[
               { l: "Nome", k: "name", p: "Nome da loja", req: true },
               { l: "Slug", k: "slug", p: "nome-da-loja", req: true },
-              { l: "Provincia", k: "province", p: "Luanda", req: true },
+              { l: "Província", k: "province", p: "Luanda", req: true },
               { l: "Cidade", k: "city", p: "Luanda", req: true },
               { l: "WhatsApp", k: "whatsapp", p: "+244 9XX XXX XXX", req: true },
             ].map((f) => (
@@ -478,8 +479,8 @@ export default function AdminStores() {
             </div>
           </div>
           <div>
-            <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Descricao <span className="text-red-500">*</span></label>
-            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} placeholder="Descricao da loja..."
+            <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Descrição <span className="text-red-500">*</span></label>
+            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} placeholder="Descrição da loja..."
               className={`w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 resize-none`} />
           </div>
           <div className={`flex justify-end gap-2 pt-2 border-t ${s.borderLight}`}>
@@ -494,7 +495,7 @@ export default function AdminStores() {
       <ConfirmModal
         open={!!confirmDelete}
         title="Eliminar loja"
-        message={`Tem a certeza que deseja eliminar "${confirmDelete?.name}"? Esta accao e irreversivel.`}
+        message={`Tem a certeza que deseja eliminar "${confirmDelete?.name}"? Esta acção e irreversivel.`}
         onConfirm={() => confirmDelete && deleteStore(confirmDelete.id, confirmDelete.name)}
         onCancel={() => setConfirmDelete(null)}
       />

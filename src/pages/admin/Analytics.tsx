@@ -166,7 +166,7 @@ export default function AdminAnalytics() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className={`text-lg font-bold ${s.textPrimary}`}>Analytics</h2>
-          <p className={`text-xs ${s.textMuted}`}>Analise de acessos e comportamento dos visitantes</p>
+          <p className={`text-xs ${s.textMuted}`}>Análise de acessos e comportamento dos visitantes</p>
         </div>
         <div className="flex items-center gap-2">
           {[1, 7, 14, 30, 90].map(d => (
@@ -179,7 +179,7 @@ export default function AdminAnalytics() {
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
           <Link to="/admin/relatorios" className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium ${s.btnSecondary}`}>
-            <FileText className="h-3.5 w-3.5" /> Relatorios
+            <FileText className="h-3.5 w-3.5" /> Relatórios
           </Link>
         </div>
       </div>
@@ -196,7 +196,7 @@ export default function AdminAnalytics() {
               <p className={`text-sm font-bold ${s.textPrimary}`}>
                 <span className="text-emerald-500">{realtime.active_visitors}</span> visitantes activos agora
               </p>
-              <p className={`text-[11px] ${s.textMuted}`}>Ultimos 30 minutos — actualiza automaticamente</p>
+              <p className={`text-[11px] ${s.textMuted}`}>Últimos 30 minutos — actualiza automaticamente</p>
             </div>
           </div>
           {realtime.active_pages.length > 0 && (
@@ -329,7 +329,7 @@ export default function AdminAnalytics() {
         {/* Top Pages */}
         <div className={cardCls}>
           <h3 className={`text-sm font-bold ${s.textPrimary} mb-3 flex items-center gap-2`}>
-            <FileText className="h-4 w-4 text-blue-500" /> Paginas Mais Visitadas
+            <FileText className="h-4 w-4 text-blue-500" /> Páginas Mais Visitadas
           </h3>
           <div className="space-y-2">
             {topPages.length === 0 && <p className={`text-xs ${s.textMuted}`}>Sem dados</p>}
@@ -390,7 +390,7 @@ export default function AdminAnalytics() {
             <Search className="h-4 w-4 text-purple-500" /> Termos de Pesquisa
           </h3>
           <div className="space-y-2 max-h-72 overflow-y-auto">
-            {searchTerms.length === 0 && <p className={`text-xs ${s.textMuted}`}>Sem dados de pesquisa ainda. Os termos serao capturados a partir de agora.</p>}
+            {searchTerms.length === 0 && <p className={`text-xs ${s.textMuted}`}>Sem dados de pesquisa ainda. Os termos serão capturados a partir de agora.</p>}
             {searchTerms.map((t, i) => {
               const maxV = searchTerms[0]?.views || 1;
               return (
@@ -443,7 +443,7 @@ export default function AdminAnalytics() {
         {/* Countries + Provinces */}
         <div className={cardCls}>
           <h3 className={`text-sm font-bold ${s.textPrimary} mb-3 flex items-center gap-2`}>
-            <Globe className="h-4 w-4 text-cyan-500" /> Paises & Provincias
+            <Globe className="h-4 w-4 text-cyan-500" /> Países & Províncias
           </h3>
           <div className="space-y-2 mb-4">
             {countries.length === 0 && <p className={`text-xs ${s.textMuted}`}>Sem dados</p>}
@@ -463,7 +463,7 @@ export default function AdminAnalytics() {
           {provinces.length > 0 && (
             <div className={`border-t ${s.borderLight} pt-3`}>
               <p className={`text-[10px] font-semibold ${s.textMuted} uppercase tracking-wider mb-2 flex items-center gap-1`}>
-                <MapPin className="h-3 w-3" /> Provincias
+                <MapPin className="h-3 w-3" /> Províncias
               </p>
               <div className="space-y-1.5">
                 {provinces.slice(0, 10).map((p, i) => {

@@ -4,6 +4,7 @@ import { trackInterest } from "@/lib/demand";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { logoSrc, productImgSrc, onImgError } from "@/lib/imageHelpers";
+import { DELIVERY_FEE_PER_STORE } from "@/lib/delivery";
 
 export function CartDrawer() {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
@@ -99,9 +100,12 @@ export function CartDrawer() {
             </div>
             <div className="border-t border-border p-4 space-y-3">
               <div className="flex items-center justify-between font-bold">
-                <span>Total</span>
+                <span>Subtotal</span>
                 <span>{formatPrice(totalPrice)} Kz</span>
               </div>
+              <p className="text-[11px] text-muted-foreground -mt-2">
+                + entrega {formatPrice(DELIVERY_FEE_PER_STORE)} Kz por loja (grátis com Pagamento na Recolha)
+              </p>
               <Link to="/carrinho" onClick={() => setIsOpen(false)}>
                 <Button className="w-full bg-hero-gradient text-primary-foreground hover:opacity-90">
                   Finalizar Compra

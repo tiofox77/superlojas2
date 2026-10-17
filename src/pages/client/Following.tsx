@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Store, Heart, MapPin, Star, Package, Users, Loader2, Search } from "lucide-react";
 import { useState } from "react";
 import { logoSrc, onImgError } from "@/lib/imageHelpers";
+import { plural } from "@/lib/utils";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
@@ -79,7 +80,7 @@ export default function ClientFollowing() {
         <div className={`rounded-2xl border ${s.card} p-12 text-center`}>
           <Heart className={`h-12 w-12 mx-auto mb-3 ${s.textMuted}`} />
           <h3 className={`text-sm font-bold ${s.textPrimary} mb-1`}>
-            {search ? "Nenhuma loja encontrada" : "Ainda nao segue nenhuma loja"}
+            {search ? "Nenhuma loja encontrada" : "Ainda não segue nenhuma loja"}
           </h3>
           <p className={`text-xs ${s.textMuted} mb-4`}>
             {search ? "Tente outro termo de busca." : "Explore as lojas e comece a seguir as que mais gosta!"}
@@ -113,7 +114,7 @@ export default function ClientFollowing() {
                         <Star className="h-3 w-3 fill-warning text-warning" /> {Number(store.rating).toFixed(1)}
                       </span>
                       <span className={`flex items-center gap-1 ${s.textMuted}`}>
-                        <Package className="h-3 w-3" /> {store.products_count} produtos
+                        <Package className="h-3 w-3" /> {plural(store.products_count, "produto", "produtos")}
                       </span>
                       <span className={`flex items-center gap-1 ${s.textMuted}`}>
                         <Users className="h-3 w-3" /> {store.followers_count}

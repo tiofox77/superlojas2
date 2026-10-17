@@ -71,7 +71,7 @@ export default function ClientDashboard() {
     <div className="space-y-6 max-w-5xl">
       {/* Welcome */}
       <div>
-        <h2 className={`text-lg font-bold ${s.textPrimary}`}>Ola, {user?.name?.split(" ")[0]}!</h2>
+        <h2 className={`text-lg font-bold ${s.textPrimary}`}>Olá, {user?.name?.split(" ")[0]}!</h2>
         <p className={`text-xs ${s.textMuted}`}>Resumo da sua conta e pedidos recentes</p>
       </div>
 
@@ -98,7 +98,7 @@ export default function ClientDashboard() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className={`text-sm font-bold ${s.textPrimary}`}>Pedidos Recentes</h3>
-            <p className={`text-[11px] ${s.textMuted}`}>Ultimos 5 pedidos</p>
+            <p className={`text-[11px] ${s.textMuted}`}>Últimos 5 pedidos</p>
           </div>
           <Link to="/minha-conta/pedidos" className={`flex items-center gap-1 text-xs font-medium text-orange-500 hover:text-orange-600 transition-colors`}>
             Ver Todos <ChevronRight className="h-3.5 w-3.5" />
@@ -108,7 +108,7 @@ export default function ClientDashboard() {
         {recent.length === 0 ? (
           <div className="text-center py-10">
             <ShoppingBag className={`h-10 w-10 ${s.textMuted} mx-auto mb-2 opacity-40`} />
-            <p className={`text-xs ${s.textMuted}`}>Ainda nao fez nenhum pedido</p>
+            <p className={`text-xs ${s.textMuted}`}>Ainda não fez nenhum pedido</p>
             <Link to="/" className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-xl text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-colors">
               Ir as Compras
             </Link>
@@ -172,8 +172,8 @@ export default function ClientDashboard() {
             <MapPin className="h-5 w-5 text-emerald-500" />
           </div>
           <div>
-            <p className={`text-xs font-semibold ${s.textPrimary} group-hover:text-emerald-500 transition-colors`}>Meus Enderecos</p>
-            <p className={`text-[10px] ${s.textMuted}`}>Gerir enderecos de entrega</p>
+            <p className={`text-xs font-semibold ${s.textPrimary} group-hover:text-emerald-500 transition-colors`}>Meus Endereços</p>
+            <p className={`text-[10px] ${s.textMuted}`}>Gerir endereços de entrega</p>
           </div>
         </Link>
         <Link to="/minha-conta/seguranca" className={`${cardCls} flex items-center gap-3 group hover:shadow-md transition-shadow`}>
@@ -181,7 +181,7 @@ export default function ClientDashboard() {
             <Package className="h-5 w-5 text-red-500" />
           </div>
           <div>
-            <p className={`text-xs font-semibold ${s.textPrimary} group-hover:text-red-500 transition-colors`}>Seguranca</p>
+            <p className={`text-xs font-semibold ${s.textPrimary} group-hover:text-red-500 transition-colors`}>Segurança</p>
             <p className={`text-[10px] ${s.textMuted}`}>Alterar palavra-passe</p>
           </div>
         </Link>

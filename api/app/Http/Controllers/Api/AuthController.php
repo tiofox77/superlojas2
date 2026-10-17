@@ -62,16 +62,16 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth-token', [$user->role])->plainTextToken;
 
-        // Send welcome email (non-blocking)
-        try { (new MailService())->sendWelcome($user->email, $user->name); } catch (\Throwable $e) {}
+        // E-mails (SMTP) e notificação depois da resposta — feitos aqui atrasavam o registo vários segundos.
+        \Illuminate\Support\defer(function () use ($user) {
+            try { (new MailService())->sendWelcome($user->email, $user->name); } catch (\Throwable $e) {}
 
-        // Notify admin
-        try {
-            Notification::notifyAdmin('new_user', 'Novo utilizador registado', "{$user->name} ({$user->email}) criou uma conta.", 'user-plus', 'violet', '/admin/utilizadores');
-        } catch (\Throwable $e) {}
+            try {
+                Notification::notifyAdmin('new_user', 'Novo utilizador registado', "{$user->name} ({$user->email}) criou uma conta.", 'user-plus', 'violet', '/admin/utilizadores');
+            } catch (\Throwable $e) {}
 
-        // Email alert to admin (non-blocking)
-        try { (new MailService())->sendAdminNewUser($user->name, $user->email, $user->phone); } catch (\Throwable $e) {}
+            try { (new MailService())->sendAdminNewUser($user->name, $user->email, $user->phone); } catch (\Throwable $e) {}
+        });
 
         return response()->json([
             'user' => $user,

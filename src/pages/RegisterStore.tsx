@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Store, CheckCircle2, Upload, Loader2, ChevronRight, ChevronLeft, MapPin, User, FileText, Image as ImageIcon, Rocket, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Store, CheckCircle2, Upload, Loader2, ChevronRight, ChevronLeft, MapPin, User, FileText, Image as ImageIcon, Rocket, Eye, EyeOff, Mail, Lock, HandCoins, Wallet, Smartphone, Building2 } from "lucide-react";
 import PhoneInput from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,16 @@ const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 interface ProvinceData { name: string; municipalities: string[]; }
 
 // Fallback list while the categories from the API load
-const CATEGORIES = ["Electronica", "Moda", "Casa & Jardim", "Desporto", "Beleza", "Alimentacao", "Automoveis", "Servicos", "Saude", "Educacao", "Outros"];
+const CATEGORIES = ["Electrónica", "Moda", "Casa & Jardim", "Desporto", "Beleza", "Alimentação", "Automóveis", "Serviços", "Saúde", "Educação", "Outros"];
+
+// Formas de pagamento escolhidas no registo — uma loja sem nenhuma não conseguia vender (QA 17-Out).
+const PAYMENT_OPTIONS = [
+  { type: "cash_delivery", label: "Pagamento na Entrega", hint: "O cliente paga quando recebe a encomenda.", icon: HandCoins },
+  { type: "cash_pickup", label: "Pagamento na Recolha", hint: "O cliente levanta e paga na sua loja (sem taxa de entrega).", icon: Wallet },
+  { type: "multicaixa_express", label: "Multicaixa Express", hint: "O cliente paga para o seu número.", icon: Smartphone, accountLabel: "Número Multicaixa Express *", placeholder: "9XX XXX XXX" },
+  { type: "transfer", label: "Transferência Bancária", hint: "O cliente transfere para a sua conta.", icon: Building2, accountLabel: "IBAN *", placeholder: "AO06 0000 0000 0000 0000 0000 0" },
+] as const;
+type PaymentType = typeof PAYMENT_OPTIONS[number]["type"];
 
 const RegisterStore = () => {
   const { token, user, isAuthenticated, setAuth } = useAuth();
@@ -43,6 +52,24 @@ const RegisterStore = () => {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [payments, setPayments] = useState<Record<PaymentType, { enabled: boolean; account: string }>>({
+    cash_delivery: { enabled: true, account: "" },
+    cash_pickup: { enabled: false, account: "" },
+    multicaixa_express: { enabled: false, account: "" },
+    transfer: { enabled: false, account: "" },
+  });
+  const togglePayment = (type: PaymentType) =>
+    setPayments((p) => ({ ...p, [type]: { ...p[type], enabled: !p[type].enabled } }));
+  const setPaymentAccount = (type: PaymentType, account: string) =>
+    setPayments((p) => ({ ...p, [type]: { ...p[type], account } }));
+  const selectedPayments = PAYMENT_OPTIONS.filter((o) => payments[o.type].enabled);
+  const paymentAccountOk = (type: PaymentType) => {
+    const acc = payments[type].account.trim();
+    if (type === "multicaixa_express") return isAngolanPhone(acc);
+    if (type === "transfer") return acc.replace(/\s/g, "").length >= 21;
+    return true;
+  };
+  const paymentsValid = selectedPayments.length > 0 && selectedPayments.every((o) => paymentAccountOk(o.type));
 
   // Step 3 — Dados do utilizador
   const [userName, setUserName] = useState(user?.name || "");
@@ -99,7 +126,7 @@ const RegisterStore = () => {
 
   const canGoNext = () => {
     if (step === 1) return !!storeName.trim() && !!description.trim() && !!category && !!logoFile;
-    if (step === 2) return !!province && !!municipality && isAngolanPhone(whatsapp);
+    if (step === 2) return !!province && !!municipality && isAngolanPhone(whatsapp) && paymentsValid;
     if (step === 3) {
       if (!userName.trim() || (userPhone && !isAngolanPhone(userPhone))) return false;
       if (isAuthenticated) return true;
@@ -125,8 +152,11 @@ const RegisterStore = () => {
     fd.append("user_phone", userPhone);
     fd.append("logo", logoFile!);
     if (bannerFile) fd.append("banner", bannerFile);
+    fd.append("payment_methods", JSON.stringify(selectedPayments.map((o) => ({
+      type: o.type, label: o.label, details: "", account: payments[o.type].account.trim(), is_active: true,
+    }))));
 
-    // Se nao esta logado, enviar campos de criacao de conta
+    // Se não está logado, enviar campos de criação de conta
     if (!isAuthenticated) {
       fd.append("user_email", userEmail);
       fd.append("user_password", userPassword);
@@ -149,7 +179,7 @@ const RegisterStore = () => {
       } else {
         setError(data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.error || data.message || "Erro ao registar loja.");
       }
-    } catch { setError("Erro de conexao. Tente novamente."); }
+    } catch { setError("Erro de ligação. Tente novamente."); }
     finally { setSaving(false); }
   };
 
@@ -164,11 +194,11 @@ const RegisterStore = () => {
           <h1 className="text-2xl font-bold mb-2">Loja Registada!</h1>
           <p className="text-muted-foreground mb-6 text-sm">
             {autoApproved
-              ? "A sua loja foi aprovada automaticamente! Ja pode comecar a adicionar produtos."
-              : "A sua loja sera analisada e aprovada em ate 48 horas. Recebera uma notificacao."}
+              ? "A sua loja foi aprovada automaticamente! Já pode começar a adicionar produtos."
+              : "A sua loja será analisada e aprovada em até 48 horas. Receberá uma notificação."}
           </p>
           <div className="flex gap-3 justify-center">
-            <Link to="/"><Button variant="outline">Voltar ao Inicio</Button></Link>
+            <Link to="/"><Button variant="outline">Voltar ao Início</Button></Link>
             {autoApproved && <Button onClick={() => navigate("/minha-loja")}>Ir para Minha Loja</Button>}
           </div>
         </div>
@@ -181,7 +211,7 @@ const RegisterStore = () => {
 
   const steps = [
     { num: 1, label: "Dados da Loja", icon: Store },
-    { num: 2, label: "Localizacao", icon: MapPin },
+    { num: 2, label: "Localização", icon: MapPin },
     { num: 3, label: "Seus Dados", icon: User },
   ];
 
@@ -234,7 +264,7 @@ const RegisterStore = () => {
             <div className="space-y-5">
               <div>
                 <h3 className="text-base font-bold mb-1">Dados da Loja</h3>
-                <p className="text-xs text-muted-foreground">Informacoes basicas sobre a sua loja</p>
+                <p className="text-xs text-muted-foreground">Informações básicas sobre a sua loja</p>
               </div>
 
               {/* Logo + Banner */}
@@ -247,7 +277,7 @@ const RegisterStore = () => {
                       : <div className="text-center"><Upload className="h-6 w-6 text-muted-foreground mx-auto mb-1" /><span className="text-[10px] text-muted-foreground">Logo</span></div>}
                   </div>
                   <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-                  <p className="text-[10px] text-muted-foreground mt-1">JPG, PNG ate 2MB</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">JPG, PNG até 2 MB</p>
                 </div>
                 <div>
                   <label className={labelClass}>Banner (opcional)</label>
@@ -257,7 +287,7 @@ const RegisterStore = () => {
                       : <div className="text-center"><ImageIcon className="h-6 w-6 text-muted-foreground mx-auto mb-1" /><span className="text-[10px] text-muted-foreground">Banner</span></div>}
                   </div>
                   <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={handleBannerChange} />
-                  <p className="text-[10px] text-muted-foreground mt-1">Imagem de capa, JPG/PNG ate 4MB</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Imagem de capa, JPG/PNG até 4 MB</p>
                 </div>
               </div>
 
@@ -278,7 +308,7 @@ const RegisterStore = () => {
               </div>
 
               <div>
-                <label className={labelClass}>Descricao da Loja *</label>
+                <label className={labelClass}>Descrição da Loja *</label>
                 <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Descreva a sua loja, o que vende, etc."
                   className={`${inputClass} resize-none`} />
               </div>
@@ -289,22 +319,22 @@ const RegisterStore = () => {
           {step === 2 && (
             <div className="space-y-5">
               <div>
-                <h3 className="text-base font-bold mb-1">Localizacao e Contacto</h3>
+                <h3 className="text-base font-bold mb-1">Localização, Contacto e Pagamentos</h3>
                 <p className="text-xs text-muted-foreground">Onde fica a sua loja e como contactar</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className={labelClass}>Provincia *</label>
+                  <label className={labelClass}>Província *</label>
                   <select value={province} onChange={(e) => setProvince(e.target.value)} className={inputClass}>
-                    <option value="">Seleccionar provincia...</option>
+                    <option value="">Seleccionar província...</option>
                     {provinces.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className={labelClass}>Municipio *</label>
+                  <label className={labelClass}>Município *</label>
                   <select value={municipality} onChange={(e) => setMunicipality(e.target.value)} className={inputClass} disabled={!province}>
-                    <option value="">{province ? "Seleccionar municipio..." : "Seleccione provincia primeiro"}</option>
+                    <option value="">{province ? "Seleccionar município..." : "Seleccione a província primeiro"}</option>
                     {currentMunicipalities.map((m) => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
@@ -317,9 +347,51 @@ const RegisterStore = () => {
                   <PhoneInput value={whatsapp} onChange={setWhatsapp} className={inputClass} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelClass}>Endereco / Rua</label>
-                  <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Ex: Rua do Comercio, n.25, Kilamba" className={inputClass} />
+                  <label className={labelClass}>Endereço / Rua</label>
+                  <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Ex: Rua do Comércio, n.º 25, Kilamba" className={inputClass} />
                 </div>
+              </div>
+
+              <div className="pt-2">
+                <h3 className="text-base font-bold mb-1">Como os clientes vão pagar? *</h3>
+                <p className="text-xs text-muted-foreground mb-3">Escolha pelo menos uma forma. Pode mudar depois em Minha Loja → Pagamentos.</p>
+                <div className="space-y-2.5">
+                  {PAYMENT_OPTIONS.map((o) => {
+                    const sel = payments[o.type];
+                    const Icon = o.icon;
+                    const needsAccount = "accountLabel" in o;
+                    return (
+                      <div key={o.type} className={`rounded-xl border transition-colors ${sel.enabled ? "border-primary bg-primary/5" : "border-border"}`}>
+                        <label className="flex items-start gap-3 p-3 cursor-pointer">
+                          <input type="checkbox" checked={sel.enabled} onChange={() => togglePayment(o.type)} className="mt-1 h-4 w-4 accent-primary" />
+                          <Icon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold">{o.label}</span>
+                            <span className="block text-[11px] text-muted-foreground">{o.hint}</span>
+                          </span>
+                        </label>
+                        {needsAccount && sel.enabled && (
+                          <div className="px-3 pb-3 pl-10">
+                            <label className="text-xs font-medium mb-1 block">{o.accountLabel}</label>
+                            {o.type === "multicaixa_express" ? (
+                              <PhoneInput value={sel.account} onChange={(v) => setPaymentAccount(o.type, v)} className={inputClass} />
+                            ) : (
+                              <input type="text" value={sel.account} onChange={(e) => setPaymentAccount(o.type, e.target.value)} placeholder={o.placeholder} className={inputClass} />
+                            )}
+                            {sel.account.trim() !== "" && !paymentAccountOk(o.type) && (
+                              <p className="text-[11px] text-red-600 mt-1">
+                                {o.type === "multicaixa_express" ? "Indique um número angolano válido." : "O IBAN angolano tem 21 dígitos depois de \"AO06\"."}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {selectedPayments.length === 0 && (
+                  <p className="text-[11px] text-red-600 mt-2">Seleccione pelo menos uma forma de pagamento para continuar.</p>
+                )}
               </div>
             </div>
           )}
@@ -334,10 +406,10 @@ const RegisterStore = () => {
                 </p>
               </div>
 
-              {/* Se esta logado, aviso */}
+              {/* Se está logado, aviso */}
               {isAuthenticated && (
                 <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 shrink-0" /> Sessao iniciada como <strong>{user?.email}</strong>
+                  <CheckCircle2 className="h-4 w-4 shrink-0" /> Sessão iniciada como <strong>{user?.email}</strong>
                 </div>
               )}
 
@@ -351,7 +423,7 @@ const RegisterStore = () => {
                   <PhoneInput value={userPhone} onChange={setUserPhone} className={inputClass} />
                 </div>
 
-                {/* Campos de criacao de conta — so para visitantes */}
+                {/* Campos de criação de conta — só para visitantes */}
                 {!isAuthenticated ? (
                   <>
                     <div>
@@ -373,7 +445,7 @@ const RegisterStore = () => {
                     </div>
                     <div className="sm:col-span-2">
                       <p className="text-[10px] text-muted-foreground">
-                        Ao criar conta, concorda com os nossos <Link to="/termos" className="underline">Termos de Uso</Link> e <Link to="/privacidade" className="underline">Politica de Privacidade</Link>.
+                        Ao criar conta, concorda com os nossos <Link to="/termos" className="underline">Termos de Uso</Link> e <Link to="/privacidade" className="underline">Política de Privacidade</Link>.
                       </p>
                     </div>
                   </>
@@ -381,7 +453,7 @@ const RegisterStore = () => {
                   <div>
                     <label className={labelClass}>Email</label>
                     <input type="email" value={user?.email || ""} disabled className={`${inputClass} opacity-60 cursor-not-allowed`} />
-                    <p className="text-[10px] text-muted-foreground mt-1">O email nao pode ser alterado aqui</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">O email não pode ser alterado aqui</p>
                   </div>
                 )}
               </div>
@@ -392,12 +464,13 @@ const RegisterStore = () => {
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
                   <span className="text-muted-foreground">Loja:</span><span className="font-medium">{storeName}</span>
                   <span className="text-muted-foreground">Categoria:</span><span className="font-medium">{category}</span>
-                  <span className="text-muted-foreground">Provincia:</span><span className="font-medium">{province}</span>
-                  <span className="text-muted-foreground">Municipio:</span><span className="font-medium">{municipality}</span>
+                  <span className="text-muted-foreground">Província:</span><span className="font-medium">{province}</span>
+                  <span className="text-muted-foreground">Município:</span><span className="font-medium">{municipality}</span>
                   {city && city !== municipality && <><span className="text-muted-foreground">Cidade:</span><span className="font-medium">{city}</span></>}
-                  {address && <><span className="text-muted-foreground">Endereco:</span><span className="font-medium">{address}</span></>}
+                  {address && <><span className="text-muted-foreground">Endereço:</span><span className="font-medium">{address}</span></>}
                   <span className="text-muted-foreground">WhatsApp:</span><span className="font-medium">{whatsapp}</span>
-                  <span className="text-muted-foreground">Proprietario:</span><span className="font-medium">{userName}</span>
+                  <span className="text-muted-foreground">Pagamentos:</span><span className="font-medium">{selectedPayments.map((o) => o.label).join(", ")}</span>
+                  <span className="text-muted-foreground">Proprietário:</span><span className="font-medium">{userName}</span>
                 </div>
               </div>
             </div>
@@ -415,12 +488,12 @@ const RegisterStore = () => {
             <div>
               {step < totalSteps ? (
                 <Button onClick={() => { setStep(step + 1); setError(""); }} disabled={!canGoNext()} className="gap-2 rounded-xl text-xs bg-hero-gradient text-primary-foreground hover:opacity-90">
-                  Proximo <ChevronRight className="h-4 w-4" />
+                  Próximo <ChevronRight className="h-4 w-4" />
                 </Button>
               ) : (
                 <Button onClick={handleSubmit} disabled={saving || !canGoNext()} className="gap-2 rounded-xl text-xs bg-hero-gradient text-primary-foreground hover:opacity-90">
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-                  {saving ? "A enviar..." : "Enviar Solicitacao"}
+                  {saving ? "A enviar..." : "Enviar Solicitação"}
                 </Button>
               )}
             </div>
@@ -429,9 +502,9 @@ const RegisterStore = () => {
           {/* Benefits */}
           <div className="mt-6 pt-4 border-t border-border grid grid-cols-3 gap-3 text-center">
             {[
-              { icon: "🆓", title: "100% Gratis", desc: "Sem taxas" },
-              { icon: "⚡", title: "Rapido", desc: "Aprovacao rapida" },
-              { icon: "📱", title: "Facil", desc: "Gerencie pelo celular" },
+              { icon: "🆓", title: "100% Grátis", desc: "Sem taxas" },
+              { icon: "⚡", title: "Rápido", desc: "Aprovação rápida" },
+              { icon: "📱", title: "Fácil", desc: "Gerencie pelo celular" },
             ].map((b) => (
               <div key={b.title}>
                 <span className="text-2xl">{b.icon}</span>

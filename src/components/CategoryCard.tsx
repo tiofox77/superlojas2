@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Category } from "@/data/types";
+import { plural } from "@/lib/utils";
 
 export function CategoryCard({ category }: { category: Category }) {
   return (
@@ -9,7 +10,7 @@ export function CategoryCard({ category }: { category: Category }) {
     >
       <span className="text-3xl group-hover:scale-110 transition-transform">{category.icon}</span>
       <span className="text-xs font-medium text-center">{category.name}</span>
-      <span className="text-[10px] text-muted-foreground">{category.productCount} produtos</span>
+      <span className="text-[10px] text-muted-foreground">{plural(category.productCount, "produto", "produtos")}</span>
     </Link>
   );
 }

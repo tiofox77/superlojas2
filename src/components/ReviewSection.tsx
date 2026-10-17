@@ -100,9 +100,9 @@ export function ReviewSection({ type, targetId, targetName, averageRating, total
         fetchReviews();
       } else {
         const data = await res.json();
-        setError(data.message || "Erro ao enviar avaliacao.");
+        setError(data.message || "Erro ao enviar avaliação.");
       }
-    } catch { setError("Erro de conexao."); }
+    } catch { setError("Erro de ligação."); }
     setSubmitting(false);
   };
 
@@ -134,10 +134,10 @@ export function ReviewSection({ type, targetId, targetName, averageRating, total
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-lg">Avaliacoes {type === "store" ? "da Loja" : "do Produto"}</h3>
+        <h3 className="font-bold text-lg">Avaliações {type === "store" ? "da Loja" : "do Produto"}</h3>
         {user ? (
           <Button size="sm" variant="outline" className="gap-1 rounded-xl text-xs" onClick={() => setShowForm(!showForm)}>
-            <Star className="h-3.5 w-3.5" /> {myReviewId ? "Editar Avaliacao" : "Avaliar"}
+            <Star className="h-3.5 w-3.5" /> {myReviewId ? "Editar Avaliação" : "Avaliar"}
           </Button>
         ) : (
           <Link to="/entrar">
@@ -176,7 +176,7 @@ export function ReviewSection({ type, targetId, targetName, averageRating, total
       {/* New Review Form */}
       {showForm && user && (
         <div className="mb-6 p-4 rounded-xl bg-secondary/50 border border-border">
-          <p className="text-sm font-medium mb-1">{myReviewId ? "Editar a sua avaliacao" : "A sua avaliacao"} para {targetName}</p>
+          <p className="text-sm font-medium mb-1">{myReviewId ? "Editar a sua avaliação" : "A sua avaliação"} para {targetName}</p>
           <p className="text-[11px] text-muted-foreground mb-3">Como {user.name}</p>
           {error && <p className="text-xs text-destructive mb-2">{error}</p>}
           <div className="flex items-center gap-1 mb-3">
@@ -203,7 +203,7 @@ export function ReviewSection({ type, targetId, targetName, averageRating, total
             <Button size="sm" onClick={handleSubmit} disabled={submitting || !newRating || !newComment.trim()}
               className="gap-1 rounded-xl bg-hero-gradient text-primary-foreground hover:opacity-90">
               {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-              {myReviewId ? "Actualizar" : "Enviar Avaliacao"}
+              {myReviewId ? "Actualizar" : "Enviar Avaliação"}
             </Button>
           </div>
         </div>
@@ -215,7 +215,7 @@ export function ReviewSection({ type, targetId, targetName, averageRating, total
       ) : reviews.length === 0 ? (
         <div className="text-center py-8">
           <Star className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Ainda sem avaliacoes. Seja o primeiro!</p>
+          <p className="text-sm text-muted-foreground">Ainda sem avaliações. Seja o primeiro!</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -256,8 +256,8 @@ export function ReviewSection({ type, targetId, targetName, averageRating, total
       )}
       <ConfirmModal
         open={confirmDeleteReview !== null}
-        title="Eliminar avaliacao"
-        message="Tem a certeza que deseja eliminar a sua avaliacao?"
+        title="Eliminar avaliação"
+        message="Tem a certeza que deseja eliminar a sua avaliação?"
         onConfirm={() => confirmDeleteReview !== null && handleDelete(confirmDeleteReview)}
         onCancel={() => setConfirmDeleteReview(null)}
       />

@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { logoSrc, bannerSrc, onImgError } from "@/lib/imageHelpers";
+import { plural } from "@/lib/utils";
 
 const Stores = () => {
   const [search, setSearch] = useState("");
@@ -219,8 +220,8 @@ const Stores = () => {
                   <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{store.description}</p>
                   <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
                     <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {store.province}</span>
-                    <span>{store.reviewCount} avaliações</span>
-                    <span>{store.categories.length} categorias</span>
+                    <span>{plural(store.reviewCount, "avaliação", "avaliações")}</span>
+                    <span>{plural(store.categories.length, "categoria", "categorias")}</span>
                   </div>
                 </div>
               </Link>

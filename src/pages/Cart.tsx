@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Minus, Plus, Trash2, MessageCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logoSrc, productImgSrc, onImgError } from "@/lib/imageHelpers";
+import { DELIVERY_FEE_PER_STORE } from "@/lib/delivery";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
@@ -15,6 +16,8 @@ const Cart = () => {
     acc[sid].items.push(item);
     return acc;
   }, {} as Record<string, { store: typeof items[0]["product"]["store"]; items: typeof items }>);
+  const storeCount = Object.keys(byStore).length;
+  const deliveryFee = storeCount * DELIVERY_FEE_PER_STORE;
 
   const generateWhatsAppMessage = (storeItems: typeof items) => {
     let msg = `Olá, quero comprar:\n\n`;
@@ -99,10 +102,13 @@ const Cart = () => {
             <h3 className="font-bold mb-4">Resumo</h3>
             <div className="space-y-2 text-sm mb-4">
               <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatPrice(totalPrice)} Kz</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Entrega</span><span>A calcular</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Entrega ({storeCount} {storeCount === 1 ? "loja" : "lojas"})</span><span>{formatPrice(deliveryFee)} Kz</span></div>
+              <p className="text-[11px] text-muted-foreground">
+                {formatPrice(DELIVERY_FEE_PER_STORE)} Kz por loja. Grátis se escolher Pagamento na Recolha no checkout (quando a loja o aceita).
+              </p>
             </div>
             <div className="border-t border-border pt-3 mb-4">
-              <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{formatPrice(totalPrice)} Kz</span></div>
+              <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{formatPrice(totalPrice + deliveryFee)} Kz</span></div>
             </div>
             <Link to="/checkout">
               <Button className="w-full bg-hero-gradient text-primary-foreground hover:opacity-90 mb-2">

@@ -68,7 +68,7 @@ export default function ClientAddresses() {
 
   const saveForm = () => {
     if (!form.label || !form.name || !form.phone || !form.address || !form.province) {
-      toast.error("Erro", "Preencha todos os campos obrigatorios.");
+      toast.error("Erro", "Preencha todos os campos obrigatórios.");
       return;
     }
     let updated: Address[];
@@ -93,8 +93,8 @@ export default function ClientAddresses() {
       if (res.ok) {
         toast.success("Guardado", d.message);
         if (d.addresses) setAddresses(d.addresses);
-      } else toast.error("Erro", d.message || "Nao foi possivel guardar.");
-    } catch { toast.error("Erro de conexao"); }
+      } else toast.error("Erro", d.message || "Não foi possível guardar.");
+    } catch { toast.error("Erro de ligação"); }
     finally { setSaving(false); }
   };
 
@@ -110,7 +110,7 @@ export default function ClientAddresses() {
     <div className="space-y-5 max-w-3xl">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className={`text-lg font-bold ${s.textPrimary}`}>Meus Enderecos</h2>
+          <h2 className={`text-lg font-bold ${s.textPrimary}`}>Meus Endereços</h2>
           <p className={`text-xs ${s.textMuted}`}>Gerir enderecos de entrega (max. 5)</p>
         </div>
         {addresses.length < 5 && editing === null && (
@@ -123,7 +123,7 @@ export default function ClientAddresses() {
       {/* Editing form */}
       {editing !== null && (
         <div className={cardCls}>
-          <h3 className={`text-sm font-bold ${s.textPrimary} mb-4`}>{editing === -1 ? "Novo Endereco" : "Editar Endereco"}</h3>
+          <h3 className={`text-sm font-bold ${s.textPrimary} mb-4`}>{editing === -1 ? "Novo Endereço" : "Editar Endereço"}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Etiqueta *</label>
@@ -138,22 +138,22 @@ export default function ClientAddresses() {
               <PhoneInput value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Provincia *</label>
+              <label className={labelCls}>Província *</label>
               <select value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value, city: "" })} className={inputCls}>
-                <option value="">Seleccionar provincia...</option>
+                <option value="">Seleccionar província...</option>
                 {provinces.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelCls}>Municipio *</label>
+              <label className={labelCls}>Município *</label>
               <select value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className={inputCls} disabled={!form.province}>
-                <option value="">{form.province ? "Seleccionar municipio..." : "Seleccione provincia primeiro"}</option>
+                <option value="">{form.province ? "Seleccionar município..." : "Seleccione a província primeiro"}</option>
                 {currentMunicipalities.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className={labelCls}>Endereco Completo *</label>
-              <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={2} className={inputCls} placeholder="Rua, numero, bairro, referencia..." />
+              <label className={labelCls}>Endereço Completo *</label>
+              <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={2} className={inputCls} placeholder="Rua, número, bairro, referencia..." />
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-4">
@@ -170,9 +170,9 @@ export default function ClientAddresses() {
       {addresses.length === 0 && editing === null ? (
         <div className={`${cardCls} text-center py-12`}>
           <MapPin className={`h-10 w-10 ${s.textMuted} mx-auto mb-2 opacity-40`} />
-          <p className={`text-xs ${s.textMuted} mb-3`}>Nenhum endereco guardado</p>
+          <p className={`text-xs ${s.textMuted} mb-3`}>Nenhum endereço guardado</p>
           <button onClick={openAdd} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-colors">
-            <Plus className="h-3.5 w-3.5" /> Adicionar Primeiro Endereco
+            <Plus className="h-3.5 w-3.5" /> Adicionar Primeiro Endereço
           </button>
         </div>
       ) : (
@@ -188,7 +188,7 @@ export default function ClientAddresses() {
                     <p className={`text-xs font-bold ${s.textPrimary}`}>{addr.label}</p>
                     {addr.is_default && (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-orange-500/10 text-orange-500">
-                        <CheckCircle2 className="h-2.5 w-2.5" /> Padrao
+                        <CheckCircle2 className="h-2.5 w-2.5" /> Padrão
                       </span>
                     )}
                   </div>
@@ -198,7 +198,7 @@ export default function ClientAddresses() {
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {!addr.is_default && (
-                    <button onClick={() => setDefault(i)} className={`p-2 rounded-lg text-xs ${s.textMuted} hover:text-orange-500 ${s.isDark ? "hover:bg-white/5" : "hover:bg-gray-100"} transition-colors`} title="Definir como padrao">
+                    <button onClick={() => setDefault(i)} className={`p-2 rounded-lg text-xs ${s.textMuted} hover:text-orange-500 ${s.isDark ? "hover:bg-white/5" : "hover:bg-gray-100"} transition-colors`} title="Definir como padrão">
                       <CheckCircle2 className="h-4 w-4" />
                     </button>
                   )}

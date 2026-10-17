@@ -44,9 +44,9 @@ export default function ClientProfile() {
         toast.success("Perfil actualizado", d.message);
         if (d.user) updateProfile(d.user);
       } else {
-        toast.error("Erro", d.message || "Nao foi possivel actualizar.");
+        toast.error("Erro", d.message || "Não foi possível actualizar.");
       }
-    } catch { toast.error("Erro de conexao"); }
+    } catch { toast.error("Erro de ligação"); }
     finally { setSaving(false); }
   };
 
@@ -58,7 +58,7 @@ export default function ClientProfile() {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h2 className={`text-lg font-bold ${s.textPrimary}`}>Meu Perfil</h2>
-        <p className={`text-xs ${s.textMuted}`}>Actualizar informacoes pessoais</p>
+        <p className={`text-xs ${s.textMuted}`}>Actualizar informações pessoais</p>
       </div>
 
       {/* Panel Quick Access - store owners & admins */}
@@ -136,7 +136,7 @@ export default function ClientProfile() {
               <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${s.textMuted}`} />
               <input value={user?.email || ""} disabled className={`${inputCls} pl-10 opacity-60 cursor-not-allowed`} />
             </div>
-            <p className={`text-[10px] ${s.textMuted} mt-1`}>O email nao pode ser alterado</p>
+            <p className={`text-[10px] ${s.textMuted} mt-1`}>O email não pode ser alterado</p>
           </div>
 
           <div>

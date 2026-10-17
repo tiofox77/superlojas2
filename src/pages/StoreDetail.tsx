@@ -21,6 +21,7 @@ import { initPixel } from "@/lib/facebookPixel";
 import { useFollowStatus, useFollowToggle } from "@/hooks/useFollow";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Product, BusinessHour } from "@/data/types";
+import { plural } from "@/lib/utils";
 
 /* ─── TikTok Icon ─── */
 function TikTokIcon({ className }: { className?: string }) {
@@ -596,7 +597,7 @@ const StoreDetail = () => {
                 <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{store.province}, {store.city}</span>
                 <span className="flex items-center gap-1">
                   <Star className="h-3.5 w-3.5 fill-warning text-warning" />
-                  {store.reviewCount > 0 ? `${store.rating} (${store.reviewCount} avaliações)` : "Sem avaliações ainda"}
+                  {store.reviewCount > 0 ? `${store.rating} (${plural(store.reviewCount, "avaliação", "avaliações")})` : "Sem avaliações ainda"}
                 </span>
                 {status && (
                   <span className="flex items-center gap-1.5">
@@ -604,7 +605,7 @@ const StoreDetail = () => {
                     {status.text}
                   </span>
                 )}
-                <span className="flex items-center gap-1"><Package className="h-3.5 w-3.5" />{inStock.length} produtos disponíveis</span>
+                <span className="flex items-center gap-1"><Package className="h-3.5 w-3.5" />{inStock.length === 1 ? "1 produto disponível" : `${inStock.length} produtos disponíveis`}</span>
                 {memberSince && <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />Na SuperLoja desde {memberSince}</span>}
               </div>
               <div className="flex flex-wrap gap-2 mt-3">

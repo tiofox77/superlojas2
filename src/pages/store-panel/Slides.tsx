@@ -56,7 +56,7 @@ export default function StorePanelSlides() {
 
   const openCreate = () => {
     if (isAtSlideLimit) {
-      toast.error("Limite atingido", `O seu plano (${plan?.name}) permite no maximo ${maxSlides} slide(s). Faca upgrade para adicionar mais.`);
+      toast.error("Limite atingido", `O seu plano (${plan?.name}) permite no máximo ${maxSlides} slide(s). Faca upgrade para adicionar mais.`);
       return;
     }
     setEditSlide(null); setForm(emptyForm); setImageFile(null); setImagePreview(""); setFormError(""); setModalOpen(true);
@@ -68,7 +68,7 @@ export default function StorePanelSlides() {
   };
 
   const saveSlide = async () => {
-    if (!form.title) { setFormError("O titulo e obrigatorio."); return; }
+    if (!form.title) { setFormError("O título e obrigatório."); return; }
     setSaving(true); setFormError("");
     const fd = new FormData();
     fd.append("title", form.title);
@@ -83,7 +83,7 @@ export default function StorePanelSlides() {
     try {
       const res = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }, body: fd });
       const data = await res.json();
-      if (!res.ok) { setFormError(data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.message || "Erro"); toast.error("Erro", "Nao foi possivel guardar o slide."); }
+      if (!res.ok) { setFormError(data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.message || "Erro"); toast.error("Erro", "Não foi possível guardar o slide."); }
       else { setModalOpen(false); fetchSlides(); toast.success(editSlide ? "Slide actualizado" : "Slide criado", `"${form.title}" guardado com sucesso.`); }
     } finally { setSaving(false); }
   };
@@ -95,7 +95,7 @@ export default function StorePanelSlides() {
     const res = await fetch(`${API}/store-panel/${slug}/slides/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
     setActionLoading(null); fetchSlides();
     if (res.ok) toast.success("Slide eliminado");
-    else toast.error("Erro", "Nao foi possivel eliminar o slide.");
+    else toast.error("Erro", "Não foi possível eliminar o slide.");
     setConfirmDelete(null);
   };
 
@@ -160,7 +160,7 @@ export default function StorePanelSlides() {
                   : <Upload className={`h-6 w-6 ${s.textMuted}`} />}
               </div>
               <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setImageFile(f); setImagePreview(URL.createObjectURL(f)); } }} />
-              <p className={`text-xs ${s.textMuted} pt-1`}>JPG, PNG ate 4MB</p>
+              <p className={`text-xs ${s.textMuted} pt-1`}>JPG, PNG até 4MB</p>
             </div>
           </div>
           <div>
@@ -180,8 +180,8 @@ export default function StorePanelSlides() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { l: "Titulo", k: "title", p: "Ofertas Especiais", req: true },
-              { l: "Subtitulo", k: "subtitle", p: "Ate 50% desconto", req: false },
+              { l: "Título", k: "title", p: "Ofertas Especiais", req: true },
+              { l: "Subtitulo", k: "subtitle", p: "Até 50% desconto", req: false },
               { l: "Texto Botao", k: "cta", p: "Ver Ofertas", req: false },
               { l: "Link", k: "cta_link", p: "/ofertas", req: false },
             ].map((f) => (

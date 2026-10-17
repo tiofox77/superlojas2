@@ -41,12 +41,12 @@ const sections: Section[] = [
       {
         method: "GET",
         path: "/stores",
-        desc: "Lista todas as lojas aprovadas. Suporta filtros por provincia, pesquisa, categoria e ordenacao.",
+        desc: "Lista todas as lojas aprovadas. Suporta filtros por província, pesquisa, categoria e ordenacao.",
         params: [
-          { name: "province", type: "string", desc: "Filtrar por provincia (ex: Luanda)" },
-          { name: "search", type: "string", desc: "Pesquisar por nome ou descricao" },
+          { name: "province", type: "string", desc: "Filtrar por província (ex: Luanda)" },
+          { name: "search", type: "string", desc: "Pesquisar por nome ou descrição" },
           { name: "category", type: "string", desc: "Filtrar por categoria (slug ou nome)" },
-          { name: "sort", type: "string", desc: "Ordenar: newest (padrao), rating, name, products" },
+          { name: "sort", type: "string", desc: "Ordenar: newest (padrão), rating, name, products" },
         ],
         response: `[{
   "id": 6,
@@ -81,7 +81,7 @@ const sections: Section[] = [
         path: "/stores/{slug}",
         desc: "Detalhes completos de uma loja, incluindo todos os produtos e slides do hero.",
         params: [
-          { name: "slug", type: "string", required: true, desc: "Slug unico da loja" },
+          { name: "slug", type: "string", required: true, desc: "Slug único da loja" },
         ],
         response: `{
   "id": 6,
@@ -112,10 +112,10 @@ const sections: Section[] = [
           { name: "store", type: "string", desc: "Filtrar por slug da loja" },
           { name: "badge", type: "string", desc: "Filtrar por badge: Promo, Novo, Usado" },
           { name: "search", type: "string", desc: "Pesquisar por nome do produto" },
-          { name: "min_price", type: "number", desc: "Preco minimo" },
-          { name: "max_price", type: "number", desc: "Preco maximo" },
+          { name: "min_price", type: "number", desc: "Preço mínimo" },
+          { name: "max_price", type: "number", desc: "Preço máximo" },
           { name: "sort", type: "string", desc: "Ordenar: newest, price_asc, price_desc, rating, name" },
-          { name: "per_page", type: "integer", desc: "Itens por pagina (padrao: 20)" },
+          { name: "per_page", type: "integer", desc: "Itens por página (padrão: 20)" },
         ],
         response: `{
   "data": [{
@@ -148,14 +148,14 @@ const sections: Section[] = [
       {
         method: "GET",
         path: "/products/trending",
-        desc: "Retorna os 18 produtos em alta. O algoritmo considera avaliacao, numero de reviews e recencia.",
+        desc: "Retorna os 18 produtos em alta. O algoritmo considera avaliação, número de reviews e recencia.",
         response: `// Array de produtos ordenados por score (rating*2 + reviews + bonus recencia)`,
       },
       {
         method: "GET",
         path: "/products/latest",
         desc: "Retorna os 18 produtos mais recentes adicionados a plataforma.",
-        response: `// Array de produtos com store incluido, ordenados por data de criacao`,
+        response: `// Array de produtos com store incluido, ordenados por data de criação`,
       },
       {
         method: "GET",
@@ -166,7 +166,7 @@ const sections: Section[] = [
       {
         method: "GET",
         path: "/products/flash-sale",
-        desc: "Retorna produtos em promocao relampago (badge Promo com data de fim valida).",
+        desc: "Retorna produtos em promoção relampago (badge Promo com data de fim valida).",
         response: `// Array de produtos com badge Promo e flash_sale_end no futuro`,
       },
       {
@@ -174,7 +174,7 @@ const sections: Section[] = [
         path: "/products/{slug}",
         desc: "Detalhes completos de um produto, incluindo loja, categoria e subcategoria.",
         params: [
-          { name: "slug", type: "string", required: true, desc: "Slug unico do produto" },
+          { name: "slug", type: "string", required: true, desc: "Slug único do produto" },
         ],
       },
     ],
@@ -215,16 +215,16 @@ const sections: Section[] = [
     ],
   },
   {
-    title: "Avaliacoes",
+    title: "Avaliações",
     icon: Star,
     color: "text-amber-500",
     bg: "bg-amber-50 dark:bg-amber-900/20",
-    desc: "Endpoints para ler e submeter avaliacoes de lojas.",
+    desc: "Endpoints para ler e submeter avaliações de lojas.",
     endpoints: [
       {
         method: "GET",
         path: "/reviews",
-        desc: "Lista avaliacoes. Pode filtrar por loja.",
+        desc: "Lista avaliações. Pode filtrar por loja.",
         params: [
           { name: "store_id", type: "integer", desc: "Filtrar por ID da loja" },
         ],
@@ -232,12 +232,12 @@ const sections: Section[] = [
       {
         method: "POST",
         path: "/reviews",
-        desc: "Submeter uma avaliacao para uma loja.",
+        desc: "Submeter uma avaliação para uma loja.",
         auth: true,
         params: [
           { name: "store_id", type: "integer", required: true, desc: "ID da loja" },
           { name: "rating", type: "integer", required: true, desc: "Nota de 1 a 5" },
-          { name: "comment", type: "string", desc: "Comentario da avaliacao" },
+          { name: "comment", type: "string", desc: "Comentario da avaliação" },
         ],
       },
     ],
@@ -255,9 +255,9 @@ const sections: Section[] = [
         desc: "Criar nova conta de utilizador.",
         params: [
           { name: "name", type: "string", required: true, desc: "Nome completo" },
-          { name: "email", type: "string", required: true, desc: "Email (unico)" },
+          { name: "email", type: "string", required: true, desc: "Email (único)" },
           { name: "password", type: "string", required: true, desc: "Senha (min 6 caracteres)" },
-          { name: "password_confirmation", type: "string", required: true, desc: "Confirmacao da senha" },
+          { name: "password_confirmation", type: "string", required: true, desc: "Confirmação da senha" },
         ],
         response: `{
   "token": "1|abc123...",
@@ -292,7 +292,7 @@ const sections: Section[] = [
       {
         method: "POST",
         path: "/auth/forgot-password",
-        desc: "Enviar email de recuperacao de senha.",
+        desc: "Enviar email de recuperação de senha.",
         params: [
           { name: "email", type: "string", required: true, desc: "Email do utilizador" },
         ],
@@ -312,16 +312,16 @@ const sections: Section[] = [
         desc: "Registar loja sem estar autenticado (cria conta automaticamente).",
         params: [
           { name: "name", type: "string", required: true, desc: "Nome da loja" },
-          { name: "description", type: "string", required: true, desc: "Descricao da loja" },
+          { name: "description", type: "string", required: true, desc: "Descrição da loja" },
           { name: "logo", type: "file", required: true, desc: "Logo da loja (imagem, max 6MB)" },
           { name: "banner", type: "file", desc: "Banner da loja (imagem, max 6MB)" },
-          { name: "province", type: "string", required: true, desc: "Provincia" },
+          { name: "province", type: "string", required: true, desc: "Província" },
           { name: "city", type: "string", required: true, desc: "Cidade" },
-          { name: "municipality", type: "string", desc: "Municipio" },
-          { name: "address", type: "string", desc: "Endereco (max 500)" },
-          { name: "whatsapp", type: "string", required: true, desc: "Numero de WhatsApp" },
+          { name: "municipality", type: "string", desc: "Município" },
+          { name: "address", type: "string", desc: "Endereço (max 500)" },
+          { name: "whatsapp", type: "string", required: true, desc: "Número de WhatsApp" },
           { name: "category", type: "string", required: true, desc: "Categoria principal" },
-          { name: "user_name", type: "string", required: true, desc: "Nome do proprietario" },
+          { name: "user_name", type: "string", required: true, desc: "Nome do proprietário" },
           { name: "user_email", type: "string", required: true, desc: "Email (para criar conta)" },
           { name: "user_password", type: "string", required: true, desc: "Senha (min 6 caracteres)" },
         ],
@@ -340,13 +340,13 @@ const sections: Section[] = [
         auth: true,
         params: [
           { name: "name", type: "string", required: true, desc: "Nome da loja" },
-          { name: "description", type: "string", required: true, desc: "Descricao da loja" },
+          { name: "description", type: "string", required: true, desc: "Descrição da loja" },
           { name: "logo", type: "file", required: true, desc: "Logo da loja" },
-          { name: "province", type: "string", required: true, desc: "Provincia" },
+          { name: "province", type: "string", required: true, desc: "Província" },
           { name: "city", type: "string", required: true, desc: "Cidade" },
-          { name: "whatsapp", type: "string", required: true, desc: "Numero de WhatsApp" },
+          { name: "whatsapp", type: "string", required: true, desc: "Número de WhatsApp" },
           { name: "category", type: "string", required: true, desc: "Categoria principal" },
-          { name: "user_name", type: "string", required: true, desc: "Nome do proprietario" },
+          { name: "user_name", type: "string", required: true, desc: "Nome do proprietário" },
         ],
       },
     ],
@@ -401,12 +401,12 @@ const sections: Section[] = [
       {
         method: "GET",
         path: "/provinces",
-        desc: "Lista todas as provincias de Angola disponiveis.",
+        desc: "Lista todas as províncias de Angola disponíveis.",
       },
       {
         method: "GET",
         path: "/site-settings",
-        desc: "Retorna configuracoes publicas do site (nome, logo, cores, redes sociais, etc).",
+        desc: "Retorna configurações publicas do site (nome, logo, cores, redes sociais, etc).",
       },
       {
         method: "GET",
@@ -435,9 +435,9 @@ const sections: Section[] = [
       {
         method: "POST",
         path: "/track",
-        desc: "Registar visita a uma pagina (analytics).",
+        desc: "Registar visita a uma página (analytics).",
         params: [
-          { name: "url", type: "string", required: true, desc: "URL da pagina visitada" },
+          { name: "url", type: "string", required: true, desc: "URL da página visitada" },
           { name: "referrer", type: "string", desc: "URL de referencia" },
         ],
       },
@@ -448,12 +448,12 @@ const sections: Section[] = [
     icon: Zap,
     color: "text-indigo-500",
     bg: "bg-indigo-50 dark:bg-indigo-900/20",
-    desc: "API autenticada por API Key para integracao externa. Requer activacao no painel da loja (planos avancados).",
+    desc: "API autenticada por API Key para integração externa. Requer activacao no painel da loja (planos avancados).",
     endpoints: [
       {
         method: "GET",
         path: "/store-api/{slug}",
-        desc: "Informacoes da loja.",
+        desc: "Informações da loja.",
         auth: true,
       },
       {
@@ -545,7 +545,7 @@ function EndpointCard({ ep }: { ep: Endpoint }) {
                     <tr className="bg-secondary/50">
                       <th className="text-left px-3 py-1.5 font-semibold">Nome</th>
                       <th className="text-left px-3 py-1.5 font-semibold">Tipo</th>
-                      <th className="text-left px-3 py-1.5 font-semibold hidden sm:table-cell">Descricao</th>
+                      <th className="text-left px-3 py-1.5 font-semibold hidden sm:table-cell">Descrição</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -694,7 +694,7 @@ export default function ApiDocs() {
 
         <div className="mt-6 text-center">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Voltar ao inicio
+            <ArrowLeft className="h-4 w-4" /> Voltar ao início
           </Link>
         </div>
       </div>

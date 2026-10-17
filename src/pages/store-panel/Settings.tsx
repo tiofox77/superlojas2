@@ -23,7 +23,7 @@ const DEFAULT_HOURS = [
   { day: "Domingo", open: "", close: "", active: false },
 ];
 
-const DEFAULT_WHATSAPP_MSG = "Ola! Gostaria de fazer uma encomenda:\n\n{produtos}\n\nTotal: {total}\n\nNome: {nome}\nEndereco: {endereco}";
+const DEFAULT_WHATSAPP_MSG = "Olá! Gostaria de fazer uma encomenda:\n\n{produtos}\n\nTotal: {total}\n\nNome: {nome}\nEndereco: {endereco}";
 
 type TabKey = "geral" | "whatsapp" | "seo" | "politicas" | "social" | "horario";
 
@@ -141,7 +141,7 @@ export default function StorePanelSettings() {
     try {
       const res = await fetch(`${API}/store-panel/${slug}/settings`, { method: "POST", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }, body: fd });
       const data = await res.json();
-      if (res.ok) { setLogoPreview(data.logo ? resolveStorageUrl(data.logo) : logoPreview); setBannerPreview(data.banner ? resolveStorageUrl(data.banner) : bannerPreview); toast.success("Configuracoes guardadas", "As alteracoes foram aplicadas."); }
+      if (res.ok) { setLogoPreview(data.logo ? resolveStorageUrl(data.logo) : logoPreview); setBannerPreview(data.banner ? resolveStorageUrl(data.banner) : bannerPreview); toast.success("Configurações guardadas", "As alterações foram aplicadas."); }
       else { toast.error("Erro", data.errors ? (Object.values(data.errors).flat().join(", ") as string) : data.message || "Erro"); }
     } finally { setSaving(false); }
   };
@@ -164,7 +164,7 @@ export default function StorePanelSettings() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className={`text-lg font-bold ${s.textPrimary}`}>Configuracoes da Loja</h2>
+          <h2 className={`text-lg font-bold ${s.textPrimary}`}>Configurações da Loja</h2>
           <p className={`text-xs ${s.textMuted}`}>Gerir todos os detalhes da sua loja</p>
         </div>
         <button onClick={save} disabled={saving} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold ${s.btnPrimary} disabled:opacity-50 shadow-sm`}>
@@ -210,11 +210,11 @@ export default function StorePanelSettings() {
             <div><label className={labelCls}>WhatsApp</label><PhoneInput value={f("whatsapp")} onChange={(v) => set("whatsapp", v)} className={inputCls} /></div>
             <div><label className={labelCls}>Email</label><input type="email" value={f("email")} onChange={(e) => set("email", e.target.value)} placeholder="loja@email.com" className={inputCls} /></div>
             <div><label className={labelCls}>Telefone</label><PhoneInput value={f("phone")} onChange={(v) => set("phone", v)} className={inputCls} /></div>
-            <div><label className={labelCls}>Provincia</label><input value={f("province")} onChange={(e) => set("province", e.target.value)} placeholder="Luanda" className={inputCls} /></div>
+            <div><label className={labelCls}>Província</label><input value={f("province")} onChange={(e) => set("province", e.target.value)} placeholder="Luanda" className={inputCls} /></div>
             <div><label className={labelCls}>Cidade</label><input value={f("city")} onChange={(e) => set("city", e.target.value)} placeholder="Luanda" className={inputCls} /></div>
           </div>
-          <div><label className={labelCls}>Descricao</label>
-            <textarea value={f("description")} onChange={(e) => set("description", e.target.value)} rows={4} placeholder="Descricao da sua loja..." className={`${inputCls} resize-none`} />
+          <div><label className={labelCls}>Descrição</label>
+            <textarea value={f("description")} onChange={(e) => set("description", e.target.value)} rows={4} placeholder="Descrição da sua loja..." className={`${inputCls} resize-none`} />
           </div>
           {/* Show Stock Toggle */}
           <div className={`p-4 rounded-xl ${s.isDark ? "bg-blue-500/5 border border-blue-500/10" : "bg-blue-50 border border-blue-100"}`}>
@@ -223,7 +223,7 @@ export default function StorePanelSettings() {
                 <Package className="h-4 w-4 text-blue-500" />
                 <div>
                   <span className={`text-xs font-semibold ${s.textPrimary}`}>Mostrar Stock dos Produtos</span>
-                  <p className={`text-[10px] ${s.textMuted}`}>Quando activo, os clientes veem a quantidade disponivel na pagina do produto.</p>
+                  <p className={`text-[10px] ${s.textMuted}`}>Quando activo, os clientes veem a quantidade disponível na página do produto.</p>
                 </div>
               </div>
               <ToggleBtn val={form.show_stock} onChange={(v) => setForm((p) => ({ ...p, show_stock: v }))} label={form.show_stock ? "Visivel" : "Oculto"} />
@@ -239,7 +239,7 @@ export default function StorePanelSettings() {
               </div>
               <ToggleBtn val={form.announcement_active} onChange={(v) => setForm((p) => ({ ...p, announcement_active: v }))} label={form.announcement_active ? "Activo" : "Inactivo"} />
             </div>
-            <input value={f("announcement")} onChange={(e) => set("announcement", e.target.value)} placeholder="Ex: Promocao de Natal — 20% desconto em tudo!" className={inputCls} />
+            <input value={f("announcement")} onChange={(e) => set("announcement", e.target.value)} placeholder="Ex: Promoção de Natal — 20% desconto em tudo!" className={inputCls} />
             <p className={`text-[10px] ${s.textMuted} mt-1.5`}>Aparece como banner no topo da sua loja quando activo.</p>
           </div>
         </div>
@@ -259,14 +259,14 @@ export default function StorePanelSettings() {
             <ToggleBtn val={form.whatsapp_orders_enabled} onChange={(v) => setForm((p) => ({ ...p, whatsapp_orders_enabled: v }))} label={form.whatsapp_orders_enabled ? "Activo" : "Desligado"} />
           </div>
           <div>
-            <label className={labelCls}>Numero WhatsApp para Encomendas</label>
+            <label className={labelCls}>Número WhatsApp para Encomendas</label>
             <PhoneInput value={f("whatsapp")} onChange={(v) => set("whatsapp", v)} className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Mensagem Modelo de Encomenda</label>
             <textarea value={form.whatsapp_message} onChange={(e) => set("whatsapp_message", e.target.value)} rows={6} className={`${inputCls} resize-none font-mono text-xs`} />
             <div className={`mt-2 p-3 rounded-xl ${s.isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
-              <p className={`text-[10px] font-semibold ${s.textSecondary} mb-1`}>Variaveis disponiveis:</p>
+              <p className={`text-[10px] font-semibold ${s.textSecondary} mb-1`}>Variaveis disponíveis:</p>
               <div className="flex flex-wrap gap-1.5">
                 {["{produtos}", "{total}", "{nome}", "{endereco}", "{telefone}", "{email}", "{notas}"].map((v) => (
                   <span key={v} className={`px-2 py-0.5 rounded-md text-[10px] font-mono ${s.isDark ? "bg-emerald-500/10 text-emerald-400" : "bg-emerald-50 text-emerald-700"}`}>{v}</span>
@@ -278,7 +278,7 @@ export default function StorePanelSettings() {
           <div className={`pt-4 border-t ${s.borderLight} space-y-4`}>
             <div className="flex items-center gap-2">
               <Truck className="h-4 w-4 text-blue-500" />
-              <span className={`text-xs font-semibold ${s.textPrimary}`}>Configuracoes de Entrega</span>
+              <span className={`text-xs font-semibold ${s.textPrimary}`}>Configurações de Entrega</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -321,7 +321,7 @@ export default function StorePanelSettings() {
                       hrs[i] = { ...hrs[i], open: e.target.value };
                       setForm((p) => ({ ...p, business_hours: hrs }));
                     }} className={`${inputCls} max-w-[120px] text-xs`} />
-                    <span className={`text-xs ${s.textMuted}`}>ate</span>
+                    <span className={`text-xs ${s.textMuted}`}>até</span>
                     <input type="time" value={h.close} onChange={(e) => {
                       const hrs = [...form.business_hours];
                       hrs[i] = { ...hrs[i], close: e.target.value };
@@ -347,12 +347,12 @@ export default function StorePanelSettings() {
           <p className={`text-[10px] ${s.textMuted} -mt-3`}>Melhore a visibilidade da sua loja no Google e redes sociais.</p>
 
           <div>
-            <label className={labelCls}>Titulo SEO <span className={`font-normal ${s.textMuted}`}>({form.meta_title.length}/70)</span></label>
+            <label className={labelCls}>Título SEO <span className={`font-normal ${s.textMuted}`}>({form.meta_title.length}/70)</span></label>
             <input value={f("meta_title")} onChange={(e) => set("meta_title", e.target.value.slice(0, 70))} placeholder={form.name || "Nome da Loja — Produtos em Angola"} className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>Descricao SEO <span className={`font-normal ${s.textMuted}`}>({form.meta_description.length}/160)</span></label>
-            <textarea value={form.meta_description} onChange={(e) => set("meta_description", e.target.value.slice(0, 160))} rows={3} placeholder="Descricao curta da loja para aparecer nos resultados de pesquisa..." className={`${inputCls} resize-none`} />
+            <label className={labelCls}>Descrição SEO <span className={`font-normal ${s.textMuted}`}>({form.meta_description.length}/160)</span></label>
+            <textarea value={form.meta_description} onChange={(e) => set("meta_description", e.target.value.slice(0, 160))} rows={3} placeholder="Descrição curta da loja para aparecer nos resultados de pesquisa..." className={`${inputCls} resize-none`} />
           </div>
           <div>
             <label className={labelCls}>Palavras-chave</label>
@@ -366,7 +366,7 @@ export default function StorePanelSettings() {
             <div>
               <p className="text-blue-600 text-sm font-medium truncate">{form.meta_title || form.name || "Nome da Loja"} — SuperLoja</p>
               <p className="text-green-700 text-[11px] truncate">superloja.vip/lojas/{slug}</p>
-              <p className={`text-xs ${s.textMuted} line-clamp-2 mt-0.5`}>{form.meta_description || form.description || "Descricao da loja aparece aqui..."}</p>
+              <p className={`text-xs ${s.textMuted} line-clamp-2 mt-0.5`}>{form.meta_description || form.description || "Descrição da loja aparece aqui..."}</p>
             </div>
           </div>
         </div>
@@ -379,7 +379,7 @@ export default function StorePanelSettings() {
             <Globe className="h-4 w-4 text-blue-500" />
             <span className={`text-sm font-semibold ${s.textPrimary}`}>Redes Sociais</span>
           </div>
-          <p className={`text-[10px] ${s.textMuted} -mt-3`}>Adicione links para as suas redes sociais. Aparecem na pagina publica da loja.</p>
+          <p className={`text-[10px] ${s.textMuted} -mt-3`}>Adicione links para as suas redes sociais. Aparecem na página publica da loja.</p>
           <div className="space-y-4">
             {[
               { k: "instagram", label: "Instagram", icon: Instagram, p: "https://instagram.com/minhaloja", color: "text-pink-500" },
@@ -408,11 +408,11 @@ export default function StorePanelSettings() {
             <FileText className="h-4 w-4 text-indigo-500" />
             <span className={`text-sm font-semibold ${s.textPrimary}`}>Politicas da Loja</span>
           </div>
-          <p className={`text-[10px] ${s.textMuted} -mt-3`}>Defina as politicas que aparecem na pagina da sua loja. Ajuda a construir confianca com os clientes.</p>
+          <p className={`text-[10px] ${s.textMuted} -mt-3`}>Defina as politicas que aparecem na página da sua loja. Ajuda a construir confianca com os clientes.</p>
           {[
-            { k: "return_policy", label: "Politica de Devolucoes", p: "Aceita devolucoes em 7 dias se o produto estiver em boas condicoes..." },
-            { k: "shipping_policy", label: "Politica de Envio", p: "Entrega em Luanda: 1-2 dias uteis. Provincias: 3-7 dias uteis..." },
-            { k: "terms", label: "Termos e Condicoes", p: "Ao comprar na nossa loja, concorda com os seguintes termos..." },
+            { k: "return_policy", label: "Política de Devolucoes", p: "Aceita devolucoes em 7 dias se o produto estiver em boas condições..." },
+            { k: "shipping_policy", label: "Política de Envio", p: "Entrega em Luanda: 1-2 dias uteis. Províncias: 3-7 dias uteis..." },
+            { k: "terms", label: "Termos e Condições", p: "Ao comprar na nossa loja, concorda com os seguintes termos..." },
           ].map((pol) => (
             <div key={pol.k}>
               <label className={labelCls}>{pol.label}</label>
@@ -425,7 +425,7 @@ export default function StorePanelSettings() {
       {/* Bottom save button (mobile friendly) */}
       <div className="flex justify-end pb-4">
         <button onClick={save} disabled={saving} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold ${s.btnPrimary} disabled:opacity-50 shadow-sm`}>
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Guardar Todas as Alteracoes
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Guardar Todas as Alterações
         </button>
       </div>
     </div>

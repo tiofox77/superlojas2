@@ -4,6 +4,7 @@ import { useCategories } from "@/hooks/useApi";
 import { motion } from "framer-motion";
 import { Grid3X3, Search, X, ChevronDown, ShieldAlert } from "lucide-react";
 import AgeGate, { isAdultConfirmed } from "@/components/AgeGate";
+import { plural } from "@/lib/utils";
 
 const COLORS = [
   "from-orange-500/10 to-amber-500/10 border-orange-200/50 dark:border-orange-800/30",
@@ -130,7 +131,7 @@ const Categories = () => {
                     </span>
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent pt-8 pb-3 px-3">
                       <h3 className="text-white font-bold text-sm drop-shadow-md">{cat.name}</h3>
-                      <p className="text-white/80 text-[11px]">{cat.productCount} produtos</p>
+                      <p className="text-white/80 text-[11px]">{plural(cat.productCount, "produto", "produtos")}</p>
                     </div>
                   </div>
                 </Link>
@@ -178,7 +179,7 @@ const Categories = () => {
                       </div>
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent pt-8 pb-3 px-3">
                         <h3 className="text-white font-bold text-sm drop-shadow-md">{cat.name}</h3>
-                        <p className="text-white/80 text-[11px]">{cat.productCount} produtos</p>
+                        <p className="text-white/80 text-[11px]">{plural(cat.productCount, "produto", "produtos")}</p>
                       </div>
                     </div>
                   </button>

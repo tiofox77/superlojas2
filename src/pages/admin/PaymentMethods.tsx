@@ -27,7 +27,7 @@ interface PayMethod {
 }
 
 const TYPE_OPTIONS = [
-  { value: "transferencia", label: "Transferencia Bancaria" },
+  { value: "transferencia", label: "Transferência Bancária" },
   { value: "multicaixa", label: "Multicaixa Express" },
   { value: "unitel_money", label: "Unitel Money" },
   { value: "cash", label: "Pagamento em Cash" },
@@ -81,7 +81,7 @@ export default function AdminPaymentMethods() {
   };
 
   const save = async () => {
-    if (!form.name.trim() || !form.type) { toast.error("Erro", "Nome e tipo sao obrigatorios."); return; }
+    if (!form.name.trim() || !form.type) { toast.error("Erro", "Nome e tipo sao obrigatórios."); return; }
     setSaving(true);
     try {
       const url = editing
@@ -93,7 +93,7 @@ export default function AdminPaymentMethods() {
         body: JSON.stringify(form),
       });
       if (res.ok) {
-        toast.success(editing ? "Metodo actualizado" : "Metodo criado");
+        toast.success(editing ? "Método actualizado" : "Método criado");
         setModalOpen(false); fetchMethods();
       } else {
         const d = await res.json();
@@ -127,12 +127,12 @@ export default function AdminPaymentMethods() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className={`text-lg font-bold ${s.textPrimary}`}>Metodos de Pagamento</h2>
-          <p className={`text-xs ${s.textMuted}`}>Configure os metodos de pagamento para subscricoes</p>
+          <h2 className={`text-lg font-bold ${s.textPrimary}`}>Métodos de Pagamento</h2>
+          <p className={`text-xs ${s.textMuted}`}>Configure os métodos de pagamento para subscrições</p>
         </div>
         <button onClick={openCreate}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl ${s.btnPrimary} text-xs font-semibold shadow-sm`}>
-          <Plus className="h-4 w-4" /> Novo Metodo
+          <Plus className="h-4 w-4" /> Novo Método
         </button>
       </div>
 
@@ -141,8 +141,8 @@ export default function AdminPaymentMethods() {
       ) : methods.length === 0 ? (
         <div className={`rounded-2xl border ${s.card} py-16 text-center`}>
           <CreditCard className={`h-10 w-10 ${s.empty} mx-auto mb-3`} />
-          <p className={`text-sm ${s.textMuted}`}>Nenhum metodo de pagamento configurado.</p>
-          <p className={`text-xs ${s.textMuted} mt-1`}>Adicione metodos para que os lojistas possam enviar comprovativos.</p>
+          <p className={`text-sm ${s.textMuted}`}>Nenhum método de pagamento configurado.</p>
+          <p className={`text-xs ${s.textMuted} mt-1`}>Adicione métodos para que os lojistas possam enviar comprovativos.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -200,7 +200,7 @@ export default function AdminPaymentMethods() {
       )}
 
       {/* Create/Edit Modal */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? "Editar Metodo" : "Novo Metodo de Pagamento"} size="md">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? "Editar Método" : "Novo Método de Pagamento"} size="md">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
@@ -244,7 +244,7 @@ export default function AdminPaymentMethods() {
                 <div>
                   <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>N. Conta</label>
                   <input value={form.account_number} onChange={(e) => setForm({ ...form, account_number: e.target.value })}
-                    placeholder="Numero da conta" className={inputCls} />
+                    placeholder="Número da conta" className={inputCls} />
                 </div>
               </div>
             </div>
@@ -271,7 +271,7 @@ export default function AdminPaymentMethods() {
           <div>
             <label className={`text-[10px] font-medium ${s.textMuted} mb-1 block`}>Instrucoes (opcional)</label>
             <textarea value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })}
-              rows={2} placeholder="Instrucoes adicionais para o pagamento..."
+              rows={2} placeholder="Instruções adicionais para o pagamento..."
               className={`${inputCls} resize-none`} />
           </div>
 
@@ -295,7 +295,7 @@ export default function AdminPaymentMethods() {
 
       <ConfirmModal
         open={!!confirmDelete}
-        title="Eliminar metodo de pagamento"
+        title="Eliminar método de pagamento"
         message={`Tem a certeza que deseja eliminar "${confirmDelete?.name}"?`}
         onConfirm={() => confirmDelete && remove(confirmDelete)}
         onCancel={() => setConfirmDelete(null)}

@@ -115,7 +115,7 @@ export default function SystemUpdate() {
       setCurrentVer(data.current_version || "1.0.0");
       setConfigDirty(false);
       return data;
-    } catch { toast.error("Erro ao carregar configuracao"); return null; }
+    } catch { toast.error("Erro ao carregar configuração"); return null; }
   };
 
   const fetchReleases = async (refresh = false) => {
@@ -130,7 +130,7 @@ export default function SystemUpdate() {
       } else {
         toast.error(data.error || "Erro ao carregar releases");
       }
-    } catch { toast.error("Erro de conexao"); }
+    } catch { toast.error("Erro de ligação"); }
     finally { setLoadingReleases(false); }
   };
 
@@ -173,7 +173,7 @@ export default function SystemUpdate() {
       } else {
         toast.error(data.message || data.error || "Erro ao guardar");
       }
-    } catch { toast.error("Erro de conexao"); }
+    } catch { toast.error("Erro de ligação"); }
     finally { setSaving(false); }
   };
 
@@ -184,9 +184,9 @@ export default function SystemUpdate() {
       const res = await fetch(`${API}/admin/system-update/test`, { headers: hdrs });
       const data: ConnectionResult = await res.json();
       setConn(data);
-      if (data.ok) toast.success("Conexao OK!");
-      else toast.error(data.error || "Falha na conexao");
-    } catch { toast.error("Erro de conexao"); setConn({ ok: false, error: "Sem resposta do servidor" }); }
+      if (data.ok) toast.success("Ligação OK!");
+      else toast.error(data.error || "Falha na ligação");
+    } catch { toast.error("Erro de ligação"); setConn({ ok: false, error: "Sem resposta do servidor" }); }
     finally { setTesting(false); }
   };
 
@@ -243,8 +243,8 @@ export default function SystemUpdate() {
         toast.error(data.error || "Falha");
       }
     } catch {
-      setInstallResult({ success: false, message: "Erro de conexao ao servidor" });
-      toast.error("Erro de conexao");
+      setInstallResult({ success: false, message: "Erro de ligação ao servidor" });
+      toast.error("Erro de ligação");
     } finally { setInstalling(null); }
   };
 
@@ -274,8 +274,8 @@ export default function SystemUpdate() {
       {/* ═══ Header ═══ */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className={`text-lg font-bold ${s.textPrimary}`}>Actualizacao do Sistema</h2>
-          <p className={`text-xs ${s.textMuted}`}>Gerir versoes e actualizacoes via GitHub</p>
+          <h2 className={`text-lg font-bold ${s.textPrimary}`}>Actualização do Sistema</h2>
+          <p className={`text-xs ${s.textMuted}`}>Gerir versoes e actualizações via GitHub</p>
         </div>
         <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${
           s.isDark ? "bg-white/5 text-white/60" : "bg-gray-100 text-gray-600"
@@ -328,7 +328,7 @@ export default function SystemUpdate() {
                 </>
               ) : (
                 <div>
-                  <p className={`text-sm font-semibold ${s.isDark ? "text-red-400" : "text-red-700"}`}>Falha na conexao</p>
+                  <p className={`text-sm font-semibold ${s.isDark ? "text-red-400" : "text-red-700"}`}>Falha na ligação</p>
                   <p className={`text-xs mt-0.5 ${s.isDark ? "text-red-400/70" : "text-red-600"}`}>{conn.error}</p>
                 </div>
               )}
@@ -344,7 +344,7 @@ export default function SystemUpdate() {
             <Settings className="h-4.5 w-4.5 text-violet-500" />
           </div>
           <div>
-            <h3 className={`text-sm font-bold ${s.textPrimary}`}>Configuracao</h3>
+            <h3 className={`text-sm font-bold ${s.textPrimary}`}>Configuração</h3>
             <p className={`text-[11px] ${s.textMuted}`}>Repositorio, token de acesso e versao</p>
           </div>
         </div>
@@ -462,7 +462,7 @@ export default function SystemUpdate() {
           <div className="text-center py-12">
             <Package className={`h-10 w-10 ${s.textMuted} mx-auto mb-2 opacity-40`} />
             <p className={`text-xs ${s.textMuted}`}>
-              {repoUrl ? "Nenhuma release encontrada. Verifique a conexao." : "Configure e guarde o repositorio primeiro."}
+              {repoUrl ? "Nenhuma release encontrada. Verifique a ligação." : "Configure e guarde o repositorio primeiro."}
             </p>
           </div>
         ) : (
@@ -628,7 +628,7 @@ export default function SystemUpdate() {
           {[
             "Preencha o repositorio (ex: owner/repo) e o token GitHub",
             'Clique "Guardar" — o sistema salva na base de dados',
-            '"Testar Conexao" verifica se o repositorio e token sao validos',
+            '"Testar Ligação" verifica se o repositorio e token sao validos',
             'Clique "Instalar" numa release para actualizar automaticamente',
             "Ficheiros .env sao preservados, migracoes e caches sao executados",
           ].map((txt, i) => (

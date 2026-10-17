@@ -15,7 +15,7 @@ interface ConfirmModalProps {
 
 export default function ConfirmModal({
   open,
-  title = "Confirmar accao",
+  title = "Confirmar acção",
   message,
   confirmLabel = "Eliminar",
   cancelLabel = "Cancelar",

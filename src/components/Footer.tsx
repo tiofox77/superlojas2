@@ -51,7 +51,7 @@ export function Footer() {
               <li><Link to="/como-comprar" className="hover:text-foreground transition-colors">Como Comprar</Link></li>
               <li><Link to="/cadastro-loja" className="hover:text-foreground transition-colors">Como Criar Loja</Link></li>
               <li><Link to="/termos" className="hover:text-foreground transition-colors">Termos de Uso</Link></li>
-              <li><Link to="/privacidade" className="hover:text-foreground transition-colors">Politica de Privacidade</Link></li>
+              <li><Link to="/privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</Link></li>
               <li><Link to="/faq" className="hover:text-foreground transition-colors">FAQ</Link></li>
               <li><Link to="/api-docs" className="hover:text-foreground transition-colors">Documentação API</Link></li>
             </ul>

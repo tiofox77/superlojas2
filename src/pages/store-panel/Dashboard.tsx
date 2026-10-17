@@ -284,7 +284,7 @@ export default function StorePanelDashboard() {
         <div className={`rounded-2xl border ${s.card} p-3.5 text-center`}>
           <MessageSquare className={`h-4 w-4 mx-auto mb-1.5 text-violet-500`} />
           <p className={`text-lg font-bold ${s.textPrimary}`}>{data.stats.review_count}</p>
-          <p className={`text-[10px] ${s.textMuted}`}>Avaliacoes</p>
+          <p className={`text-[10px] ${s.textMuted}`}>Avaliações</p>
         </div>
         <div className={`rounded-2xl border ${s.card} p-3.5 text-center`}>
           <Package className={`h-4 w-4 mx-auto mb-1.5 text-red-500`} />

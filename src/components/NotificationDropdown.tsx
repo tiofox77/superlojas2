@@ -145,7 +145,7 @@ export default function NotificationDropdown({ apiBase, isDark, onNavigate, poll
           {/* Header */}
           <div className={`px-4 py-3 border-b ${borderLight} flex items-center justify-between`}>
             <div>
-              <h3 className={`text-sm font-bold ${textPrimary}`}>Notificacoes</h3>
+              <h3 className={`text-sm font-bold ${textPrimary}`}>Notificações</h3>
               {unread > 0 && <p className={`text-[10px] ${textMuted}`}>{unread} nao lidas</p>}
             </div>
             <div className="flex items-center gap-1.5">
@@ -165,7 +165,7 @@ export default function NotificationDropdown({ apiBase, isDark, onNavigate, poll
                 className={`px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === f
                   ? "bg-orange-500/10 text-orange-500"
                   : `${textMuted} ${hoverBg}`}`}>
-                {f === "all" ? "Todas" : "Nao lidas"}
+                {f === "all" ? "Todas" : "Não lidas"}
               </button>
             ))}
           </div>
@@ -177,7 +177,7 @@ export default function NotificationDropdown({ apiBase, isDark, onNavigate, poll
             ) : items.length === 0 ? (
               <div className={`py-12 text-center`}>
                 <Bell className={`h-8 w-8 ${textMuted} mx-auto mb-2 opacity-40`} />
-                <p className={`text-xs ${textMuted}`}>Sem notificacoes</p>
+                <p className={`text-xs ${textMuted}`}>Sem notificações</p>
               </div>
             ) : (
               items.map((n) => {

@@ -72,7 +72,7 @@ export default function AdminAnalyticsReports() {
 
   const exportCsv = () => {
     if (logs.length === 0) return;
-    const header = "Data,Pagina,Loja,Referrer,Pais,Dispositivo,Browser,OS,Unico\n";
+    const header = "Data,Página,Loja,Referrer,Pais,Dispositivo,Browser,OS,Único\n";
     const rows = logs.map(l =>
       `"${l.created_at}","${l.path}","${l.store_slug || ""}","${l.referrer_domain || ""}","${l.country || ""}","${l.device || ""}","${l.browser || ""}","${l.os || ""}","${l.is_unique_today ? "Sim" : "Nao"}"`
     ).join("\n");
@@ -92,7 +92,7 @@ export default function AdminAnalyticsReports() {
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <h2 className={`text-lg font-bold ${s.textPrimary}`}>Relatorios Detalhados</h2>
+            <h2 className={`text-lg font-bold ${s.textPrimary}`}>Relatórios Detalhados</h2>
             <p className={`text-xs ${s.textMuted}`}>{pagination.total} registos encontrados</p>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function AdminAnalyticsReports() {
           <button onClick={clearFilters} className={`ml-auto text-[10px] ${s.textMuted} hover:text-orange-500 transition-colors`}>Limpar filtros</button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputCls} placeholder="Data inicio" />
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputCls} placeholder="Data início" />
           <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={inputCls} placeholder="Data fim" />
           <input type="text" value={filterStore} onChange={(e) => setFilterStore(e.target.value)} placeholder="Loja (slug)" className={inputCls} />
           <input type="text" value={filterCountry} onChange={(e) => setFilterCountry(e.target.value)} placeholder="Pais" className={inputCls} />
@@ -149,14 +149,14 @@ export default function AdminAnalyticsReports() {
               <thead>
                 <tr className={`border-b ${s.borderLight}`}>
                   <th className={thCls}>Data</th>
-                  <th className={thCls}>Pagina</th>
+                  <th className={thCls}>Página</th>
                   <th className={thCls}>Loja</th>
                   <th className={thCls}>Referrer</th>
                   <th className={thCls}>Pais</th>
                   <th className={thCls}>Disp.</th>
                   <th className={thCls}>Browser</th>
                   <th className={thCls}>OS</th>
-                  <th className={thCls}>Unico</th>
+                  <th className={thCls}>Único</th>
                 </tr>
               </thead>
               <tbody>
@@ -199,7 +199,7 @@ export default function AdminAnalyticsReports() {
                       <td className={`${tdCls} text-[10px]`}>{l.os || "—"}</td>
                       <td className={tdCls}>
                         {l.is_unique_today ? (
-                          <span className={`h-2 w-2 rounded-full bg-emerald-500 inline-block`} title="Unico hoje" />
+                          <span className={`h-2 w-2 rounded-full bg-emerald-500 inline-block`} title="Único hoje" />
                         ) : (
                           <span className={`h-2 w-2 rounded-full ${s.isDark ? "bg-white/10" : "bg-gray-200"} inline-block`} title="Repetido" />
                         )}

@@ -71,8 +71,8 @@ export default function AdminUsers() {
   };
 
   const saveUser = async () => {
-    if (!form.name || !form.email) { setFormError("Nome e email sao obrigatorios."); return; }
-    if (!editUser && !form.password) { setFormError("Password e obrigatoria para novos utilizadores."); return; }
+    if (!form.name || !form.email) { setFormError("Nome e email sao obrigatórios."); return; }
+    if (!editUser && !form.password) { setFormError("Password e obrigatória para novos utilizadores."); return; }
     setSaving(true);
     setFormError("");
     const body: Record<string, unknown> = { name: form.name, email: form.email, role: form.role, phone: form.phone || null, is_active: form.is_active };
@@ -90,7 +90,7 @@ export default function AdminUsers() {
       if (!res.ok) {
         const err = data.errors ? Object.values(data.errors).flat().join(", ") : data.message || "Erro ao guardar.";
         setFormError(err as string);
-        toast.error("Erro", "Nao foi possivel guardar o utilizador.");
+        toast.error("Erro", "Não foi possível guardar o utilizador.");
       } else {
         setModalOpen(false);
         fetchUsers();
@@ -105,7 +105,7 @@ export default function AdminUsers() {
     setActionLoading(null);
     fetchUsers();
     if (res.ok) toast.update("Estado actualizado");
-    else toast.error("Erro", "Nao foi possivel actualizar o estado.");
+    else toast.error("Erro", "Não foi possível actualizar o estado.");
   };
 
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
@@ -116,7 +116,7 @@ export default function AdminUsers() {
     setActionLoading(null);
     fetchUsers();
     if (res.ok) toast.success("Utilizador eliminado", `"${name}" foi removido.`);
-    else toast.error("Erro", "Nao foi possivel eliminar o utilizador.");
+    else toast.error("Erro", "Não foi possível eliminar o utilizador.");
     setConfirmDelete(null);
   };
 
@@ -172,7 +172,7 @@ export default function AdminUsers() {
           <table className="w-full">
             <thead>
               <tr className={`border-b ${s.borderLight}`}>
-                {["Utilizador", "Email", "Role", "Estado", "Registado", "Accoes"].map((h, i) => (
+                {["Utilizador", "Email", "Role", "Estado", "Registado", "Acções"].map((h, i) => (
                   <th key={h} className={`text-left text-[10px] font-semibold ${s.thText} uppercase tracking-wider px-5 py-3 ${i === 1 ? "hidden md:table-cell" : ""} ${i === 4 ? "hidden lg:table-cell" : ""} ${i === 5 ? "text-right" : ""}`}>{h}</th>
                 ))}
               </tr>
@@ -239,10 +239,10 @@ export default function AdminUsers() {
         </div>
         {totalPages > 1 && (
           <div className={`flex items-center justify-between px-5 py-3 border-t ${s.borderLight}`}>
-            <p className={`text-[11px] ${s.textMuted}`}>Pagina {page} de {totalPages}</p>
+            <p className={`text-[11px] ${s.textMuted}`}>Página {page} de {totalPages}</p>
             <div className="flex gap-1">
               <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1} className={`px-3 py-1.5 rounded-lg text-xs ${s.btnSecondary} disabled:opacity-30`}>Anterior</button>
-              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className={`px-3 py-1.5 rounded-lg text-xs ${s.btnSecondary} disabled:opacity-30`}>Proximo</button>
+              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className={`px-3 py-1.5 rounded-lg text-xs ${s.btnSecondary} disabled:opacity-30`}>Próximo</button>
             </div>
           </div>
         )}
@@ -264,7 +264,7 @@ export default function AdminUsers() {
             <div>
               <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>Password {!editUser && <span className="text-red-500">*</span>}</label>
               <div className="relative">
-                <input type={showPass ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder={editUser ? "Deixar vazio para manter" : "Minimo 6 caracteres"}
+                <input type={showPass ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder={editUser ? "Deixar vazio para manter" : "Mínimo 6 caracteres"}
                   className={`w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all`} />
                 <button type="button" onClick={() => setShowPass(!showPass)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${s.textMuted}`}>
                   {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -301,7 +301,7 @@ export default function AdminUsers() {
             <button onClick={() => setModalOpen(false)} className={`px-4 py-2.5 rounded-xl text-xs font-medium ${s.btnSecondary}`}>Cancelar</button>
             <button onClick={saveUser} disabled={saving} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold ${s.btnPrimary} disabled:opacity-50 shadow-sm`}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {editUser ? "Guardar Alteracoes" : "Criar Utilizador"}
+              {editUser ? "Guardar Alterações" : "Criar Utilizador"}
             </button>
           </div>
         </div>
@@ -310,7 +310,7 @@ export default function AdminUsers() {
       <ConfirmModal
         open={!!confirmDelete}
         title="Eliminar utilizador"
-        message={`Tem a certeza que deseja eliminar "${confirmDelete?.name}"? Esta accao e irreversivel.`}
+        message={`Tem a certeza que deseja eliminar "${confirmDelete?.name}"? Esta acção e irreversivel.`}
         onConfirm={() => confirmDelete && deleteUser(confirmDelete.id, confirmDelete.name)}
         onCancel={() => setConfirmDelete(null)}
       />

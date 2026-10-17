@@ -94,7 +94,7 @@ const CategoryDetail = () => {
             <span className="text-4xl">{category.icon}</span>
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-primary-foreground">{category.name}</h1>
-              <p className="text-primary-foreground/80 text-sm">{category.productCount} produtos disponíveis</p>
+              <p className="text-primary-foreground/80 text-sm">{category.productCount === 1 ? "1 produto disponível" : `${category.productCount} produtos disponíveis`}</p>
             </div>
           </div>
           {/* Search bar */}

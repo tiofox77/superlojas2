@@ -136,7 +136,7 @@ export default function StoreSubscription() {
         setUpgradeModal(null); setPayMethodId(""); setPayFile(null);
         fetchCurrent(); fetchHistory();
       } else {
-        toast.error("Erro", d.error || "Nao foi possivel enviar pedido.");
+        toast.error("Erro", d.error || "Não foi possível enviar pedido.");
       }
     } finally { setUpgrading(false); }
   };
@@ -171,7 +171,7 @@ export default function StoreSubscription() {
 
   const formatPrice = (p: string | number) => {
     const n = typeof p === "string" ? parseFloat(p) : p;
-    if (n === 0) return "Gratis";
+    if (n === 0) return "Grátis";
     return new Intl.NumberFormat("pt-AO", { minimumFractionDigits: 0 }).format(n) + " Kz";
   };
   const cycleName = (c: string) => c === "monthly" ? "/mes" : c === "yearly" ? "/ano" : "";
@@ -182,8 +182,8 @@ export default function StoreSubscription() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className={`text-lg font-bold ${s.textPrimary}`}>Subscricao</h2>
-        <p className={`text-xs ${s.textMuted}`}>Gerencie o seu plano e subscricao</p>
+        <h2 className={`text-lg font-bold ${s.textPrimary}`}>Subscrição</h2>
+        <p className={`text-xs ${s.textMuted}`}>Gerencie o seu plano e subscrição</p>
       </div>
 
       {/* ─── Current Plan Card ─── */}
@@ -244,7 +244,7 @@ export default function StoreSubscription() {
               )}
             </div>
           ) : (
-            <p className={`text-xs ${s.textMuted}`}>Nenhuma subscricao activa registada.</p>
+            <p className={`text-xs ${s.textMuted}`}>Nenhuma subscrição activa registada.</p>
           )}
 
           {/* Usage */}
@@ -253,7 +253,7 @@ export default function StoreSubscription() {
               { label: "Produtos", value: `${usage.products}/${usage.max_products === 0 ? "∞" : usage.max_products}`, icon: Package, color: "blue" },
               { label: "Imagens/prod", value: plan?.max_images_per_product || 0, icon: Image, color: "purple" },
               { label: "Hero Slides", value: plan?.max_hero_slides || 0, icon: Sparkles, color: "cyan" },
-              { label: "API", value: plan?.has_api ? "Sim" : "Nao", icon: Key, color: plan?.has_api ? "emerald" : "gray" },
+              { label: "API", value: plan?.has_api ? "Sim" : "Não", icon: Key, color: plan?.has_api ? "emerald" : "gray" },
             ].map((item) => (
               <div key={item.label} className={`p-3 rounded-xl border ${s.borderLight} text-center`}>
                 <item.icon className={`h-4 w-4 text-${item.color}-500 mx-auto mb-1`} />
@@ -302,7 +302,7 @@ export default function StoreSubscription() {
       {plansOpen && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className={`text-sm font-bold ${s.textPrimary}`}>Planos Disponiveis</h3>
+            <h3 className={`text-sm font-bold ${s.textPrimary}`}>Planos Disponíveis</h3>
             <button onClick={() => setPlansOpen(false)} className={`${s.textMuted} hover:text-orange-500`}>
               <ChevronUp className="h-4 w-4" />
             </button>
@@ -365,14 +365,14 @@ export default function StoreSubscription() {
         <button onClick={() => setHistoryOpen(!historyOpen)}
           className={`w-full flex items-center justify-between p-4 ${s.textPrimary} hover:opacity-80 transition-opacity`}>
           <span className="flex items-center gap-2 text-sm font-bold">
-            <History className="h-4 w-4 text-orange-500" /> Historico de Subscricoes
+            <History className="h-4 w-4 text-orange-500" /> Histórico de Subscrições
           </span>
           {historyOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
         {historyOpen && (
           <div className={`border-t ${s.borderLight}`}>
             {history.length === 0 ? (
-              <p className={`p-4 text-xs ${s.textMuted} text-center`}>Nenhum historico.</p>
+              <p className={`p-4 text-xs ${s.textMuted} text-center`}>Nenhum histórico.</p>
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-white/[0.04]">
                 {history.map((h) => (
@@ -412,9 +412,9 @@ export default function StoreSubscription() {
             </div>
 
             <div>
-              <label className={`text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5 block`}>Metodo de Pagamento</label>
+              <label className={`text-[10px] font-medium ${s.textMuted} uppercase tracking-wider mb-1.5 block`}>Método de Pagamento</label>
               {payMethods.length === 0 ? (
-                <p className={`text-xs ${s.textMuted} italic py-2`}>Nenhum metodo de pagamento configurado pelo administrador.</p>
+                <p className={`text-xs ${s.textMuted} italic py-2`}>Nenhum método de pagamento configurado pelo administrador.</p>
               ) : (
                 <select value={payMethodId} onChange={(e) => setPayMethodId(e.target.value)}
                   className={`w-full ${s.input} border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20`}>
@@ -503,7 +503,7 @@ export default function StoreSubscription() {
               <div className="flex items-start gap-2">
                 <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
                 <p className={`text-[10px] leading-relaxed ${s.isDark ? "text-amber-300" : "text-amber-700"}`}>
-                  Apos enviar o pedido, o administrador ira verificar o pagamento e activar a sua subscricao. Recebera uma notificacao quando for aprovado.
+                  Após enviar o pedido, o administrador ira verificar o pagamento e activar a sua subscrição. Receberá uma notificação quando for aprovado.
                 </p>
               </div>
             </div>

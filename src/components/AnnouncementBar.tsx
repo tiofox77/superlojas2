@@ -2,11 +2,12 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
+// Shown only when the admin has no marquee messages configured. Keep these true for every store:
+// the old "até 40% OFF" / "frete grátis acima de 50.000 Kz" were not (QA 17-Out — checkout charges 2 500 Kz/loja).
 const FALLBACK = [
-  "🎉 Bem-vindo ao SuperLoja — O maior marketplace de Angola!",
-  "🔥 Promoções de até 40% OFF em electrónica!",
-  "🚚 Frete grátis para Luanda em compras acima de 50.000 Kz",
-  "🏪 Quer vender? Abra sua loja gratuitamente!",
+  "🎉 Bem-vindo ao SuperLoja — compre online em lojas de Angola!",
+  "🚚 Entrega a partir de 2 500 Kz por loja — ou levante na loja sem custo, quando disponível",
+  "🏪 Quer vender? Abra a sua loja gratuitamente!",
 ];
 
 export function AnnouncementBar() {
