@@ -1,9 +1,9 @@
 # SuperLoja — https://superloja.vip
 # Search engines and AI assistants are welcome on the public catalogue.
+# /api/ stays crawlable on purpose: Googlebot needs it to render the React pages.
 
 User-agent: *
 Allow: /
-Disallow: /api/
 Disallow: /admin
 Disallow: /checkout
 Disallow: /carrinho
@@ -12,9 +12,6 @@ Disallow: /favoritos
 Disallow: /minha-conta
 Disallow: /minha-loja
 Disallow: /loja/
-Allow: /api/products
-Allow: /api/stores
-Allow: /api/categories
 
 User-agent: Googlebot
 User-agent: Bingbot
@@ -32,7 +29,6 @@ User-agent: Applebot-Extended
 User-agent: CCBot
 User-agent: DuckAssistBot
 Allow: /
-Disallow: /api/
 Disallow: /admin
 Disallow: /checkout
 Disallow: /carrinho
@@ -41,8 +37,5 @@ Disallow: /favoritos
 Disallow: /minha-conta
 Disallow: /minha-loja
 Disallow: /loja/
-Allow: /api/products
-Allow: /api/stores
-Allow: /api/categories
 
 Sitemap: https://superloja.vip/sitemap.xml
