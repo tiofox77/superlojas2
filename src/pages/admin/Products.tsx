@@ -669,8 +669,8 @@ export default function AdminProducts() {
             </div>
             {/* Preco, Original, Stock */}
             {[
-              { l: "Preço (Kz)", k: "price", p: "15000", req: true, type: "number" },
-              { l: "Preço Original (Kz)", k: "original_price", p: "20000", type: "number" },
+              { l: "Preço (Kz)", k: "price", p: "Ex: 5000", req: true, type: "number" },
+              { l: "Preço Original (Kz)", k: "original_price", p: "Ex: 7500 (opcional)", type: "number" },
               { l: "Stock", k: "stock", p: "100", type: "number" },
             ].map((f) => (
               <div key={f.k}>

@@ -56,7 +56,7 @@ export default function StorePanelSlides() {
 
   const openCreate = () => {
     if (isAtSlideLimit) {
-      toast.error("Limite atingido", `O seu plano (${plan?.name}) permite no máximo ${maxSlides} slide(s). Faca upgrade para adicionar mais.`);
+      toast.error("Limite atingido", `O seu plano (${plan?.name}) permite no máximo ${maxSlides} slide(s). Faça upgrade para adicionar mais.`);
       return;
     }
     setEditSlide(null); setForm(emptyForm); setImageFile(null); setImagePreview(""); setFormError(""); setModalOpen(true);

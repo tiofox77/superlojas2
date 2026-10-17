@@ -80,14 +80,14 @@ export function CartDrawer() {
                           <p className="text-sm font-medium truncate">{item.product.name}</p>
                           <p className="text-xs text-muted-foreground">{formatPrice(item.product.price)} Kz</p>
                           <div className="flex items-center gap-2 mt-1">
-                            <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariants)} className="h-6 w-6 rounded bg-secondary flex items-center justify-center hover:bg-border">
+                            <button type="button" aria-label={`Diminuir quantidade de ${item.product.name}`} onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariants)} className="h-6 w-6 rounded bg-secondary flex items-center justify-center hover:bg-border">
                               <Minus className="h-3 w-3" />
                             </button>
                             <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariants)} className="h-6 w-6 rounded bg-secondary flex items-center justify-center hover:bg-border">
+                            <button type="button" aria-label={`Aumentar quantidade de ${item.product.name}`} disabled={item.quantity >= item.product.stock} title={item.quantity >= item.product.stock ? "Stock máximo atingido" : undefined} onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariants)} className="h-6 w-6 rounded bg-secondary flex items-center justify-center hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed">
                               <Plus className="h-3 w-3" />
                             </button>
-                            <button onClick={() => removeItem(item.product.id, item.selectedVariants)} className="ml-auto text-destructive hover:text-destructive/80">
+                            <button type="button" aria-label={`Remover ${item.product.name} do carrinho`} onClick={() => removeItem(item.product.id, item.selectedVariants)} className="ml-auto text-destructive hover:text-destructive/80">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>

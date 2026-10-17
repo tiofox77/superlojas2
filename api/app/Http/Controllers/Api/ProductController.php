@@ -32,7 +32,13 @@ class ProductController extends Controller
 
         // ─── Filters ─────────────────────────────────────
         if ($request->has('category')) {
-            $query->where('category', $request->category);
+            // Match the legacy text column or the category relation (name or slug), so renaming a
+            // category (e.g. "Electronica" -> "Electrónica") never empties its page.
+            $category = (string) $request->category;
+            $query->where(function ($q) use ($category) {
+                $q->where('category', $category)
+                  ->orWhereHas('categoryRelation', fn ($c) => $c->where('name', $category)->orWhere('slug', $category));
+            });
         }
         if ($request->has('category_id')) {
             $query->where('category_id', $request->category_id);

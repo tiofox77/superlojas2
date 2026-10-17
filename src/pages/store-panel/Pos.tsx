@@ -325,7 +325,7 @@ export default function StorePos() {
         <Lock className={`h-12 w-12 ${s.empty} mx-auto mb-3`} />
         <h3 className={`text-lg font-bold ${s.textPrimary} mb-2`}>POS não disponível</h3>
         <p className={`text-sm ${s.textMuted} mb-1`}>O plano <strong>{planName || "actual"}</strong> não inclui acesso ao POS.</p>
-        <p className={`text-xs ${s.textMuted} mb-4`}>Faca upgrade para um plano com POS incluido.</p>
+        <p className={`text-xs ${s.textMuted} mb-4`}>Faça upgrade para um plano com POS incluído.</p>
         <a href={`/loja/${slug}/painel/subscricao`}
           className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold ${s.btnPrimary} shadow-sm`}>
           <ArrowUpRight className="h-4 w-4" /> Ver Planos

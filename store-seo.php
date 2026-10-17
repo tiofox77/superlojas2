@@ -50,7 +50,7 @@ if (!$store) {
 
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $canonical = $path === '/' ? 'https://superloja.vip/lojas/'.$store->slug : 'https://superloja.vip'.rtrim($path,'/');
-$siteName = 'SuperLojas';
+$siteName = 'SuperLoja';
 $title = ($store->meta_title ?: $store->name . ' — Loja Online em Angola') . ' | ' . $siteName;
 $description = cleanDescription($store->meta_description ?? null, $store->description ?: "Compre produtos da {$store->name} online. Entregas em Angola.");
 $image = absoluteMedia($store->banner ?: $store->logo);

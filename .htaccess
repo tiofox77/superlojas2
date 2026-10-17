@@ -33,6 +33,12 @@ AddType application/javascript .js
   RewriteRule ^sitemap-products\.xml$ /sitemap.php?type=products [END,QSA]
   RewriteRule ^sitemap-store-([a-z0-9\-]+)\.xml$ /sitemap.php?type=store&slug=$1 [END,QSA]
 
+  # --- llms.txt for AI assistants (generated from the live catalogue) ---
+  RewriteCond %{HTTP_HOST} ^superloja\.vip$ [NC]
+  RewriteRule ^llms\.txt$ /llms.php?type=index [END]
+  RewriteCond %{HTTP_HOST} ^superloja\.vip$ [NC]
+  RewriteRule ^llms-full\.txt$ /llms.php?type=full [END]
+
   # ─── Frontend: serve existing files from disk (prevents loops) ───
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]

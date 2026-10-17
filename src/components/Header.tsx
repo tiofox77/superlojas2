@@ -94,8 +94,8 @@ export function Header() {
 
           {/* Right actions */}
           <div className="flex items-center gap-1 ml-auto">
-            <Link to="/favoritos" className="hidden sm:flex">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
+            <Link to="/favoritos" className="hidden sm:flex" aria-label={wishlistCount > 0 ? `Favoritos (${wishlistCount})` : "Favoritos"}>
+              <Button variant="ghost" size="icon" tabIndex={-1} aria-hidden="true" className="text-muted-foreground hover:text-foreground relative">
                 <Heart className="h-5 w-5" />
                 {wishlistCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-primary-foreground text-[9px] font-bold flex items-center justify-center">

@@ -269,11 +269,11 @@ const ProductDetail = () => {
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium">Quantidade</span>
               <div className="flex items-center border border-border rounded-lg">
-                <button onClick={() => { setQuantity(Math.max(1, quantity - 1)); setStockAlert(""); }} className="px-3 py-2 hover:bg-secondary">
+                <button type="button" aria-label="Diminuir quantidade" onClick={() => { setQuantity(Math.max(1, quantity - 1)); setStockAlert(""); }} className="px-3 py-2 hover:bg-secondary">
                   <Minus className="h-4 w-4" />
                 </button>
-                <span className="px-4 py-2 text-sm font-medium border-x border-border">{quantity}</span>
-                <button onClick={() => {
+                <span className="px-4 py-2 text-sm font-medium border-x border-border" aria-live="polite" aria-label={`Quantidade: ${quantity}`}>{quantity}</span>
+                <button type="button" aria-label="Aumentar quantidade" onClick={() => {
                   if (product.stock > 0 && quantity >= product.stock) {
                     setStockAlert((product.stock === 1 ? "Apenas 1 unidade disponível." : `Apenas ${product.stock} unidades disponíveis.`));
                     return;
@@ -310,27 +310,36 @@ const ProductDetail = () => {
                   const missing = product.variants.filter(v => !selectedVariants[v.type]).map(v => v.type);
                   if (missing.length > 0) { setVariantAlert(`Selecione: ${missing.join(", ")}`); return; }
                   if (quantity > product.stock) { setStockAlert((product.stock === 1 ? "Apenas 1 unidade disponível." : `Apenas ${product.stock} unidades disponíveis.`)); setQuantity(product.stock); return; }
-                  addItem(product, quantity, selectedVariants);
+                  const added = addItem(product, quantity, selectedVariants);
+                  if (added === 0) {
+                    setStockAlert("Stock máximo atingido: já tem no carrinho todas as unidades disponíveis.");
+                    toast.error("Stock máximo atingido", { description: "Já tem no carrinho todas as unidades disponíveis." });
+                    return;
+                  }
                   pixelTrack(storePixelId, "AddToCart", {
                     content_ids: [`SL-${product.id}`],
                     content_name: product.name,
                     content_type: "product",
-                    value: (Number(product.price) || 0) * quantity,
+                    value: (Number(product.price) || 0) * added,
                     currency: "AOA",
                   });
                   setStockAlert(""); setVariantAlert("");
-                  toast.success(`"${product.name}" adicionado ao carrinho`);
+                  if (added < quantity) toast.success(`${added} unidade(s) de "${product.name}" adicionada(s) ao carrinho`, { description: "Stock máximo atingido." });
+                  else toast.success(`"${product.name}" adicionado ao carrinho`);
                 }}
               >
                 <ShoppingCart className="h-4 w-4" /> Adicionar ao Carrinho
               </Button>
             ) : (
-              <Button
-                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white gap-2"
-                onClick={openPreOrder}
-              >
-                <PackageCheck className="h-4 w-4" /> Encomendar
-              </Button>
+              <div className="flex-1 flex flex-col gap-2">
+                <Button className="w-full gap-2" variant="secondary" disabled aria-disabled="true">
+                  <PackageCheck className="h-4 w-4" /> Esgotado
+                </Button>
+                {/* Real pre-order flow (POST /api/pre-orders): the store contacts the customer when it has stock. */}
+                <button type="button" onClick={openPreOrder} className="text-xs text-purple-600 dark:text-purple-400 hover:underline">
+                  Pedir à loja para reservar quando houver stock (pré-encomenda)
+                </button>
+              </div>
             )}
             <Button
               variant="outline"

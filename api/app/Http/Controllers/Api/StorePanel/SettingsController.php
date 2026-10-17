@@ -24,6 +24,7 @@ class SettingsController extends Controller
     public function show(Request $request, string $slug)
     {
         $store = $this->getStore($request, $slug);
+        $store->ensureCategory();
         $store->load(['plan', 'storeCategories']);
 
         $data = $store->toArray();

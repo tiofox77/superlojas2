@@ -438,6 +438,8 @@ const Auth = () => {
                   <motion.button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Ocultar palavra-passe" : "Mostrar palavra-passe"}
+                    aria-pressed={showPassword}
                     whileTap={{ scale: 0.85 }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >

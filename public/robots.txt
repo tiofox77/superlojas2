@@ -1,4 +1,48 @@
+# SuperLoja — https://superloja.vip
+# Search engines and AI assistants are welcome on the public catalogue.
+
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /checkout
+Disallow: /carrinho
+Disallow: /entrar
+Disallow: /favoritos
+Disallow: /minha-conta
+Disallow: /minha-loja
+Disallow: /loja/
+Allow: /api/products
+Allow: /api/stores
+Allow: /api/categories
+
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: Applebot
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-User
+User-agent: Claude-SearchBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: CCBot
+User-agent: DuckAssistBot
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /checkout
+Disallow: /carrinho
+Disallow: /entrar
+Disallow: /favoritos
+Disallow: /minha-conta
+Disallow: /minha-loja
+Disallow: /loja/
+Allow: /api/products
+Allow: /api/stores
+Allow: /api/categories
 
 Sitemap: https://superloja.vip/sitemap.xml

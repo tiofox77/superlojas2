@@ -35,7 +35,7 @@ export interface CategoryTheme {
 const themes: Record<string, CategoryTheme> = {
   /* ─── Tecnologia & Electronica ─── */
   electronica: {
-    slug: "electronica", name: "Electronica",
+    slug: "electronica", name: "Electrónica",
     accent: "blue",
     bannerGradient: "linear-gradient(to top, rgba(30,64,175,0.85), rgba(30,64,175,0.4), rgba(30,64,175,0.1))",
     btnGradient: "bg-gradient-to-r from-blue-600 to-cyan-500",
@@ -50,7 +50,7 @@ const themes: Record<string, CategoryTheme> = {
     flashAccent: "border-blue-500/20",
   },
   informatica: {
-    slug: "informatica", name: "Informatica",
+    slug: "informatica", name: "Informática",
     accent: "violet",
     bannerGradient: "linear-gradient(to top, rgba(109,40,217,0.85), rgba(109,40,217,0.4), rgba(109,40,217,0.1))",
     btnGradient: "bg-gradient-to-r from-violet-600 to-purple-500",
@@ -114,7 +114,7 @@ const themes: Record<string, CategoryTheme> = {
 
   /* ─── Casa & Vida ─── */
   "casa-decoracao": {
-    slug: "casa-decoracao", name: "Casa & Decoracao",
+    slug: "casa-decoracao", name: "Casa & Decoração",
     accent: "amber",
     bannerGradient: "linear-gradient(to top, rgba(180,83,9,0.82), rgba(180,83,9,0.38), rgba(180,83,9,0.08))",
     btnGradient: "bg-gradient-to-r from-amber-600 to-orange-400",
@@ -129,7 +129,7 @@ const themes: Record<string, CategoryTheme> = {
     flashAccent: "border-amber-400/20",
   },
   "bebes-criancas": {
-    slug: "bebes-criancas", name: "Bebes & Criancas",
+    slug: "bebes-criancas", name: "Bebés & Crianças",
     accent: "sky",
     bannerGradient: "linear-gradient(to top, rgba(14,165,233,0.78), rgba(56,189,248,0.35), rgba(125,211,252,0.1))",
     btnGradient: "bg-gradient-to-r from-sky-500 to-cyan-400",
@@ -161,7 +161,7 @@ const themes: Record<string, CategoryTheme> = {
     flashAccent: "border-pink-400/20",
   },
   "saude-bem-estar": {
-    slug: "saude-bem-estar", name: "Saude & Bem-estar",
+    slug: "saude-bem-estar", name: "Saúde & Bem-estar",
     accent: "teal",
     bannerGradient: "linear-gradient(to top, rgba(13,148,136,0.82), rgba(20,184,166,0.4), rgba(94,234,212,0.1))",
     btnGradient: "bg-gradient-to-r from-teal-600 to-emerald-500",
@@ -195,7 +195,7 @@ const themes: Record<string, CategoryTheme> = {
 
   /* ─── Alimentacao ─── */
   "alimentacao-bebidas": {
-    slug: "alimentacao-bebidas", name: "Alimentacao & Bebidas",
+    slug: "alimentacao-bebidas", name: "Alimentação & Bebidas",
     accent: "orange",
     bannerGradient: "linear-gradient(to top, rgba(234,88,12,0.82), rgba(249,115,22,0.38), rgba(251,146,60,0.1))",
     btnGradient: "bg-gradient-to-r from-orange-500 to-amber-400",
@@ -212,7 +212,7 @@ const themes: Record<string, CategoryTheme> = {
 
   /* ─── Automoveis ─── */
   "automoveis-motas": {
-    slug: "automoveis-motas", name: "Automoveis & Motas",
+    slug: "automoveis-motas", name: "Automóveis & Motas",
     accent: "red",
     bannerGradient: "linear-gradient(to top, rgba(153,27,27,0.88), rgba(185,28,28,0.45), rgba(220,38,38,0.12))",
     btnGradient: "bg-gradient-to-r from-red-700 to-red-500",
@@ -246,7 +246,7 @@ const themes: Record<string, CategoryTheme> = {
 
   /* ─── Ferramentas ─── */
   "ferramentas-construcao": {
-    slug: "ferramentas-construcao", name: "Ferramentas & Construcao",
+    slug: "ferramentas-construcao", name: "Ferramentas & Construção",
     accent: "orange",
     bannerGradient: "linear-gradient(to top, rgba(124,45,18,0.88), rgba(194,65,12,0.42), rgba(234,88,12,0.1))",
     btnGradient: "bg-gradient-to-r from-orange-700 to-orange-500",
@@ -280,7 +280,7 @@ const themes: Record<string, CategoryTheme> = {
 
   /* ─── Musica ─── */
   "musica-instrumentos": {
-    slug: "musica-instrumentos", name: "Musica & Instrumentos",
+    slug: "musica-instrumentos", name: "Música & Instrumentos",
     accent: "indigo",
     bannerGradient: "linear-gradient(to top, rgba(55,48,163,0.88), rgba(79,70,229,0.42), rgba(99,102,241,0.1))",
     btnGradient: "bg-gradient-to-r from-indigo-700 to-violet-500",
@@ -297,7 +297,7 @@ const themes: Record<string, CategoryTheme> = {
 
   /* ─── Escritorio ─── */
   "escritorio-material": {
-    slug: "escritorio-material", name: "Escritorio & Material",
+    slug: "escritorio-material", name: "Escritório & Material",
     accent: "gray",
     bannerGradient: "linear-gradient(to top, rgba(55,65,81,0.88), rgba(75,85,99,0.45), rgba(107,114,128,0.12))",
     btnGradient: "bg-gradient-to-r from-gray-700 to-gray-500",
@@ -314,7 +314,7 @@ const themes: Record<string, CategoryTheme> = {
 
   /* ─── Servicos ─── */
   servicos: {
-    slug: "servicos", name: "Servicos",
+    slug: "servicos", name: "Serviços",
     accent: "cyan",
     bannerGradient: "linear-gradient(to top, rgba(8,145,178,0.85), rgba(6,182,212,0.4), rgba(34,211,238,0.1))",
     btnGradient: "bg-gradient-to-r from-cyan-600 to-teal-500",
@@ -331,7 +331,7 @@ const themes: Record<string, CategoryTheme> = {
 
   /* ─── Imoveis ─── */
   imoveis: {
-    slug: "imoveis", name: "Imoveis",
+    slug: "imoveis", name: "Imóveis",
     accent: "blue",
     bannerGradient: "linear-gradient(to top, rgba(30,58,138,0.9), rgba(29,78,216,0.45), rgba(59,130,246,0.1))",
     btnGradient: "bg-gradient-to-r from-blue-900 to-blue-600",

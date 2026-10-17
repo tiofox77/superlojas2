@@ -20,6 +20,12 @@ class Category extends Model
         'is_adult' => 'boolean',
     ];
 
+    /** Generic category given to stores that have none yet (see Store::ensureCategory). */
+    public static function defaultForStores(): self
+    {
+        return static::firstOrCreate(['slug' => 'outros'], ['name' => 'Outros', 'icon' => '📦']);
+    }
+
     public function subcategories(): HasMany
     {
         return $this->hasMany(Subcategory::class);

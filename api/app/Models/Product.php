@@ -7,6 +7,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Product extends Model
 {
+    protected static function booted(): void
+    {
+        // IndexNow (Bing/Yandex): ping the public product page when something visible changes.
+        static::saved(function (Product $product) {
+            if ($product->slug && ($product->wasRecentlyCreated
+                || $product->wasChanged(['name', 'slug', 'price', 'original_price', 'stock', 'description', 'images', 'is_active']))) {
+                \App\Services\IndexNow::queue('/produto/' . $product->slug);
+            }
+        });
+    }
+
     protected $fillable = [
         'name',
         'slug',

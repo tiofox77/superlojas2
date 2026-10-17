@@ -27,6 +27,8 @@ class StoreCategoryController extends Controller
     public function index(Request $request, string $slug)
     {
         $store = $this->getStore($request, $slug);
+        $store->ensureCategory();
+        $store->load('storeCategories');
 
         // Auto-migrate legacy JSON categories to pivot if pivot is empty
         if ($store->storeCategories->isEmpty()) {

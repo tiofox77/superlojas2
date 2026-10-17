@@ -47,6 +47,7 @@ export function ProductCard({ product }: { product: Product }) {
             e.stopPropagation();
             toggleWishlist(product);
           }}
+          aria-label={wishlisted ? "Remover dos favoritos" : "Adicionar aos favoritos"}
           className={`absolute top-2 right-2 h-7 w-7 rounded-full flex items-center justify-center transition-all ${
             wishlisted
               ? "bg-destructive/10 opacity-100"
@@ -60,11 +61,13 @@ export function ProductCard({ product }: { product: Product }) {
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            addItem(product, 1, {});
-            toast.success(`"${product.name}" adicionado ao carrinho`);
+            if (product.stock <= 0) { toast.error("Produto esgotado"); return; }
+            if (addItem(product, 1, {}) > 0) toast.success(`"${product.name}" adicionado ao carrinho`);
+            else toast.error("Stock máximo atingido", { description: "Já tem no carrinho todas as unidades disponíveis." });
           }}
           className="absolute bottom-2 right-2 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:translate-y-2 sm:group-hover:translate-y-0 transition-all shadow-md"
-          aria-label="Adicionar ao carrinho"
+          aria-label={product.stock > 0 ? "Adicionar ao carrinho" : "Produto esgotado"}
+          disabled={product.stock <= 0}
         >
           <ShoppingCart className="h-3.5 w-3.5" />
         </button>

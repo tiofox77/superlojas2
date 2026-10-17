@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { CartItem, Product } from "@/data/types";
 import { transformProduct } from "@/services/transformers";
 import { trackInterest } from "@/lib/demand";
@@ -43,7 +43,8 @@ function saveCart(items: CartItem[]) {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product, quantity: number, variants: Record<string, string>) => void;
+  /** Returns how many units were actually added (0 when the stock limit was already reached). */
+  addItem: (product: Product, quantity: number, variants: Record<string, string>) => number;
   removeItem: (productId: string, variants?: Record<string, string>) => void;
   updateQuantity: (productId: string, quantity: number, variants?: Record<string, string>) => void;
   clearCart: () => void;
@@ -87,23 +88,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  useEffect(() => { saveCart(items); }, [items]);
+  // Latest items, readable synchronously so addItem can tell the caller what happened.
+  const itemsRef = useRef(items);
+  useEffect(() => { itemsRef.current = items; saveCart(items); }, [items]);
 
   const addItem = useCallback((product: Product, quantity: number, variants: Record<string, string>) => {
-    if (!Number.isInteger(quantity) || quantity <= 0) return;
+    if (!Number.isInteger(quantity) || quantity <= 0) return 0;
+    const prev = itemsRef.current;
+    const inCart = prev.filter((i) => i.product.id === product.id).reduce((acc, i) => acc + i.quantity, 0);
+    const toAdd = Math.min(quantity, Math.max(0, product.stock - inCart));
+    if (!toAdd) return 0;
     trackInterest(product.id, "cart");
-    setItems((prev) => {
-      const inCart = prev.filter((i) => i.product.id === product.id).reduce((acc, i) => acc + i.quantity, 0);
-      const toAdd = Math.min(quantity, Math.max(0, product.stock - inCart));
-      if (!toAdd) return prev;
-      const key = cartItemKey(product.id, variants);
-      if (prev.some((i) => cartItemKey(i.product.id, i.selectedVariants) === key)) {
-        return prev.map((i) =>
-          cartItemKey(i.product.id, i.selectedVariants) === key ? { ...i, quantity: i.quantity + toAdd } : i
-        );
-      }
-      return [...prev, { product, quantity: toAdd, selectedVariants: variants }];
-    });
+    const key = cartItemKey(product.id, variants);
+    const next = prev.some((i) => cartItemKey(i.product.id, i.selectedVariants) === key)
+      ? prev.map((i) => (cartItemKey(i.product.id, i.selectedVariants) === key ? { ...i, quantity: i.quantity + toAdd } : i))
+      : [...prev, { product, quantity: toAdd, selectedVariants: variants }];
+    itemsRef.current = next; // a second click before re-render must see this one
+    setItems(next);
+    return toAdd;
   }, []);
 
   const removeItem = useCallback((productId: string, variants: Record<string, string> = {}) => {

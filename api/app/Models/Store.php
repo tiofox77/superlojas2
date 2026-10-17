@@ -10,6 +10,44 @@ use Illuminate\Support\Facades\Storage;
 
 class Store extends Model
 {
+    protected static function booted(): void
+    {
+        // Every store needs at least one category, otherwise the seller cannot create the first
+        // product (the product's category is required). QA 17-Out.
+        static::created(fn (Store $store) => $store->ensureCategory());
+
+        // IndexNow (Bing/Yandex): ping the public store page when something visible changes.
+        static::saved(function (Store $store) {
+            if ($store->slug && ($store->wasRecentlyCreated
+                || $store->wasChanged(['name', 'slug', 'description', 'logo', 'banner', 'status', 'province', 'city']))) {
+                \App\Services\IndexNow::queue('/lojas/' . $store->slug);
+            }
+        });
+    }
+
+    /**
+     * Make sure the store has at least one category (category_store pivot): first from the legacy
+     * `categories` JSON (names chosen at registration), otherwise the generic "Outros" category.
+     * Only ever adds; never removes a category the store already has.
+     */
+    public function ensureCategory(): void
+    {
+        try {
+            if ($this->storeCategories()->exists()) return;
+            $names = array_values(array_filter((array) ($this->categories ?? []), 'is_string'));
+            $ids = $names
+                ? Category::whereIn('name', $names)
+                    ->orWhereIn('slug', array_map(fn ($n) => \Illuminate\Support\Str::slug($n), $names))
+                    ->pluck('id')->all()
+                : [];
+            if (!$ids) $ids = [Category::defaultForStores()->id];
+            $this->storeCategories()->syncWithoutDetaching($ids);
+            $this->unsetRelation('storeCategories');
+        } catch (\Throwable $e) {
+            report($e); // never block store creation
+        }
+    }
+
     protected $fillable = [
         'user_id',
         'name',

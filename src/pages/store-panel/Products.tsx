@@ -93,10 +93,11 @@ export default function StorePanelProducts() {
   }, []);
 
   // Filter categories to only the store's registered categories
-  const storeCatIds = Array.isArray(storeInfo?.categories) ? storeInfo.categories : [];
-  const storeCategories = storeCatIds.length
-    ? allCategories.filter(c => storeCatIds.map(String).includes(String(c.id)))
-    : allCategories;
+  // (ids from the pivot; older stores may still carry names/slugs). If nothing matches, offer
+  // every category instead of an empty, required dropdown (QA 17-Out: new seller could not create a product).
+  const storeCatIds = (Array.isArray(storeInfo?.categories) ? storeInfo.categories : []).map(String);
+  const matchedCategories = allCategories.filter(c => storeCatIds.includes(String(c.id)) || storeCatIds.includes(c.name) || storeCatIds.includes(c.slug));
+  const storeCategories = matchedCategories.length ? matchedCategories : allCategories;
 
   // Auto-select category if store only has one
   useEffect(() => {
@@ -134,7 +135,7 @@ export default function StorePanelProducts() {
 
   const openCreate = () => {
     if (isAtProductLimit) {
-      toast.error("Limite atingido", `O seu plano (${plan?.name}) permite no máximo ${maxProducts} produto(s). Faca upgrade para adicionar mais.`);
+      toast.error("Limite atingido", `O seu plano (${plan?.name}) permite no máximo ${maxProducts} produto(s). Faça upgrade para adicionar mais.`);
       return;
     }
     setEditProd(null); setForm(emptyForm); setImageFiles([]); setImagePreviews([]); setExistingImages([]); setFormError(""); setFieldErrors({}); setSlugManual(false); setSlugStatus("idle"); setSlugSuggestion(null); setVariants([]); setNewVariantType(""); setNewOptionInputs({}); setFlashSaleStart(""); setFlashSaleEnd(""); setModalOpen(true);
@@ -675,9 +676,9 @@ export default function StorePanelProducts() {
             </div>
             {/* Preco, Original, Stock */}
             {[
-              { l: "Preço (Kz)", k: "price", p: "15000", req: true, type: "number" },
-              { l: "Preço Original", k: "original_price", p: "20000", type: "number" },
-              { l: "Stock", k: "stock", p: "100", type: "number" },
+              { l: "Preço (Kz)", k: "price", p: "Ex: 5000", req: true, type: "number" },
+              { l: "Preço Original", k: "original_price", p: "Ex: 7500 (opcional)", type: "number" },
+              { l: "Stock", k: "stock", p: "Ex: 10", type: "number" },
             ].map((f) => (
               <div key={f.k}>
                 <label className={`block text-xs font-medium ${s.textSecondary} mb-1.5`}>{f.l} {f.req && <span className="text-red-500">*</span>}</label>

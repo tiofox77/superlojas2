@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { useToastNotification } from "@/contexts/ToastContext";
 import { useAdminStyles } from "@/hooks/useAdminStyles";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
@@ -32,6 +33,7 @@ interface CategoriesData {
 export default function StorePanelCategories() {
   const { token } = useAuth();
   const s = useAdminStyles();
+  const toast = useToastNotification();
   const { slug } = useOutletContext<{ slug: string }>();
 
   const [data, setData] = useState<CategoriesData | null>(null);
@@ -101,12 +103,15 @@ export default function StorePanelCategories() {
       const json = await res.json();
       if (res.ok) {
         setMsg({ type: "success", text: json.message });
+        toast.success("Categorias guardadas", json.message || "As categorias da loja foram actualizadas.");
         fetchData();
       } else {
         setMsg({ type: "error", text: json.message || "Erro ao guardar." });
+        toast.error("Erro ao guardar categorias", json.message || "Tente novamente.");
       }
     } catch {
       setMsg({ type: "error", text: "Erro de rede." });
+      toast.error("Erro de rede", "Não foi possível guardar as categorias.");
     } finally {
       setSaving(false);
       setTimeout(() => setMsg(null), 5000);
@@ -124,10 +129,12 @@ export default function StorePanelCategories() {
       const json = await res.json();
       if (res.ok) {
         setMsg({ type: "success", text: json.message });
+        toast.success("Pedido enviado", json.message || "O pedido de alteração foi enviado.");
         setShowRequestModal(false);
         setRequestReason("");
       } else {
         setMsg({ type: "error", text: json.message || "Erro ao enviar pedido." });
+        toast.error("Erro ao enviar pedido", json.message || "Tente novamente.");
       }
     } catch {
       setMsg({ type: "error", text: "Erro de rede." });
@@ -201,7 +208,7 @@ export default function StorePanelCategories() {
             <p className="mt-1">Após alterar categorias, terá de aguardar <strong>{data.cooldown_days} dias</strong> para poder trocar novamente.</p>
           )}
           {data.max_categories === 1 && (
-            <p className="mt-1">O seu plano permite apenas <strong>1 categoria</strong>. Faca upgrade para selecionar mais categorias.</p>
+            <p className="mt-1">O seu plano permite apenas <strong>1 categoria</strong>. Faça upgrade para selecionar mais categorias.</p>
           )}
         </div>
       </div>

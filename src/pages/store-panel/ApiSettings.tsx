@@ -150,7 +150,7 @@ export default function StoreApiSettings() {
             O seu plano <strong>{data.plan_name || "actual"}</strong> não inclui acesso a API.
           </p>
           <p className={`text-xs ${s.textMuted} mb-6`}>
-            Faca upgrade para o plano <strong>Premium</strong> ou <strong>Empresarial</strong> para usar a API.
+            Faça upgrade para o plano <strong>Premium</strong> ou <strong>Empresarial</strong> para usar a API.
           </p>
           <div className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold ${s.btnPrimary}`}>
             <ArrowUpRight className="h-4 w-4" /> Contactar para Upgrade

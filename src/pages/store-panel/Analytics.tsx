@@ -140,7 +140,7 @@ export default function StoreAnalytics() {
             O seu plano actual <strong className="text-purple-500">({planName})</strong> não inclui acesso ao Analytics.
           </p>
           <p className={`text-sm ${s.textSecondary} mb-6`}>
-            Faca upgrade para um plano com analytics para ver estatísticas detalhadas da sua loja.
+            Faça upgrade para um plano com analytics para ver estatísticas detalhadas da sua loja.
           </p>
           <Link
             to={`/loja/${slug}/painel/subscricao`}

@@ -17,7 +17,7 @@ class SiteSettingsController extends Controller
         $all = Setting::all()->pluck('value', 'key');
 
         $public = [
-            'site_name'        => $all['site_name'] ?? 'SuperLojas',
+            'site_name'        => $all['site_name'] ?? 'SuperLoja',
             'site_description' => $all['site_description'] ?? '',
             'site_logo'        => $this->absoluteUrl($all['site_logo'] ?? ''),
             'site_favicon'     => $this->absoluteUrl($all['site_favicon'] ?? ''),

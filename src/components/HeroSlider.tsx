@@ -1,13 +1,25 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useHeroSlides } from "@/hooks/useApi";
+import { useHeroSlides, useFlashSaleProducts } from "@/hooks/useApi";
+
+// Slides that promise discounts/offers only make sense while there are products on sale.
+const OFFER_SLIDE = /desconto|oferta|promo|saldos|black\s*friday|\d+\s*%/i;
 
 export function HeroSlider() {
-  const { data: heroSlides = [] } = useHeroSlides();
+  const { data: allSlides = [] } = useHeroSlides();
+  const { data: saleProducts } = useFlashSaleProducts();
+  const hasOffers = (saleProducts?.length ?? 0) > 0;
+  const heroSlides = hasOffers
+    ? allSlides
+    : allSlides.filter((sl) => !OFFER_SLIDE.test(`${sl.title} ${sl.subtitle ?? ""} ${sl.cta ?? ""}`));
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (current >= heroSlides.length && heroSlides.length > 0) setCurrent(0);
+  }, [current, heroSlides.length]);
 
   const goTo = useCallback((index: number) => {
     if (isTransitioning) return;
@@ -49,7 +61,7 @@ export function HeroSlider() {
           <div className={`absolute inset-0 ${!slide.bgColor || slide.bgColor === "none" ? "bg-gray-900" : `bg-gradient-to-r ${slide.bgColor}`}`} />
           {/* Image — full visibility, no blend */}
           {slide.image && (
-            <img src={slide.image} alt={slide.title} className="absolute inset-0 w-full h-full object-cover" />
+            <img src={slide.image} alt={slide.title} loading={i === 0 ? "eager" : "lazy"} decoding="async" className="absolute inset-0 w-full h-full object-cover" />
           )}
           {/* Dark overlay for text readability */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/25 to-transparent" />

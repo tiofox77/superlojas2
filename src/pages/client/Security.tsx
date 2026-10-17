@@ -89,7 +89,7 @@ export default function ClientSecurity() {
                 className={`${inputCls} pl-10 pr-10`}
                 placeholder="Palavra-passe actual"
               />
-              <button type="button" onClick={() => setShowCurrent(!showCurrent)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${s.textMuted}`}>
+              <button type="button" aria-label={showCurrent ? "Ocultar palavra-passe" : "Mostrar palavra-passe"} aria-pressed={showCurrent} onClick={() => setShowCurrent(!showCurrent)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${s.textMuted}`}>
                 {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
@@ -106,7 +106,7 @@ export default function ClientSecurity() {
                 className={`${inputCls} pl-10 pr-10`}
                 placeholder="Mínimo 6 caracteres"
               />
-              <button type="button" onClick={() => setShowNew(!showNew)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${s.textMuted}`}>
+              <button type="button" aria-label={showNew ? "Ocultar palavra-passe" : "Mostrar palavra-passe"} aria-pressed={showNew} onClick={() => setShowNew(!showNew)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${s.textMuted}`}>
                 {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
